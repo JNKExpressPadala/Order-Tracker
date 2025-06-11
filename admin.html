@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -75,8 +74,24 @@
     </select>
     <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
     <button onclick="saveTracking()">Add / Update</button>
+
     <h3>All Tracking Entries</h3>
     <div id="entries"></div>
+
+    <h3>Bulk Update All Entries</h3>
+    <select id="bulkStatus">
+      <option value="">Select Status</option>
+      <option>Order Placed</option>
+      <option>Package Received</option>
+      <option>In Transit</option>
+      <option>Out for Delivery</option>
+      <option>Delivered</option>
+      <option>Delivery Failed</option>
+      <option>Returned to Sender</option>
+      <option>Canceled</option>
+    </select>
+    <input type="text" id="bulkLocation" placeholder="Location (optional)" />
+    <button onclick="updateAllTracking()">Update All</button>
   </div>
 
   <script>
@@ -141,6 +156,26 @@
             <button class='delete-btn' onclick="deleteEntry('${doc.id}')">Delete</button>
           </div>`;
       });
+    }
+
+    async function updateAllTracking() {
+      const newStatus = document.getElementById("bulkStatus").value;
+      const newLocation = document.getElementById("bulkLocation").value.trim();
+
+      if (!newStatus) return alert("Please select a status to apply.");
+      if (!confirm("Are you sure you want to update all tracking entries to this status?")) return;
+
+      const snapshot = await db.collection("tracking").get();
+      const batch = db.batch();
+
+      snapshot.forEach(doc => {
+        const ref = db.collection("tracking").doc(doc.id);
+        batch.set(ref, { status: newStatus, location: newLocation || "" });
+      });
+
+      await batch.commit();
+      alert("All tracking entries updated.");
+      loadAllEntries();
     }
   </script>
 </body>
