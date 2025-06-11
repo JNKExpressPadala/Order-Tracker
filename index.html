@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JNK Express - Track Your Package</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; background: #f8f9fa; }
+    .tracker { max-width: 500px; margin: 0 auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 0.75em; margin-top: 1em; font-size: 1em; }
+    .status { margin-top: 2em; padding: 1em; background: #e9ecef; border-radius: 5px; }
+    a { display: block; margin-top: 20px; text-align: center; color: #007bff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="tracker">
+    <h2>Track Your Package</h2>
+    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+    <button onclick="trackPackage()">Track</button>
+    <div id="statusResult" class="status" style="display:none"></div>
+    <a href="admin.html">Go to Admin Panel</a>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+
+      try {
+        const doc = await db.collection("tracking").doc(input).get();
+        if (doc.exists) {
+          resultDiv.innerHTML = `<strong>Status:</strong> ${doc.data().status}`;
+        } else {
+          resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
+        }
+      } catch (error) {
+        resultDiv.innerHTML = "Error fetching data.";
+        console.error(error);
+      }
+
+      resultDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
