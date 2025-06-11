@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - JNK Express</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f1f1f1; }
+    input, button { padding: 10px; margin-top: 10px; width: 100%; max-width: 400px; }
+    .hidden { display: none; }
+    .item { background: #fff; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    .flex { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <p id="loginMessage" style="color:red;"></p>
+  </div>
+
+  <div id="adminPanel" class="hidden">
+    <h2>Manage Tracking Data</h2>
+    <input type="text" id="newTracking" placeholder="Tracking Number" />
+    <input type="text" id="newStatus" placeholder="Status" />
+    <button onclick="addOrUpdate()">Add / Update</button>
+
+    <h3>All Entries</h3>
+    <div id="allData"></div>
+  </div>
+
+  <script>
+    const credentials = { username: "JNK", password: "11223344$" };
+
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === credentials.username && pass === credentials.password) {
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        loadData();
+      } else {
+        document.getElementById("loginMessage").innerText = "Invalid credentials.";
+      }
+    }
+
+    function addOrUpdate() {
+      const key = document.getElementById("newTracking").value.trim();
+      const value = document.getElementById("newStatus").value.trim();
+      if (!key || !value) return alert("Please fill both fields.");
+      const data = JSON.parse(localStorage.getItem("trackingData") || "{}");
+      data[key] = value;
+      localStorage.setItem("trackingData", JSON.stringify(data));
+      document.getElementById("newTracking").value = "";
+      document.getElementById("newStatus").value = "";
+      loadData();
+    }
+
+    function loadData() {
+      const data = JSON.parse(localStorage.getItem("trackingData") || "{}");
+      const container = document.getElementById("allData");
+      container.innerHTML = "";
+      for (let key in data) {
+        container.innerHTML += `<div class='item'><strong>${key}:</strong> ${data[key]}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
