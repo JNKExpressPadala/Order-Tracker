@@ -50,6 +50,11 @@
       display: none;
       text-align: left;
     }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: #D7282F;
+    }
     .footer-link {
       margin-top: 25px;
       display: block;
@@ -107,6 +112,7 @@
     <h2>Track Your Package</h2>
     <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
     <button onclick="trackPackage()">Track</button>
+    <div id="loading">⏳ Loading...</div>
     <div id="statusResult" class="status-box"></div>
     <a href="admin.html" class="footer-link">Admin Login</a>
   </div>
@@ -140,6 +146,10 @@
     async function trackPackage() {
       const input = document.getElementById('trackingInput').value.trim().toUpperCase();
       const resultDiv = document.getElementById('statusResult');
+      const loadingDiv = document.getElementById('loading');
+
+      loadingDiv.style.display = 'block';
+      resultDiv.style.display = 'none';
 
       try {
         const doc = await db.collection("tracking").doc(input).get();
@@ -156,6 +166,7 @@
         console.error(error);
       }
 
+      loadingDiv.style.display = 'none';
       resultDiv.style.display = 'block';
     }
 
