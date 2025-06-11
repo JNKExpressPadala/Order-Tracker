@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Package Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; background: #f8f9fa; }
+    .tracker { max-width: 500px; margin: 0 auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 0.75em; margin-top: 1em; font-size: 1em; }
+    .status { margin-top: 2em; padding: 1em; background: #e9ecef; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="tracker">
+    <h2>Track Your Package</h2>
+    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+    <button onclick="trackPackage()">Track</button>
+    <div id="statusResult" class="status" style="display:none"></div>
+  </div>
+
+  <script>
+    // Dummy data - you can update this manually or integrate a database later
+    const trackingDatabase = {
+      "TRK123456": "Shipped - In transit",
+      "TRK987654": "Delivered on June 10, 2025",
+      "TRK112233": "Pending - Awaiting pickup",
+    };
+
+    function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+      if (trackingDatabase[input]) {
+        resultDiv.innerHTML = `<strong>Status:</strong> ${trackingDatabase[input]}`;
+      } else {
+        resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
+      }
+      resultDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
