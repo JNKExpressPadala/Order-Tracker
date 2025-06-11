@@ -58,3 +58,57 @@
     .footer-link {
       margin-top: 20px;
       display: block;
+      color: #D7282F;
+      text-decoration: none;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.jpg" alt="JNK Logo" class="logo" />
+    <h2>Track Your Package</h2>
+    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+    <button onclick="trackPackage()">Track</button>
+    <div id="statusResult" class="status-box"></div>
+    <a href="admin.html" class="footer-link">Admin Login</a>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+
+      try {
+        const doc = await db.collection("tracking").doc(input).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const status = data.status || "N/A";
+          const location = data.location || "Not specified";
+          resultDiv.innerHTML = `<strong>Status:</strong> ${status}<br><strong>Location:</strong> ${location}`;
+        } else {
+          resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
+        }
+      } catch (error) {
+        resultDiv.innerHTML = "Error fetching data.";
+        console.error(error);
+      }
+
+      resultDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
