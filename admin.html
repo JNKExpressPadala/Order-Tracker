@@ -3,6 +3,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <a href="admin.html" id="adminLink" style="display:none;">Go to Admin Panel</a>
+
+<script>
+  // Show admin link when Ctrl + Shift + A is pressed
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      document.getElementById('adminLink').style.display = 'block';
+      alert("Admin link revealed.");
+    }
+  });
+</script>
   <title>Admin Panel - JNK Express</title>
   <style>
     body { font-family: Arial; padding: 20px; background: #f1f1f1; }
