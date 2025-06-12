@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JNK Express - Track Your Package</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #fff3f3;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 4% auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 2em;
+      text-align: center;
+    }
+    .logo {
+      max-width: 160px;
+      margin-bottom: 20px;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #D7282F;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .status-box {
+      margin-top: 20px;
+      padding: 20px;
+      background: #fdf1f1;
+      color: #333;
+      border-radius: 10px;
+      display: none;
+      text-align: left;
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: #D7282F;
+    }
+    .footer-link {
+      margin-top: 25px;
+      display: block;
+      color: #D7282F;
+      text-decoration: none;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    .support-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #D7282F;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    .support-form {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 300px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 1em;
+      display: none;
+      z-index: 1001;
+    }
+    .support-form input,
+    .support-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .support-form button {
+      background: #D7282F;
+      color: white;
+      border: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.jpg" alt="JNK Logo" class="logo" />
+    <h2>Track Your Package</h2>
+    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+    <button onclick="trackPackage()">Track</button>
+    <div id="loading">⏳ Loading...</div>
+    <div id="statusResult" class="status-box"></div>
+    <a href="admin.html" class="footer-link">Admin Login</a>
+  </div>
+
+  <!-- Support Button -->
+  <a href="#" class="support-btn" onclick="toggleSupportForm()">🛟 Support</a>
+
+  <!-- Support Form Popup -->
+  <div class="support-form" id="supportForm">
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="Name" placeholder="Your Name" required />
+      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
+      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+      const loadingDiv = document.getElementById('loading');
+
+      loadingDiv.style.display = 'block';
+      resultDiv.style.display = 'none';
+
+      try {
+        const doc = await db.collection("tracking").doc(input).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const status = data.status || "N/A";
+          const location = data.location || "Not specified";
+          resultDiv.innerHTML = `<strong>Status:</strong> ${status}<br><strong>Location:</strong> ${location}`;
+        } else {
+          resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
+        }
+      } catch (error) {
+        resultDiv.innerHTML = "Error fetching data.";
+        console.error(error);
+      }
+
+      loadingDiv.style.display = 'none';
+      resultDiv.style.display = 'block';
+    }
+
+    function toggleSupportForm() {
+      const form = document.getElementById('supportForm');
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
+</body>
+</html>
