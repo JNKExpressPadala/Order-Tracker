@@ -115,24 +115,29 @@
     }
 
     async function saveTracking() {
-      const number = document.getElementById("trackNumber").value.trim().toUpperCase();
-      const status = document.getElementById("trackStatus").value;
-      const location = document.getElementById("trackLocation").value.trim();
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
 
-      if (!number || !status) return alert("Please enter tracking number and status.");
+  if (!number || !status) return alert("Please enter tracking number and status.");
 
-      await db.collection("tracking").doc(number).set({
-        status,
-        location,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+  try {
+    await db.collection("tracking").doc(number).set({
+      status,
+      location,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("✅ Tracking info saved.");
+    document.getElementById("trackNumber").value = "";
+    document.getElementById("trackStatus").value = "";
+    document.getElementById("trackLocation").value = "";
+    loadAllEntries();
+  } catch (error) {
+    console.error("❌ Failed to save tracking info:", error);
+    alert("❌ Failed to save tracking info. See console for details.");
+  }
+}
 
-      alert("Tracking info saved.");
-      document.getElementById("trackNumber").value = "";
-      document.getElementById("trackStatus").value = "";
-      document.getElementById("trackLocation").value = "";
-      loadAllEntries();
-    }
 
     async function deleteEntry(id) {
       if (confirm("Are you sure you want to delete tracking number: " + id + "?")) {
