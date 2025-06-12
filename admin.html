@@ -1,4 +1,4 @@
-<!-- admin.html - Full Upgrade with 7 Features -->
+<!-- admin.html - With Locked Updates and Delete by Date -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +14,9 @@
     input, select, button { width: 100%; padding: 12px; margin-top: 10px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
     button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
     .item { background: #fff; padding: 10px; margin: 10px 0; border-left: 5px solid #D7282F; border-radius: 4px; position: relative; }
+    .item-content { padding-right: 80px; }
     .delete-btn { background: #aaa; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
+    .delete-btn.locked { background: #ccc; cursor: not-allowed; pointer-events: none; }
     .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -48,6 +50,11 @@
         <option value="week">This Week</option>
       </select>
       <button onclick="exportToCSV()">Export CSV</button>
+    </div>
+
+    <div class="top-bar">
+      <label>Date Lock From:</label><input type="date" id="lockFrom" />
+      <label>To:</label><input type="date" id="lockTo" />
     </div>
 
     <h3>All Tracking Entries</h3>
@@ -88,6 +95,15 @@
       }
     }
 
+    function isLockedByDate(dateStr) {
+      const lockFrom = document.getElementById("lockFrom").value;
+      const lockTo = document.getElementById("lockTo").value;
+      if (lockFrom && lockTo && dateStr) {
+        return dateStr < lockFrom || dateStr > lockTo;
+      }
+      return false;
+    }
+
     async function saveTracking() {
       const number = document.getElementById("trackNumber").value.trim().toUpperCase();
       const status = document.getElementById("trackStatus").value;
@@ -95,6 +111,12 @@
       const estimatedDate = document.getElementById("estimatedDate").value;
 
       if (!number || !status) return alert("Please enter tracking number and status.");
+
+      const existingDoc = allEntries.find(e => e.id === number);
+      const dateStr = existingDoc?.timestamp?.toLocaleDateString('en-CA') || '';
+      if (existingDoc && isLockedByDate(dateStr)) {
+        return alert("This entry is locked and cannot be updated.");
+      }
 
       const docRef = db.collection("tracking").doc(number);
       const docSnap = await docRef.get();
@@ -105,14 +127,9 @@
       statusHistory.push({ status, timestamp });
 
       try {
-        await docRef.set({
-          location,
-          statusHistory,
-          estimatedDate,
-          timestamp
-        });
+        await docRef.set({ location, statusHistory, estimatedDate, timestamp });
         alert("✅ Tracking info saved.");
-        ['trackNumber','trackStatus','trackLocation','estimatedDate'].forEach(id => document.getElementById(id).value = "");
+        ["trackNumber","trackStatus","trackLocation","estimatedDate"].forEach(id => document.getElementById(id).value = "");
         loadAllEntries();
       } catch (error) {
         console.error("❌ Failed to save tracking info:", error);
@@ -120,7 +137,8 @@
       }
     }
 
-    async function deleteEntry(id) {
+    async function deleteEntry(id, locked) {
+      if (locked) return;
       const confirmPass = prompt("Enter admin password to delete:");
       if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
       await db.collection("tracking").doc(id).delete();
@@ -169,14 +187,19 @@
           return `- [${date}] ${h.status}`;
         }).join("<br>");
 
+        const dateStr = entry.timestamp ? entry.timestamp.toLocaleDateString('en-CA') : '';
+        const isLocked = isLockedByDate(dateStr);
+
         entriesDiv.innerHTML += `
           <div class='item'>
-            <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
-            <strong>${entry.id}</strong><br>
-            Location: ${entry.location}<br>
-            Estimated Delivery: ${entry.estimatedDate}<br>
-            Timeline:<br>
-            <div class='timeline'>${timeline}</div>
+            <div class='item-content'>
+              <strong>${entry.id}</strong><br>
+              Location: ${entry.location}<br>
+              Estimated Delivery: ${entry.estimatedDate}<br>
+              Timeline:<br>
+              <div class='timeline'>${timeline}</div>
+            </div>
+            <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">${isLocked ? '🔒' : 'Delete'}</button>
           </div>`;
       }
     }
