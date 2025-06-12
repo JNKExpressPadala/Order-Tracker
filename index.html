@@ -95,8 +95,8 @@
 
           if (location && location !== "Unknown") {
             const encodedLocation = encodeURIComponent(location);
-            mapDiv.innerHTML = `<iframe width="100%" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"
-          }
+           mapDiv.innerHTML = `<iframe width="100%" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
+
         } else {
           resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
         }
