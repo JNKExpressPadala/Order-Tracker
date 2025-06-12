@@ -1,4 +1,4 @@
-<!-- index.html - Customer View with Progress Bar & Map -->
+<!-- index.html - Fixed with Progress Bar & Map -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,7 +83,6 @@
           const estimated = data.estimatedDate || "Not available";
           const history = data.statusHistory || [];
 
-          let currentStage = history.length ? history[history.length - 1].status : "";
           let progress = STAGES.map(stage => `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`).join("");
 
           let timeline = history.map(h => {
@@ -91,12 +90,22 @@
             return `• [${time}] ${h.status}`;
           }).join("<br>");
 
-          resultDiv.innerHTML = `<strong>Location:</strong> ${location}<br><strong>Estimated Delivery:</strong> ${estimated}<br><br><strong>Status Progress:</strong><div class='progress-bar'>${progress}</div><br><strong>Status Timeline:</strong><br>${timeline}`;
+          resultDiv.innerHTML = `
+            <strong>Location:</strong> ${location}<br>
+            <strong>Estimated Delivery:</strong> ${estimated}<br><br>
+            <strong>Status Progress:</strong>
+            <div class='progress-bar'>${progress}</div><br>
+            <strong>Status Timeline:</strong><br>${timeline}`;
 
           if (location && location !== "Unknown") {
             const encodedLocation = encodeURIComponent(location);
-           mapDiv.innerHTML = `<iframe width="100%" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
-
+            mapDiv.innerHTML = `
+              <iframe width="100%" height="250" frameborder="0" style="border:0" 
+                referrerpolicy="no-referrer-when-downgrade" allowfullscreen 
+                src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
+              </iframe>
+            `;
+          }
         } else {
           resultDiv.innerHTML = "Tracking number not found. Please check and try again.";
         }
@@ -104,6 +113,7 @@
         resultDiv.innerHTML = "Error fetching data.";
         console.error(error);
       }
+
       loadingDiv.style.display = 'none';
       resultDiv.style.display = 'block';
     }
