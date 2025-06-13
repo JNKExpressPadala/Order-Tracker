@@ -47,9 +47,8 @@
       <option>For Pick-up</option>
     </select>
     <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
-    <input type="date" id="estimatedDate" placeholder="Estimated Delivery Date" />
+    <input type="date" id="estimatedDate" />
     <button onclick="saveTracking()">Add / Update</button>
-
     <div class="top-bar">
       <input type="text" id="searchInput" placeholder="Search tracking number..." oninput="renderEntries()" />
       <select id="filterDate" onchange="renderEntries()">
@@ -82,7 +81,6 @@
       <button onclick="nextPage()">Next</button>
     </div>
   </div>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
@@ -139,7 +137,6 @@ async function deleteEntry(id) {
   alert("Deleted.");
   loadAllEntries();
 }
-
 function loadAllEntries() {
   db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     allEntries = snapshot.docs.map(doc => {
@@ -185,6 +182,7 @@ function renderEntries() {
           <strong>${entry.id}</strong><br>
           Location: ${entry.location}<br>
           Estimated Delivery: ${entry.estimatedDate}<br>
+          <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
           Timeline:<br><div class='timeline'>${timeline}</div>
         </div>
         <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
