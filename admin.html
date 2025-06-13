@@ -1,4 +1,3 @@
-<!-- admin.html - With Locked Updates and Delete by Date -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,9 +12,9 @@
     h2 { color: #D7282F; }
     input, select, button { width: 100%; padding: 12px; margin-top: 10px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
     button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
-    .item { background: #fff; padding: 10px; margin: 10px 0; border-left: 5px solid #D7282F; border-radius: 4px; position: relative; }
-    .item-content { padding-right: 80px; }
-    .delete-btn { background: #aaa; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
+    .item { background: #fff; padding: 10px; margin: 10px 0; border-left: 5px solid #D7282F; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .item-content { width: 100%; }
+    .delete-btn { background: #aaa; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px; }
     .delete-btn.locked { background: #ccc; cursor: not-allowed; pointer-events: none; }
     .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
@@ -191,23 +190,25 @@
         const isLocked = isLockedByDate(dateStr);
 
         entriesDiv.innerHTML += `
-  <div class='item' style="display: flex; justify-content: space-between; align-items: flex-start;">
-    <div class='item-content'>
-      <strong>${entry.id}</strong><br>
-      Location: ${entry.location}<br>
-      Estimated Delivery: ${entry.estimatedDate}<br>
-      Timeline:<br>
-      <div class='timeline'>${timeline}</div>
-    </div>
-    <div style="margin-left: 10px;">
-      <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">
-        ${isLocked ? '🔒' : 'Delete'}
-      </button>
-    </div>
-  </div>`;
+          <div class='item'>
+            <div class='item-content'>
+              <strong>${entry.id}</strong><br>
+              Location: ${entry.location}<br>
+              Estimated Delivery: ${entry.estimatedDate}<br>
+              Timeline:<br>
+              <div class='timeline'>${timeline}</div>
+            </div>
+            <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">
+              ${isLocked ? '🔒' : 'Delete'}
+            </button>
+          </div>`;
       }
+    }
+
     function sameDay(d1, d2) {
-      return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+      return d1.getFullYear() === d2.getFullYear() &&
+             d1.getMonth() === d2.getMonth() &&
+             d1.getDate() === d2.getDate();
     }
 
     function nextPage() {
