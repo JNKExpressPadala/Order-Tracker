@@ -10,12 +10,24 @@
   <style>
     body { font-family: 'Roboto', sans-serif; background: #fff3f3; padding: 20px; max-width: 800px; margin: auto; }
     h2 { color: #D7282F; }
-    input, select, button { width: 100%; padding: 12px; margin-top: 10px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
+    input, select, button {
+      width: 100%; padding: 12px; margin-top: 10px;
+      font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
+    }
     button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
-    .item { background: #fff; padding: 10px; margin: 10px 0; border-left: 5px solid #D7282F; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .item {
+      background: #fff; padding: 10px; margin: 10px 0;
+      border-left: 5px solid #D7282F; border-radius: 4px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
     .item-content { width: 100%; }
-    .delete-btn { background: #aaa; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px; }
-    .delete-btn.locked { background: #ccc; cursor: not-allowed; pointer-events: none; }
+    .delete-btn {
+      background: #aaa; color: white; border: none;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;
+    }
+    .delete-btn.locked {
+      background: #ccc; cursor: not-allowed; pointer-events: none;
+    }
     .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -40,7 +52,6 @@
     <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
     <input type="date" id="estimatedDate" placeholder="Estimated Delivery Date" />
     <button onclick="saveTracking()">Add / Update</button>
-
     <div class="top-bar">
       <input type="text" id="searchInput" placeholder="Search tracking number..." oninput="renderEntries()" />
       <select id="filterDate" onchange="renderEntries()">
@@ -56,6 +67,18 @@
       <label>To:</label><input type="date" id="lockTo" />
     </div>
 
+    <div class="top-bar">
+      <select id="bulkStatus">
+        <option value="">Update Status to...</option>
+        <option>Package Received</option>
+        <option>In Transit</option>
+        <option>Arrived</option>
+        <option>For Pick-up</option>
+      </select>
+      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+      <button onclick="bulkUpdateLockedRange()">Apply to Locked Range</button>
+    </div>
+
     <h3>All Tracking Entries</h3>
     <div id="entries"></div>
     <div class="pagination">
@@ -63,184 +86,209 @@
       <button onclick="nextPage()">Next</button>
     </div>
   </div>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+    authDomain: "jnk-ordertracker.firebaseapp.com",
+    projectId: "jnk-ordertracker",
+    storageBucket: "jnk-ordertracker.appspot.com",
+    messagingSenderId: "421193030070",
+    appId: "1:421193030070:web:078e39980237bc41f64917"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-      authDomain: "jnk-ordertracker.firebaseapp.com",
-      projectId: "jnk-ordertracker",
-      storageBucket: "jnk-ordertracker.appspot.com",
-      messagingSenderId: "421193030070",
-      appId: "1:421193030070:web:078e39980237bc41f64917"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+  const USERNAME = "JNK";
+  const PASSWORD = "11223344$";
+  let allEntries = [];
+  let currentPage = 1;
+  const pageSize = 10;
 
-    const USERNAME = "JNK";
-    const PASSWORD = "11223344$";
-    let allEntries = [];
-    let currentPage = 1;
-    const pageSize = 10;
-
-    function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
-      if (user === USERNAME && pass === PASSWORD) {
-        document.getElementById("adminSection").style.display = "block";
-        document.getElementById("loginMessage").innerText = "";
-        loadAllEntries();
-      } else {
-        document.getElementById("loginMessage").innerText = "Invalid login.";
-      }
-    }
-
-    function isLockedByDate(dateStr) {
-      const lockFrom = document.getElementById("lockFrom").value;
-      const lockTo = document.getElementById("lockTo").value;
-      if (lockFrom && lockTo && dateStr) {
-        return dateStr < lockFrom || dateStr > lockTo;
-      }
-      return false;
-    }
-
-    async function saveTracking() {
-      const number = document.getElementById("trackNumber").value.trim().toUpperCase();
-      const status = document.getElementById("trackStatus").value;
-      const location = document.getElementById("trackLocation").value.trim();
-      const estimatedDate = document.getElementById("estimatedDate").value;
-
-      if (!number || !status) return alert("Please enter tracking number and status.");
-
-      const existingDoc = allEntries.find(e => e.id === number);
-      const dateStr = existingDoc?.timestamp?.toLocaleDateString('en-CA') || '';
-      if (existingDoc && isLockedByDate(dateStr)) {
-        return alert("This entry is locked and cannot be updated.");
-      }
-
-      const docRef = db.collection("tracking").doc(number);
-      const docSnap = await docRef.get();
-      const timestamp = firebase.firestore.Timestamp.now();
-      let statusHistory = [];
-
-      if (docSnap.exists) statusHistory = docSnap.data().statusHistory || [];
-      statusHistory.push({ status, timestamp });
-
-      try {
-        await docRef.set({ location, statusHistory, estimatedDate, timestamp });
-        alert("✅ Tracking info saved.");
-        ["trackNumber","trackStatus","trackLocation","estimatedDate"].forEach(id => document.getElementById(id).value = "");
-        loadAllEntries();
-      } catch (error) {
-        console.error("❌ Failed to save tracking info:", error);
-        alert("❌ Failed to save tracking info. See console.");
-      }
-    }
-
-    async function deleteEntry(id, locked) {
-      if (locked) return;
-      const confirmPass = prompt("Enter admin password to delete:");
-      if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-      await db.collection("tracking").doc(id).delete();
-      alert("Deleted.");
+  function login() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+    if (user === USERNAME && pass === PASSWORD) {
+      document.getElementById("adminSection").style.display = "block";
+      document.getElementById("loginMessage").innerText = "";
       loadAllEntries();
+    } else {
+      document.getElementById("loginMessage").innerText = "Invalid login.";
+    }
+  }
+
+  function isLockedByDate(dateStr) {
+    const lockFrom = document.getElementById("lockFrom").value;
+    const lockTo = document.getElementById("lockTo").value;
+    if (lockFrom && lockTo && dateStr) {
+      return dateStr < lockFrom || dateStr > lockTo;
+    }
+    return false;
+  }
+
+  async function saveTracking() {
+    const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+    const status = document.getElementById("trackStatus").value;
+    const location = document.getElementById("trackLocation").value.trim();
+    const estimatedDate = document.getElementById("estimatedDate").value;
+
+    if (!number || !status) return alert("Please enter tracking number and status.");
+
+    const existingDoc = allEntries.find(e => e.id === number);
+    const dateStr = existingDoc?.timestamp?.toLocaleDateString('en-CA') || '';
+    if (existingDoc && isLockedByDate(dateStr)) {
+      return alert("This entry is locked and cannot be updated.");
     }
 
-    async function loadAllEntries() {
-      const snapshot = await db.collection("tracking").orderBy("timestamp", "desc").get();
-      allEntries = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          location: data.location || '-',
-          statusHistory: data.statusHistory || [],
-          estimatedDate: data.estimatedDate || '-',
-          timestamp: data.timestamp?.toDate() || null,
-        };
-      });
-      renderEntries();
+    const docRef = db.collection("tracking").doc(number);
+    const docSnap = await docRef.get();
+    const timestamp = firebase.firestore.Timestamp.now();
+    let statusHistory = [];
+
+    if (docSnap.exists) statusHistory = docSnap.data().statusHistory || [];
+    statusHistory.push({ status, timestamp });
+
+    await docRef.set({ location, statusHistory, estimatedDate, timestamp });
+    alert("✅ Tracking info saved.");
+    ["trackNumber", "trackStatus", "trackLocation", "estimatedDate"].forEach(id => document.getElementById(id).value = "");
+    loadAllEntries();
+  }
+
+  async function deleteEntry(id, locked) {
+    if (locked) return;
+    const confirmPass = prompt("Enter admin password to delete:");
+    if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+    await db.collection("tracking").doc(id).delete();
+    alert("Deleted.");
+    loadAllEntries();
+  }
+  async function loadAllEntries() {
+    const snapshot = await db.collection("tracking").orderBy("timestamp", "desc").get();
+    allEntries = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        location: data.location || '-',
+        statusHistory: data.statusHistory || [],
+        estimatedDate: data.estimatedDate || '-',
+        timestamp: data.timestamp?.toDate() || null,
+      };
+    });
+    renderEntries();
+  }
+
+  function renderEntries() {
+    const search = document.getElementById("searchInput").value.toUpperCase();
+    const filter = document.getElementById("filterDate").value;
+    const entriesDiv = document.getElementById("entries");
+    entriesDiv.innerHTML = "";
+
+    let filtered = allEntries.filter(e => e.id.includes(search));
+
+    if (filter === "today") {
+      const today = new Date();
+      filtered = filtered.filter(e => e.timestamp && sameDay(e.timestamp, today));
+    } else if (filter === "week") {
+      const now = new Date();
+      const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+      filtered = filtered.filter(e => e.timestamp && e.timestamp >= weekStart);
     }
 
-    function renderEntries() {
-      const search = document.getElementById("searchInput").value.toUpperCase();
-      const filter = document.getElementById("filterDate").value;
-      const entriesDiv = document.getElementById("entries");
-      entriesDiv.innerHTML = "";
+    const start = (currentPage - 1) * pageSize;
+    const paginated = filtered.slice(start, start + pageSize);
 
-      let filtered = allEntries.filter(e => e.id.includes(search));
+    for (const entry of paginated) {
+      const timeline = entry.statusHistory.map(h => {
+        const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
+        return `- [${date}] ${h.status}`;
+      }).join("<br>");
 
-      if (filter === "today") {
-        const today = new Date();
-        filtered = filtered.filter(e => e.timestamp && sameDay(e.timestamp, today));
-      } else if (filter === "week") {
-        const now = new Date();
-        const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-        filtered = filtered.filter(e => e.timestamp && e.timestamp >= weekStart);
+      const dateStr = entry.timestamp ? entry.timestamp.toLocaleDateString('en-CA') : '';
+      const isLocked = isLockedByDate(dateStr);
+
+      entriesDiv.innerHTML += `
+        <div class='item'>
+          <div class='item-content'>
+            <strong>${entry.id}</strong><br>
+            Location: ${entry.location}<br>
+            Estimated Delivery: ${entry.estimatedDate}<br>
+            Timeline:<br>
+            <div class='timeline'>${timeline}</div>
+          </div>
+          <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">
+            ${isLocked ? '🔒' : 'Delete'}
+          </button>
+        </div>`;
+    }
+  }
+
+  function sameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }
+
+  function nextPage() {
+    const search = document.getElementById("searchInput").value.toUpperCase();
+    const filtered = allEntries.filter(e => e.id.includes(search));
+    const totalPages = Math.ceil(filtered.length / pageSize);
+    if (currentPage < totalPages) currentPage++;
+    renderEntries();
+  }
+
+  function prevPage() {
+    if (currentPage > 1) currentPage--;
+    renderEntries();
+  }
+
+  function exportToCSV() {
+    const data = allEntries.map(e => {
+      const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
+      return {
+        TrackingNumber: e.id,
+        Location: e.location,
+        EstimatedDelivery: e.estimatedDate,
+        StatusTimeline: status
+      };
+    });
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `tracking_export_${Date.now()}.csv`;
+    link.click();
+  }
+  async function bulkUpdateLockedRange() {
+    const from = document.getElementById("lockFrom").value;
+    const to = document.getElementById("lockTo").value;
+    const status = document.getElementById("bulkStatus").value;
+    const location = document.getElementById("bulkLocation").value.trim();
+    if (!from || !to || !status) return alert("Set date range and status to apply.");
+
+    const confirmPass = prompt("Enter admin password to apply bulk update:");
+    if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
+    const snapshot = await db.collection("tracking").get();
+    const batch = db.batch();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const docDate = data.timestamp?.toDate().toLocaleDateString('en-CA');
+      if (docDate >= from && docDate <= to) {
+        const history = data.statusHistory || [];
+        history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+        batch.set(doc.ref, {
+          location: location || data.location,
+          estimatedDate: data.estimatedDate || '',
+          statusHistory: history,
+          timestamp: firebase.firestore.Timestamp.now()
+        });
       }
+    });
 
-      const start = (currentPage - 1) * pageSize;
-      const paginated = filtered.slice(start, start + pageSize);
-
-      for (const entry of paginated) {
-        const timeline = entry.statusHistory.map(h => {
-          const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
-          return `- [${date}] ${h.status}`;
-        }).join("<br>");
-
-        const dateStr = entry.timestamp ? entry.timestamp.toLocaleDateString('en-CA') : '';
-        const isLocked = isLockedByDate(dateStr);
-
-        entriesDiv.innerHTML += `
-          <div class='item'>
-            <div class='item-content'>
-              <strong>${entry.id}</strong><br>
-              Location: ${entry.location}<br>
-              Estimated Delivery: ${entry.estimatedDate}<br>
-              Timeline:<br>
-              <div class='timeline'>${timeline}</div>
-            </div>
-            <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">
-              ${isLocked ? '🔒' : 'Delete'}
-            </button>
-          </div>`;
-      }
-    }
-
-    function sameDay(d1, d2) {
-      return d1.getFullYear() === d2.getFullYear() &&
-             d1.getMonth() === d2.getMonth() &&
-             d1.getDate() === d2.getDate();
-    }
-
-    function nextPage() {
-      const search = document.getElementById("searchInput").value.toUpperCase();
-      const filtered = allEntries.filter(e => e.id.includes(search));
-      const totalPages = Math.ceil(filtered.length / pageSize);
-      if (currentPage < totalPages) currentPage++;
-      renderEntries();
-    }
-
-    function prevPage() {
-      if (currentPage > 1) currentPage--;
-      renderEntries();
-    }
-
-    function exportToCSV() {
-      const data = allEntries.map(e => {
-        const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
-        return {
-          TrackingNumber: e.id,
-          Location: e.location,
-          EstimatedDelivery: e.estimatedDate,
-          StatusTimeline: status
-        };
-      });
-      const csv = Papa.unparse(data);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `tracking_export_${Date.now()}.csv`;
-      link.click();
-    }
-  </script>
+    await batch.commit();
+    alert("✅ Entries updated for locked date range.");
+    loadAllEntries();
+  }
+</script>
 </body>
 </html>
