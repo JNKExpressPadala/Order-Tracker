@@ -191,18 +191,20 @@
         const isLocked = isLockedByDate(dateStr);
 
         entriesDiv.innerHTML += `
-          <div class='item'>
-            <div class='item-content'>
-              <strong>${entry.id}</strong><br>
-              Location: ${entry.location}<br>
-              Estimated Delivery: ${entry.estimatedDate}<br>
-              Timeline:<br>
-              <div class='timeline'>${timeline}</div>
-            </div>
-            <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">${isLocked ? '🔒' : 'Delete'}</button>
-          </div>`;
-      }
-    }
+  <div class='item' style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div class='item-content'>
+      <strong>${entry.id}</strong><br>
+      Location: ${entry.location}<br>
+      Estimated Delivery: ${entry.estimatedDate}<br>
+      Timeline:<br>
+      <div class='timeline'>${timeline}</div>
+    </div>
+    <div style="margin-left: 10px;">
+      <button class='delete-btn ${isLocked ? "locked" : ""}' onclick="deleteEntry('${entry.id}', ${isLocked})">
+        ${isLocked ? '🔒' : 'Delete'}
+      </button>
+    </div>
+  </div>`;
 
     function sameDay(d1, d2) {
       return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
