@@ -1,3 +1,4 @@
+<!-- Updated admin panel with time-based bulk update -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,257 +16,64 @@
       font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
     }
     button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
-    .item {
-      background: #fff; padding: 10px; margin: 10px 0;
-      border-left: 5px solid #D7282F; border-radius: 4px;
-      display: flex; justify-content: space-between; align-items: flex-start;
-    }
-    .item-content { width: 100%; }
-    .delete-btn {
-      background: #aaa; color: white; border: none;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;
-    }
-    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-    .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
-  <h2>JNK Admin Panel</h2>
-  <input type="text" id="username" placeholder="Username" />
-  <input type="password" id="password" placeholder="Password" />
-  <button onclick="login()">Login</button>
-  <p id="loginMessage" style="color:red;"></p>
-
-  <div id="adminSection" style="display:none;">
-    <input type="text" id="trackNumber" placeholder="Tracking Number" />
-    <select id="trackStatus">
-      <option value="">Select Status</option>
+  <!-- Form elements -->
+  <div class="top-bar">
+    <input type="date" id="bulkDate" placeholder="Select Date to Apply" />
+    <input type="time" id="startTime" />
+    <input type="time" id="endTime" />
+    <select id="bulkStatus">
+      <option value="">Update Status to...</option>
       <option>Package Received</option>
       <option>In Transit</option>
       <option>Arrived</option>
       <option>For Pick-up</option>
     </select>
-    <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
-    <input type="date" id="estimatedDate" placeholder="Estimated Delivery Date" />
-    <button onclick="saveTracking()">Add / Update</button>
-
-    <div class="top-bar">
-      <input type="text" id="searchInput" placeholder="Search tracking number..." oninput="renderEntries()" />
-      <select id="filterDate" onchange="renderEntries()">
-        <option value="">All Dates</option>
-        <option value="today">Today</option>
-        <option value="week">This Week</option>
-      </select>
-      <button onclick="exportToCSV()">Export CSV</button>
-    </div>
-
-    <div class="top-bar">
-      <input type="date" id="bulkDate" placeholder="Select Date to Apply" />
-      <select id="bulkStatus">
-        <option value="">Update Status to...</option>
-        <option>Package Received</option>
-        <option>In Transit</option>
-        <option>Arrived</option>
-        <option>For Pick-up</option>
-      </select>
-      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
-      <button onclick="bulkUpdateByDate()">Apply to Selected Date</button>
-    </div>
-
-    <h3>All Tracking Entries</h3>
-    <div id="entries"></div>
-    <div class="pagination">
-      <button onclick="prevPage()">Previous</button>
-      <button onclick="nextPage()">Next</button>
-    </div>
+    <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+    <button onclick="bulkUpdateByTimeRange()">Apply to Date + Time Range</button>
   </div>
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+  <script>
+    async function bulkUpdateByTimeRange() {
+      const date = document.getElementById("bulkDate").value;
+      const start = document.getElementById("startTime").value;
+      const end = document.getElementById("endTime").value;
+      const status = document.getElementById("bulkStatus").value;
+      const location = document.getElementById("bulkLocation").value.trim();
 
-const USERNAME = "JNK";
-const PASSWORD = "11223344$";
-let allEntries = [];
-let currentPage = 1;
-const pageSize = 10;
+      if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
 
-function login() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if (user === USERNAME && pass === PASSWORD) {
-    document.getElementById("adminSection").style.display = "block";
-    document.getElementById("loginMessage").innerText = "";
-    loadAllEntries();
-  } else {
-    document.getElementById("loginMessage").innerText = "Invalid login.";
-  }
-}
+      const confirmPass = prompt("Enter admin password to apply bulk update:");
+      if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
 
-async function saveTracking() {
-  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
-  const status = document.getElementById("trackStatus").value;
-  const location = document.getElementById("trackLocation").value.trim();
-  const estimatedDate = document.getElementById("estimatedDate").value;
+      const fromDate = new Date(`${date}T${start}`);
+      const toDate = new Date(`${date}T${end}`);
 
-  if (!number || !status) return alert("Please enter tracking number and status.");
+      const snapshot = await db.collection("tracking").get();
+      const batch = db.batch();
 
-  const docRef = db.collection("tracking").doc(number);
-  const docSnap = await docRef.get();
-  const timestamp = firebase.firestore.Timestamp.now();
-  let statusHistory = [];
-
-  if (docSnap.exists) statusHistory = docSnap.data().statusHistory || [];
-  statusHistory.push({ status, timestamp });
-
-  await docRef.set({ location, statusHistory, estimatedDate, timestamp });
-  alert("✅ Tracking info saved.");
-  ["trackNumber", "trackStatus", "trackLocation", "estimatedDate"].forEach(id => document.getElementById(id).value = "");
-  loadAllEntries();
-}
-
-async function deleteEntry(id) {
-  const confirmPass = prompt("Enter admin password to delete:");
-  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-  await db.collection("tracking").doc(id).delete();
-  alert("Deleted.");
-  loadAllEntries();
-}
-
-function loadAllEntries() {
-  db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-    allEntries = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        location: data.location || '-',
-        statusHistory: data.statusHistory || [],
-        estimatedDate: data.estimatedDate || '-',
-        timestamp: data.timestamp?.toDate() || null,
-      };
-    });
-    renderEntries();
-  });
-}
-
-function renderEntries() {
-  const search = document.getElementById("searchInput").value.toUpperCase();
-  const filter = document.getElementById("filterDate").value;
-  const entriesDiv = document.getElementById("entries");
-  entriesDiv.innerHTML = "";
-
-  let filtered = allEntries.filter(e => e.id.includes(search));
-
-  if (filter === "today") {
-    const today = new Date();
-    filtered = filtered.filter(e => e.timestamp && sameDay(e.timestamp, today));
-  } else if (filter === "week") {
-    const now = new Date();
-    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-    filtered = filtered.filter(e => e.timestamp && e.timestamp >= weekStart);
-  }
-
-  const start = (currentPage - 1) * pageSize;
-  const paginated = filtered.slice(start, start + pageSize);
-
-  for (const entry of paginated) {
-    const timeline = entry.statusHistory.map(h => {
-      const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
-      return `- [${date}] ${h.status}`;
-    }).join("<br>");
-
-    entriesDiv.innerHTML += `
-      <div class='item'>
-        <div class='item-content'>
-          <strong>${entry.id}</strong><br>
-          Location: ${entry.location}<br>
-          Estimated Delivery: ${entry.estimatedDate}<br>
-          Timeline:<br>
-          <div class='timeline'>${timeline}</div>
-        </div>
-        <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
-      </div>`;
-  }
-}
-
-function sameDay(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
-}
-
-function nextPage() {
-  const search = document.getElementById("searchInput").value.toUpperCase();
-  const filtered = allEntries.filter(e => e.id.includes(search));
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  if (currentPage < totalPages) currentPage++;
-  renderEntries();
-}
-
-function prevPage() {
-  if (currentPage > 1) currentPage--;
-  renderEntries();
-}
-
-function exportToCSV() {
-  const data = allEntries.map(e => {
-    const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
-    return {
-      TrackingNumber: e.id,
-      Location: e.location,
-      EstimatedDelivery: e.estimatedDate,
-      StatusTimeline: status
-    };
-  });
-  const csv = Papa.unparse(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `tracking_export_${Date.now()}.csv`;
-  link.click();
-}
-
-async function bulkUpdateByDate() {
-  const selectedDate = document.getElementById("bulkDate").value;
-  const status = document.getElementById("bulkStatus").value;
-  const location = document.getElementById("bulkLocation").value.trim();
-
-  if (!selectedDate || !status) return alert("Select date and status to apply.");
-
-  const confirmPass = prompt("Enter admin password to apply bulk update:");
-  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-
-  const snapshot = await db.collection("tracking").get();
-  const batch = db.batch();
-
-  snapshot.docs.forEach(doc => {
-    const data = doc.data();
-    const docDate = data.timestamp?.toDate().toLocaleDateString('en-CA');
-    if (docDate === selectedDate) {
-      const history = data.statusHistory || [];
-      history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-      batch.set(doc.ref, {
-        location: location || data.location,
-        estimatedDate: data.estimatedDate || '',
-        statusHistory: history,
-        timestamp: firebase.firestore.Timestamp.now()
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const entryDate = data.timestamp?.toDate();
+        if (entryDate >= fromDate && entryDate <= toDate) {
+          const history = data.statusHistory || [];
+          history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+          batch.set(doc.ref, {
+            location: location || data.location,
+            estimatedDate: data.estimatedDate || '',
+            statusHistory: history,
+            timestamp: firebase.firestore.Timestamp.now()
+          });
+        }
       });
-    }
-  });
 
-  await batch.commit();
-  alert("✅ Bulk update applied to entries with selected date.");
-  loadAllEntries();
-}
-</script>
+      await batch.commit();
+      alert("✅ Bulk update applied to selected date and time range.");
+      loadAllEntries();
+    }
+  </script>
 </body>
 </html>
