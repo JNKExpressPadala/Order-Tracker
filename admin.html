@@ -141,19 +141,20 @@ async function deleteEntry(id) {
   loadAllEntries();
 }
 
-async function loadAllEntries() {
-  const snapshot = await db.collection("tracking").orderBy("timestamp", "desc").get();
-  allEntries = snapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      location: data.location || '-',
-      statusHistory: data.statusHistory || [],
-      estimatedDate: data.estimatedDate || '-',
-      timestamp: data.timestamp?.toDate() || null,
-    };
+function loadAllEntries() {
+  db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    allEntries = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        location: data.location || '-',
+        statusHistory: data.statusHistory || [],
+        estimatedDate: data.estimatedDate || '-',
+        timestamp: data.timestamp?.toDate() || null,
+      };
+    });
+    renderEntries();
   });
-  renderEntries();
 }
 
 function renderEntries() {
