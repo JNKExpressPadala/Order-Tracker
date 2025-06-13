@@ -76,7 +76,7 @@
         <option>For Pick-up</option>
       </select>
       <input type="text" id="bulkLocation" placeholder="Optional New Location" />
-      <button onclick="bulkUpdateLockedRange()">Apply to Locked Range</button>
+      <button onclick="bulkUpdateLockedRange()">Apply to Unlocked Entries</button>
     </div>
 
     <h3>All Tracking Entries</h3>
@@ -120,7 +120,7 @@
     const lockFrom = document.getElementById("lockFrom").value;
     const lockTo = document.getElementById("lockTo").value;
     if (lockFrom && lockTo && dateStr) {
-      return dateStr < lockFrom || dateStr > lockTo;
+      return dateStr >= lockFrom && dateStr <= lockTo;
     }
     return false;
   }
@@ -208,7 +208,12 @@
       entriesDiv.innerHTML += `
         <div class='item'>
           <div class='item-content'>
-            <strong>${entry.id}</strong><br>
+            <strong>
+              ${entry.id}
+              <span style="font-size: 0.85em; font-weight: normal; color: ${isLocked ? '#d9534f' : '#5cb85c'};">
+                ${isLocked ? '🔒 Locked' : '✅ Unlocked'}
+              </span>
+            </strong><br>
             Location: ${entry.location}<br>
             Estimated Delivery: ${entry.estimatedDate}<br>
             Timeline:<br>
@@ -262,6 +267,7 @@
     const to = document.getElementById("lockTo").value;
     const status = document.getElementById("bulkStatus").value;
     const location = document.getElementById("bulkLocation").value.trim();
+
     if (!from || !to || !status) return alert("Set date range and status to apply.");
 
     const confirmPass = prompt("Enter admin password to apply bulk update:");
@@ -273,9 +279,12 @@
     snapshot.docs.forEach(doc => {
       const data = doc.data();
       const docDate = data.timestamp?.toDate().toLocaleDateString('en-CA');
-      if (docDate >= from && docDate <= to) {
+
+      // ✅ Skip locked entries (inside date range)
+      if (docDate < from || docDate > to) {
         const history = data.statusHistory || [];
         history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+
         batch.set(doc.ref, {
           location: location || data.location,
           estimatedDate: data.estimatedDate || '',
@@ -286,7 +295,7 @@
     });
 
     await batch.commit();
-    alert("✅ Entries updated for locked date range.");
+    alert("✅ Unlocked entries updated. Locked range skipped.");
     loadAllEntries();
   }
 </script>
