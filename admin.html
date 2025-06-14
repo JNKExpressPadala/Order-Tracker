@@ -1,3 +1,4 @@
+<!-- Paste this full admin.html content -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,6 +67,21 @@
         <option value="week">This Week</option>
       </select>
       <button onclick="exportToCSV()">Export CSV</button>
+    </div>
+
+    <div class="top-bar">
+      <input type="date" id="bulkDate" />
+      <input type="time" id="startTime" />
+      <input type="time" id="endTime" />
+      <select id="bulkStatus">
+        <option value="">Update Status to...</option>
+        <option>Package Received</option>
+        <option>In Transit</option>
+        <option>Arrived</option>
+        <option>For Pick-up</option>
+      </select>
+      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+      <button onclick="bulkUpdateByTimeRange()">Apply to Date + Time Range</button>
     </div>
 
     <h3>All Tracking Entries</h3>
@@ -238,6 +254,38 @@ function exportToCSV() {
   link.href = URL.createObjectURL(blob);
   link.download = `tracking_export_${Date.now()}.csv`;
   link.click();
+}
+
+async function bulkUpdateByTimeRange() {
+  const date = document.getElementById("bulkDate").value;
+  const start = document.getElementById("startTime").value;
+  const end = document.getElementById("endTime").value;
+  const status = document.getElementById("bulkStatus").value;
+  const location = document.getElementById("bulkLocation").value.trim();
+  if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+  const fromDate = new Date(`${date}T${start}`);
+  const toDate = new Date(`${date}T${end}`);
+  const snapshot = await db.collection("tracking").get();
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const entryDate = data.timestamp?.toDate();
+    if (entryDate >= fromDate && entryDate <= toDate) {
+      const history = data.statusHistory || [];
+      history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+      batch.set(doc.ref, {
+        location: location || data.location,
+        estimatedDate: data.estimatedDate || '',
+        statusHistory: history,
+        timestamp: firebase.firestore.Timestamp.now()
+      });
+    }
+  });
+  await batch.commit();
+  alert("✅ Bulk update applied to selected date and time range.");
+  loadAllEntries();
 }
 </script>
 </body>
