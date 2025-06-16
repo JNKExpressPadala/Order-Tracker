@@ -19,7 +19,6 @@
     nav button { margin: 5px 10px; padding: 10px 20px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; cursor: pointer; border-radius: 6px; }
     nav button:hover { background: #D7282F; color: #fff; }
 
-    /* Tracker Section */
     .container { max-width: 600px; margin: 30px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
     .logo { max-width: 160px; margin-bottom: 20px; }
     input, button { width: 100%; padding: 12px; font-size: 1em; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; }
@@ -33,32 +32,70 @@
     .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
 
     #loading { display: none; margin-top: 10px; color: #D7282F; }
-
     a.footer-link { display: block; margin: 20px auto; color: #D7282F; text-decoration: none; }
     a.footer-link:hover { text-decoration: underline; }
 
-    .support-btn { position: fixed; bottom: 20px; right: 20px; background-color: #D7282F; color: white; padding: 12px 18px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
-    .support-form { position: fixed; bottom: 80px; right: 20px; width: 300px; background: #fff; border-radius: 10px; padding: 1em; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: 1px solid #ccc; }
-    .support-form button { background: #D7282F; color: white; border: none; padding: 10px; width: 100%; margin-top: 10px; cursor: pointer; }
+    .support-fab {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: #D7282F;
+      color: white;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8em;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
 
-    /* Info and Quick Access */
-    .info-section { background: #f8f8f8; padding: 30px 20px; text-align: center; color: #333; }
-    .info-section p { max-width: 800px; margin: 0 auto; line-height: 1.6; }
-
-    .quick-access { position: fixed; right: 20px; bottom: 80px; display: flex; flex-direction: column; z-index: 900; }
-    .quick-access button { margin-top: 10px; padding: 12px; border-radius: 50%; background: #fff; border: 1px solid #ccc; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .support-form-box {
+      position: fixed;
+      bottom: 90px;
+      right: 25px;
+      width: 300px;
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1001;
+    }
+    .support-form-box h4 {
+      margin: 0 0 10px;
+      color: #D7282F;
+      font-weight: bold;
+    }
+    .support-form-box input,
+    .support-form-box textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .support-form-box button {
+      width: 100%;
+      background: #D7282F;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-
-  <!-- Header / Banner -->
   <header>
     <img src="logo.jpg" alt="JNK Express Logo" />
     <h1>JNK Express Padala</h1>
   </header>
 
-  <!-- Navigation Buttons -->
   <nav>
     <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
     <button onclick="alert('Shipping Rates feature coming soon!')">Shipping Rates</button>
@@ -66,7 +103,6 @@
     <button onclick="alert('Find Branches feature coming soon!')">Find Branches</button>
   </nav>
 
-  <!-- Tracker Section -->
   <div class="container">
     <img src="logo.jpg" alt="JNK Logo" class="logo" />
     <h2>Track Your Package</h2>
@@ -78,33 +114,18 @@
     <a href="admin.html" class="footer-link">Admin Login</a>
   </div>
 
-  <!-- Info Section -->
-  <section class="info-section">
-    <p>
-      We deliver from Urban to Lubang and vice versa—JNK Express Padala is your trusted local courier service! Enjoy reliable nationwide delivery, real-time tracking, door-to-door service and excellent customer support.
-    </p>
-  </section>
-
-  <!-- Floating Quick Access -->
-  <div class="quick-access">
-    <button title="Mobile App">📱</button>
-    <button title="Place Order">📦</button>
-    <button title="Customer Service" onclick="toggleSupportForm()">☎️</button>
-  </div>
-
-  <!-- Support Form Trigger & Popup -->
-  <button class="support-btn" onclick="toggleSupportForm()">🛟 Support</button>
-  <div class="support-form" id="supportForm">
+  <div class="support-fab" onclick="toggleSupportForm()">❓</div>
+  <div class="support-form-box" id="supportForm">
     <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <h4>Need Help?</h4>
       <input type="hidden" name="_captcha" value="false">
       <input type="text" name="Name" placeholder="Your Name" required />
       <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
       <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
-      <button type="submit">Send Message</button>
+      <button type="submit">📨 Send</button>
     </form>
   </div>
 
-  <!-- Firebase + Tracking Script -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
@@ -134,9 +155,7 @@
           const location = data.location || "Unknown";
           const estimated = data.estimatedDate || "Not available";
           const history = data.statusHistory || [];
-          let progress = STAGES.map(stage =>
-            `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
-          ).join("");
+          let progress = STAGES.map(stage => `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`).join("");
           let timeline = history.map(h => {
             const time = h.timestamp?.toDate().toLocaleString() || "";
             return `• [${time}] ${h.status}`;
@@ -148,15 +167,10 @@
             <strong>Status Timeline:</strong><br>${timeline}`;
           if (location !== "Unknown") {
             const encoded = encodeURIComponent(location);
-            mapDiv.innerHTML = `<iframe width="100%" height="250" style="border:0" allowfullscreen
-              src="https://www.google.com/maps/embed/v1/place?q=${encoded}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
+            mapDiv.innerHTML = `<iframe width="100%" height="250" style="border:0" allowfullscreen src="https://www.google.com/maps/embed/v1/place?q=${encoded}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
           }
         } else {
-          resultDiv.innerHTML = `
-            ❌ <strong>Tracking number not found.</strong><br>
-            Your parcel may still be on the way or not yet processed.<br>
-            Please double-check your tracking number or <a href="#" onclick="toggleSupportForm()">contact support</a>.
-          `;
+          resultDiv.innerHTML = `❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href="#" onclick="toggleSupportForm()">contact support</a>.`;
         }
       } catch (err) {
         resultDiv.innerHTML = "Error fetching data.";
