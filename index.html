@@ -142,24 +142,6 @@
       font-size: 0.9em;
     }
 
-    nav {
-      background: white;
-      padding: 1em;
-      display: flex;
-      justify-content: space-around;
-      border-top: 1px solid #ccc;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      z-index: 999;
-    }
-
-    nav a {
-      color: #D7282F;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -193,15 +175,8 @@
     </form>
   </div>
 
-  <nav>
-    <a href="#">Home</a>
-    <a href="#">Rates</a>
-    <a href="#">Branches</a>
-    <a href="#">Help</a>
-  </nav>
-
   <footer>
-    &copy; 2025 JNK Express Padala. All Rights Reserved.
+    &copy; 2021 JNK Express Padala. All Rights Reserved.
   </footer>
 
   <script>
@@ -258,7 +233,7 @@
               </iframe>`;
           }
         } else {
-          resultDiv.innerHTML = "Your parcel may still be on the way or not yet processed. Please double-check your tracking number or try again shortly.";
+          resultDiv.innerHTML = `❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href="#" onclick="toggleSupportForm()">contact support</a>.`;
         }
       } catch (error) {
         resultDiv.innerHTML = "Error fetching data.";
