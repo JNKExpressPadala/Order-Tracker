@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>JNK Express - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
@@ -84,15 +83,6 @@
 
     #loading { display: none; margin-top: 10px; color: #D7282F; }
 
-    a.footer-link {
-      display: block;
-      margin: 20px auto;
-      color: #D7282F;
-      text-decoration: none;
-    }
-
-    a.footer-link:hover { text-decoration: underline; }
-
     .support-fab {
       position: relative;
       margin: 20px auto 0;
@@ -170,10 +160,8 @@
     <div id="mapContainer" class="map-box"></div>
     <a href="admin.html" class="footer-link">Admin Login</a>
 
-    <!-- Support Floating Button -->
+    <!-- Support Button & Form -->
     <div class="support-fab" onclick="toggleSupportForm()">📞</div>
-
-    <!-- Support Form -->
     <div class="support-form-box" id="supportForm">
       <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
         <h4>Need Help?</h4>
@@ -236,10 +224,8 @@
 
           if (location !== "Unknown") {
             const encoded = encodeURIComponent(location);
-            mapDiv.innerHTML = `
-              <iframe width="100%" height="250" style="border:0" allowfullscreen 
-                src="https://www.google.com/maps/embed/v1/place?q=${encoded}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
-              </iframe>`;
+            mapDiv.innerHTML = `<iframe width="100%" height="250" style="border:0" allowfullscreen 
+              src="https://www.google.com/maps/embed/v1/place?q=${encoded}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
           }
         } else {
           resultDiv.innerHTML = `❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href="#" onclick="toggleSupportForm()">contact support</a>.`;
