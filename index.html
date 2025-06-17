@@ -4,17 +4,17 @@
   <meta charset="UTF-8" />
   <title>JNK Express Padala - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #fff;
       margin: 0;
       padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
@@ -44,6 +44,7 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.1);
       padding: 2em;
       text-align: center;
+      flex-grow: 1;
     }
 
     input, button {
@@ -248,7 +249,7 @@
           const estimated = data.estimatedDate || "Not available";
           const history = data.statusHistory || [];
 
-          let progress = STAGES.map(stage => 
+          let progress = STAGES.map(stage =>
             `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
           ).join("");
 
