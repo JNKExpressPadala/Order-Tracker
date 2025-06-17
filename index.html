@@ -7,151 +7,44 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #fff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+    body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
+    header { background: #D7282F; color: #fff; text-align: center; padding: 20px; }
+    header h1 { margin: 0; font-size: 1.6em; }
 
-    header {
-      background: #D7282F;
-      color: #fff;
-      text-align: center;
-      padding: 20px;
-    }
+    nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
+    nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    nav button:hover { background: #D7282F; color: #fff; }
 
-    header img {
-      max-width: 140px;
-      vertical-align: middle;
-    }
+    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
+    input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
+    .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
+    .tracking-bar input { flex: 1; }
+    .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
 
-    header h1 {
-      display: inline-block;
-      font-size: 1.5em;
-      margin-left: 10px;
-      vertical-align: middle;
-    }
+    .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
+    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
+    .progress-step { flex: 1; text-align: center; position: relative; }
+    .progress-step::before { content: ""; display: block; height: 8px; background: #ccc; margin: 0 auto 6px; border-radius: 4px; width: 80%; }
+    .progress-step.active::before { background: #D7282F; }
+    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
+    #loading { display: none; margin-top: 10px; color: #D7282F; }
+    .footer-link { display: block; margin-top: 20px; color: #D7282F; text-decoration: none; }
 
-    .container {
-      max-width: 600px;
-      margin: 30px auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-      padding: 2em;
-      text-align: center;
-      flex-grow: 1;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 12px;
-      font-size: 1em;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    button.track-btn {
+    .support-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
       background-color: #D7282F;
       color: white;
-      border: none;
+      padding: 12px 18px;
+      border-radius: 25px;
       font-weight: bold;
-      cursor: pointer;
-    }
-
-    .status-box {
-      margin-top: 20px;
-      padding: 20px;
-      background: #fdf1f1;
-      color: #333;
-      border-radius: 10px;
-      text-align: left;
-    }
-
-    .progress-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      font-size: 0.95em;
-    }
-
-    .progress-step {
-      flex: 1;
-      text-align: center;
-      position: relative;
-    }
-
-    .progress-step::before {
-      content: "";
-      display: block;
-      height: 8px;
-      background: #ccc;
-      margin: 0 auto 6px;
-      border-radius: 4px;
-      width: 80%;
-    }
-
-    .progress-step.active::before {
-      background: #D7282F;
-    }
-
-    .map-box {
-      margin-top: 20px;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    #loading {
-      display: none;
-      margin-top: 10px;
-      color: #D7282F;
-    }
-
-    a.footer-link {
-      display: block;
-      margin: 20px auto;
-      color: #D7282F;
-      text-decoration: none;
-    }
-
-    a.footer-link:hover {
-      text-decoration: underline;
-    }
-
-    footer {
-      background: #D7282F;
-      color: white;
-      text-align: center;
-      padding: 15px;
-      font-size: 0.9em;
-    }
-
-    .chat-support-btn {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 48px;
-      height: 48px;
-      background: #D7282F;
-      color: white;
-      font-size: 24px;
-      border-radius: 50%;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
       z-index: 1000;
     }
-
     .support-form {
       position: fixed;
-      bottom: 140px;
+      bottom: 150px;
       right: 20px;
       width: 300px;
       background: #fff;
@@ -161,7 +54,6 @@
       display: none;
       z-index: 1001;
     }
-
     .support-form input, .support-form textarea {
       width: 100%;
       padding: 10px;
@@ -170,7 +62,6 @@
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-
     .support-form button {
       background: #D7282F;
       color: white;
@@ -180,27 +71,72 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
+    .info-section, .services-section, .news-section {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 10px 20px;
+    }
+    .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
+
+    footer {
+      background: #D7282F;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 0.9em;
+      margin-top: 50px;
+    }
   </style>
 </head>
 <body>
-
   <header>
-    <img src="logo.jpg" alt="JNK Express Logo" />
     <h1>JNK Express Padala</h1>
   </header>
 
+  <nav>
+    <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
+    <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
+    <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
+    <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
+  </nav>
+
   <div class="container">
     <h2>Track Your Package</h2>
-    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
-    <button class="track-btn" onclick="trackPackage()">Track</button>
+    <div class="tracking-bar">
+      <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+      <button class="track-btn" onclick="trackPackage()">Track</button>
+    </div>
     <div id="loading">⏳ Loading...</div>
-    <div id="statusResult" class="status-box" style="display:none"></div>
+    <div id="statusResult" class="status-box"></div>
     <div id="mapContainer" class="map-box"></div>
     <a href="admin.html" class="footer-link">Admin Login</a>
   </div>
 
+  <div class="services-section">
+    <h3>Our Services</h3>
+    <p><strong>Padala:</strong> Fast delivery across Luzon, Visayas, Mindanao</p>
+    <p><strong>Sea Freight:</strong> Best rates, secure shipping</p>
+    <p><strong>Bulk/Truck Services:</strong> Large shipments handled with care</p>
+  </div>
+
+  <div class="news-section">
+    <h4>📣 Announcements</h4>
+    <ul>
+      <li>New branch opening in Cebu!</li>
+      <li>Holiday cutoff dates: June 12–13</li>
+    </ul>
+  </div>
+
+  <div class="info-section">
+    <h4>📞 Need Help?</h4>
+    <p>Call Us: 0917‑XYZ‑ABCD</p>
+    <p>Email: support@jnkexpresspadala.com</p>
+    <p>Mon–Fri: 8am–5pm</p>
+  </div>
+
   <!-- Floating Support Button -->
-  <div class="chat-support-btn" onclick="toggleSupportForm()">💬</div>
+  <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
 
   <!-- Support Form -->
   <div class="support-form" id="supportForm">
@@ -213,7 +149,6 @@
     </form>
   </div>
 
-  <!-- Footer -->
   <footer>
     &copy; 2021 JNK Express Padala. All Rights Reserved.
   </footer>
