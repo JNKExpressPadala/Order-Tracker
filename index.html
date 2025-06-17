@@ -2,60 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JNK Express - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <title>JNK Express Padala - Track Your Package</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff3f3; }
-    .header { background: #D7282F; padding: 1em; color: white; text-align: center; }
-    .logo { max-width: 120px; display: block; margin: 0 auto 10px; }
-    .container { max-width: 600px; margin: 2em auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
-
+    body {
+      font-family: Arial, sans-serif;
+      background: #fff3f3;
+      margin: 0;
+      padding: 0;
+      padding-bottom: 100px; /* Space for floating button */
+    }
+    .header {
+      background: #D7282F;
+      padding: 1em;
+      color: white;
+      text-align: center;
+    }
+    .logo {
+      max-width: 120px;
+      display: block;
+      margin: 0 auto 10px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 2em auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 2em;
+      text-align: center;
+    }
     input, button {
-      width: 100%; padding: 12px; font-size: 1em;
-      margin-top: 10px; border-radius: 6px; border: 1px solid #ccc;
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
-
-    button.track-btn {
-      background-color: #D7282F; color: white; border: none;
-      font-weight: bold; cursor: pointer;
+    button {
+      background-color: #D7282F;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
     }
-
     .status-box {
-      margin-top: 20px; padding: 20px; background: #fdf1f1;
-      color: #333; border-radius: 10px; text-align: left; display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #fdf1f1;
+      color: #333;
+      border-radius: 10px;
+      text-align: left;
+      display: none;
     }
-
-    .progress-bar {
-      display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em;
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: #D7282F;
     }
-
-    .progress-step {
-      flex: 1; text-align: center; position: relative;
-    }
-
-    .progress-step::before {
-      content: ""; display: block; height: 8px; background: #ccc;
-      margin: 0 auto 6px; border-radius: 4px; width: 80%;
-    }
-
-    .progress-step.active::before { background: #D7282F; }
-
-    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
-
-    #loading { display: none; margin-top: 10px; color: #D7282F; }
-
-    .footer-link {
-      display: block; margin: 20px auto; color: #D7282F;
-      text-decoration: none; text-align: center;
-    }
-
     .support-btn {
       position: fixed;
-      bottom: 70px;
+      bottom: 90px;
       right: 20px;
       background-color: #D7282F;
       color: white;
@@ -65,10 +75,9 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       z-index: 1000;
     }
-
     .support-form {
       position: fixed;
-      bottom: 140px;
+      bottom: 160px;
       right: 20px;
       width: 300px;
       background: #fff;
@@ -78,27 +87,55 @@
       display: none;
       z-index: 1001;
     }
-
-    .support-form input,
-    .support-form textarea {
-      width: 100%; padding: 10px; margin-top: 8px;
-      font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
+    .support-form input, .support-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
-
     .support-form button {
-      background: #D7282F; color: white;
-      border: none; margin-top: 10px; padding: 10px;
-      border-radius: 6px; cursor: pointer; width: 100%;
+      background: #D7282F;
+      color: white;
+      border: none;
+      margin-top: 10px;
     }
-
+    .progress-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+    .progress-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+    .progress-step::before {
+      content: "";
+      display: block;
+      height: 8px;
+      background: #ccc;
+      margin: 0 auto 6px;
+      border-radius: 4px;
+      width: 80%;
+    }
+    .progress-step.active::before {
+      background: #D7282F;
+    }
+    .map-box {
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
     footer {
       background: #D7282F;
       color: white;
       text-align: center;
-      padding: 15px;
+      padding: 1em;
+      margin-top: 2em;
       font-size: 0.9em;
-      position: relative;
-      margin-top: 30px;
     }
   </style>
 </head>
@@ -111,15 +148,17 @@
   <div class="container">
     <h2>Track Your Package</h2>
     <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
-    <button class="track-btn" onclick="trackPackage()">Track</button>
+    <button onclick="trackPackage()">Track</button>
     <div id="loading">⏳ Loading...</div>
     <div id="statusResult" class="status-box"></div>
     <div id="mapContainer" class="map-box"></div>
     <a href="admin.html" class="footer-link">Admin Login</a>
   </div>
 
-  <!-- Support Button and Form (Above Footer) -->
+  <!-- Support Floating Button -->
   <a href="#" class="support-btn" onclick="toggleSupportForm()">🛟 Support</a>
+
+  <!-- Support Contact Form -->
   <div class="support-form" id="supportForm">
     <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
       <input type="hidden" name="_captcha" value="false">
@@ -132,9 +171,10 @@
 
   <!-- Footer -->
   <footer>
-    © 2021 JNK Express Padala. All Rights Reserved.
+    &copy; 2021 JNK Express Padala. All Rights Reserved.
   </footer>
 
+  <!-- Firebase Script -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
@@ -146,6 +186,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
     const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 
     async function trackPackage() {
@@ -153,6 +194,7 @@
       const resultDiv = document.getElementById('statusResult');
       const mapDiv = document.getElementById('mapContainer');
       const loadingDiv = document.getElementById('loading');
+
       loadingDiv.style.display = 'block';
       resultDiv.style.display = 'none';
       mapDiv.innerHTML = '';
@@ -164,9 +206,8 @@
           const location = data.location || "Unknown";
           const estimated = data.estimatedDate || "Not available";
           const history = data.statusHistory || [];
-          let progress = STAGES.map(stage =>
-            `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`).join("");
 
+          let progress = STAGES.map(stage => `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`).join("");
           let timeline = history.map(h => {
             const time = h.timestamp?.toDate().toLocaleString() || "";
             return `• [${time}] ${h.status}`;
@@ -175,24 +216,24 @@
           resultDiv.innerHTML = `
             <strong>Location:</strong> ${location}<br>
             <strong>Estimated Delivery:</strong> ${estimated}<br><br>
-            <strong>Status Progress:</strong><div class='progress-bar'>${progress}</div><br>
+            <strong>Status Progress:</strong>
+            <div class='progress-bar'>${progress}</div><br>
             <strong>Status Timeline:</strong><br>${timeline}`;
 
           if (location && location !== "Unknown") {
-            const encoded = encodeURIComponent(location);
+            const encodedLocation = encodeURIComponent(location);
             mapDiv.innerHTML = `
-              <iframe width="100%" height="250" style="border:0" allowfullscreen
-              src="https://www.google.com/maps/embed/v1/place?q=${encoded}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
+              <iframe width="100%" height="250" frameborder="0" style="border:0" 
+                referrerpolicy="no-referrer-when-downgrade" allowfullscreen 
+                src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
+              </iframe>`;
           }
         } else {
-          resultDiv.innerHTML = `❌ <strong>Tracking number not found.</strong><br>
-            Your parcel may still be on the way or not yet processed.<br>
-            Please double-check your tracking number or 
-            <a href="#" onclick="toggleSupportForm()">contact support</a>.`;
+          resultDiv.innerHTML = `❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href="#" onclick="toggleSupportForm()">contact support</a>.`;
         }
-      } catch (err) {
+      } catch (error) {
         resultDiv.innerHTML = "Error fetching data.";
-        console.error(err);
+        console.error(error);
       }
 
       loadingDiv.style.display = 'none';
