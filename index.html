@@ -4,17 +4,17 @@
   <meta charset="UTF-8" />
   <title>JNK Express Padala - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #fff;
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
     }
 
     header {
@@ -37,26 +37,36 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 700px;
       margin: 30px auto;
       background: white;
       border-radius: 16px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.1);
       padding: 2em;
       text-align: center;
-      flex-grow: 1;
     }
 
-    input, button {
-      width: 100%;
+    .tracking-form {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .tracking-form input {
+      flex: 2;
       padding: 12px;
       font-size: 1em;
-      margin-top: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
 
-    button.track-btn {
+    .tracking-form button {
+      flex: 1;
+      padding: 12px;
+      font-size: 1em;
+      border-radius: 6px;
       background-color: #D7282F;
       color: white;
       border: none;
@@ -129,6 +139,7 @@
       text-align: center;
       padding: 15px;
       font-size: 0.9em;
+      margin-top: 30px;
     }
 
     .chat-support-btn {
@@ -191,8 +202,10 @@
 
   <div class="container">
     <h2>Track Your Package</h2>
-    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
-    <button class="track-btn" onclick="trackPackage()">Track</button>
+    <div class="tracking-form">
+      <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+      <button onclick="trackPackage()">Track</button>
+    </div>
     <div id="loading">⏳ Loading...</div>
     <div id="statusResult" class="status-box" style="display:none"></div>
     <div id="mapContainer" class="map-box"></div>
@@ -213,7 +226,6 @@
     </form>
   </div>
 
-  <!-- Footer -->
   <footer>
     &copy; 2021 JNK Express Padala. All Rights Reserved.
   </footer>
@@ -249,7 +261,7 @@
           const estimated = data.estimatedDate || "Not available";
           const history = data.statusHistory || [];
 
-          let progress = STAGES.map(stage =>
+          let progress = STAGES.map(stage => 
             `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
           ).join("");
 
