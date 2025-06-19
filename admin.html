@@ -58,7 +58,8 @@
     <button onclick="saveTracking()">Add / Update</button>
 
     <div class="top-bar">
-      <input type="text" id="searchInput" placeholder="Search tracking number..." oninput="renderEntries()" />
+      <input type="text" id="searchInput" placeholder="Search tracking number..." />
+<button onclick="renderEntries()">🔍 Search</button>
       <select id="filterDate" onchange="renderEntries()">
         <option value="">All Dates</option>
         <option value="today">Today</option>
@@ -242,23 +243,42 @@
     renderEntries();
   }
 
-  function exportToCSV() {
-    const data = allEntries.map(e => {
-      const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
-      return {
-        TrackingNumber: e.id,
-        Location: e.location,
-        EstimatedDelivery: e.estimatedDate,
-        StatusTimeline: status
-      };
-    });
-    const csv = Papa.unparse(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `tracking_export_${Date.now()}.csv`;
-    link.click();
+function exportCSVByDateRange() {
+  const fromDate = document.getElementById("exportFrom").value;
+  const toDate = document.getElementById("exportTo").value;
+  if (!fromDate || !toDate) return alert("Please select both start and end dates.");
+
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  to.setHours(23, 59, 59, 999); // Include entire day
+
+  const filtered = allEntries.filter(entry => {
+    const entryDate = entry.timestamp;
+    return entryDate >= from && entryDate <= to;
+  });
+
+  if (filtered.length === 0) {
+    alert("No entries found in selected date range.");
+    return;
   }
+
+  const data = filtered.map(e => {
+    const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
+    return {
+      TrackingNumber: e.id,
+      Location: e.location,
+      EstimatedDelivery: e.estimatedDate,
+      StatusTimeline: status
+    };
+  });
+
+  const csv = Papa.unparse(data);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `tracking_export_${filtered.length}_items_${Date.now()}.csv`;
+  link.click();
+}
 
   async function bulkUpdateByTimeRange() {
     const date = document.getElementById("bulkDate").value;
