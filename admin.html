@@ -184,40 +184,34 @@
   }
 
   function renderEntries() {
-    const search = document.getElementById("searchInput").value.toUpperCase();
-    const filter = document.getElementById("filterDate").value;
-    const entriesDiv = document.getElementById("entries");
-    entriesDiv.innerHTML = "";
-    let filtered = allEntries.filter(e => e.id.includes(search));
-    if (filter === "today") {
-      const today = new Date();
-      filtered = filtered.filter(e => e.timestamp && sameDay(e.timestamp, today));
-    } else if (filter === "week") {
-      const now = new Date();
-      const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-      filtered = filtered.filter(e => e.timestamp && e.timestamp >= weekStart);
-    }
-    const start = (currentPage - 1) * pageSize;
-    const paginated = filtered.slice(start, start + pageSize);
-    paginated.forEach(entry => {
-      const timeline = entry.statusHistory.map(h => {
-        const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
-        return `- [${date}] ${h.status}`;
-      }).join("<br>");
-      entriesDiv.innerHTML += `
-        <div class='item'>
-          <div class='item-content'>
-            <strong>${entry.id}</strong><br>
-            Location: ${entry.location}<br>
-            Estimated Delivery: ${entry.estimatedDate}<br>
-            <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
-            Timeline:<div class='timeline'>${timeline}</div>
-          </div>
-          <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
-        </div>`;
-    });
-  }
+  const search = document.getElementById("searchInput").value.toUpperCase();
+  const entriesDiv = document.getElementById("entries");
+  entriesDiv.innerHTML = "";
+  console.log("All entries:", allEntries);
+  console.log("Search input:", search);
 
+  let filtered = allEntries.filter(e => e.id.includes(search));
+  const start = (currentPage - 1) * 10;
+  const paginated = filtered.slice(start, start + 10);
+  paginated.forEach(entry => {
+    const timeline = entry.statusHistory.map(h => {
+      const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
+      return `- [${date}] ${h.status}`;
+    }).join("<br>");
+    entriesDiv.innerHTML += `
+      <div class='item'>
+        <div class='item-content'>
+          <strong>${entry.id}</strong><br>
+          Location: ${entry.location}<br>
+          Estimated Delivery: ${entry.estimatedDate}<br>
+          <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
+          Timeline:<div class='timeline'>${timeline}</div>
+        </div>
+        <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
+      </div>`;
+  });
+  document.getElementById("debugOutput").innerText = JSON.stringify(allEntries, null, 2);
+}
   function sameDay(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
            d1.getMonth() === d2.getMonth() &&
