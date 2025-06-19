@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JNK Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - JNK Express</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Roboto', sans-serif; background: #fff3f3; padding: 20px; max-width: 900px; margin: auto; }
+    body { font-family: 'Roboto', sans-serif; background: #fff3f3; padding: 20px; max-width: 800px; margin: auto; }
     h2 { color: #D7282F; }
     input, select, button {
       width: 100%; padding: 12px; margin-top: 10px;
@@ -66,14 +65,24 @@
         <option value="today">Today</option>
         <option value="week">This Week</option>
       </select>
-      <button onclick="exportToCSV()">Export All CSV</button>
     </div>
 
     <div class="top-bar">
-      <label>From:</label><input type="date" id="fromDate" />
-      <label>To:</label><input type="date" id="toDate" />
-      <button onclick="exportDateRangeCSV()">📁 Export Range to CSV</button>
+      <input type="date" id="bulkDate" />
+      <input type="time" id="startTime" />
+      <input type="time" id="endTime" />
+      <select id="bulkStatus">
+        <option value="">Update Status to...</option>
+        <option>Package Received</option>
+        <option>In Transit</option>
+        <option>Arrived</option>
+        <option>For Pick-up</option>
+      </select>
+      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+      <button onclick="bulkUpdateByTimeRange()">Apply to Date + Time Range</button>
     </div>
+
+    <button onclick="exportToCSVRange()">📤 Export Filtered CSV</button>
 
     <h3>All Tracking Entries</h3>
     <div id="entries"></div>
@@ -94,6 +103,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
 const USERNAME = "JNK";
 const PASSWORD = "11223344$";
 let allEntries = [];
@@ -117,11 +127,15 @@ function startScanner() {
   const container = document.getElementById("scannerContainer");
   container.style.display = "block";
   scanner = new Html5Qrcode("scanner");
-  scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
     (decodedText) => {
       document.getElementById("trackNumber").value = decodedText.trim();
       stopScanner();
-    }, () => {});
+    },
+    () => {}
+  );
 }
 function stopScanner() {
   const container = document.getElementById("scannerContainer");
@@ -224,32 +238,14 @@ function prevPage() {
   renderEntries();
 }
 
-function exportToCSV() {
-  const data = allEntries.map(e => {
-    const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
-    return {
-      TrackingNumber: e.id,
-      Location: e.location,
-      EstimatedDelivery: e.estimatedDate,
-      StatusTimeline: status
-    };
-  });
-  const csv = Papa.unparse(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `tracking_export_all_${Date.now()}.csv`;
-  link.click();
-}
-
-function exportDateRangeCSV() {
-  const fromDate = new Date(document.getElementById("fromDate").value);
-  const toDate = new Date(document.getElementById("toDate").value);
-  if (!fromDate || !toDate) return alert("Select both from and to dates.");
-  const filtered = allEntries.filter(e => {
-    const date = e.timestamp;
-    return date && date >= fromDate && date <= toDate;
-  });
+function exportToCSVRange() {
+  const date = document.getElementById("bulkDate").value;
+  const start = document.getElementById("startTime").value;
+  const end = document.getElementById("endTime").value;
+  if (!date || !start || !end) return alert("Select date and time range.");
+  const from = new Date(`${date}T${start}`);
+  const to = new Date(`${date}T${end}`);
+  const filtered = allEntries.filter(e => e.timestamp >= from && e.timestamp <= to);
   const data = filtered.map(e => {
     const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
     return {
@@ -259,13 +255,44 @@ function exportDateRangeCSV() {
       StatusTimeline: status
     };
   });
-  data.push({ TrackingNumber: `Total Downloaded Items: ${data.length}` });
   const csv = Papa.unparse(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `tracking_export_range_${Date.now()}.csv`;
+  link.download = `tracking_export_${filtered.length}_items.csv`;
   link.click();
+}
+
+async function bulkUpdateByTimeRange() {
+  const date = document.getElementById("bulkDate").value;
+  const start = document.getElementById("startTime").value;
+  const end = document.getElementById("endTime").value;
+  const status = document.getElementById("bulkStatus").value;
+  const location = document.getElementById("bulkLocation").value.trim();
+  if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+  const fromDate = new Date(`${date}T${start}`);
+  const toDate = new Date(`${date}T${end}`);
+  const snapshot = await db.collection("tracking").get();
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const entryDate = data.timestamp?.toDate();
+    if (entryDate >= fromDate && entryDate <= toDate) {
+      const history = data.statusHistory || [];
+      history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+      batch.set(doc.ref, {
+        location: location || data.location,
+        estimatedDate: data.estimatedDate || '',
+        statusHistory: history,
+        timestamp: firebase.firestore.Timestamp.now()
+      });
+    }
+  });
+  await batch.commit();
+  alert("✅ Bulk update applied to selected date and time range.");
+  loadAllEntries();
 }
 </script>
 </body>
