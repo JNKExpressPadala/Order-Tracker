@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,22 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
-    header { background: #D7282F; color: #fff; text-align: center; padding: 20px; }
-    header h1 { margin: 0; font-size: 1.6em; }
+    header {
+      background: #D7282F;
+      color: #fff;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    header img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6em;
+    }
 
     nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
     nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
@@ -91,6 +105,7 @@
 </head>
 <body>
   <header>
+    <img src="logo.jpg" alt="JNK Logo" />
     <h1>JNK Express Padala</h1>
   </header>
 
