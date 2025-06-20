@@ -9,23 +9,40 @@
   <style>
     body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
     header {
-      background: #D7282F;
-      color: #fff;
-      padding: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    header img {
-      height: 50px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6em;
-    }
+  background: #D7282F;
+  color: #fff;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+header img {
+  height: 50px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.6em;
+  flex: 1;
+}
+
+.admin-link {
+  color: white;
+  text-decoration: none;
+  background: rgba(255,255,255,0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.95em;
+}
+
+.admin-link:hover {
+  background: white;
+  color: #D7282F;
+}
 
     nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
     nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
