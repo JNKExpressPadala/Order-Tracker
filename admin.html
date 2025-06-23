@@ -151,21 +151,25 @@
 
     const docRef = db.collection("tracking").doc(number);
     const docSnap = await docRef.get();
-    const currentTimestamp = firebase.firestore.Timestamp.now();
+    const now = firebase.firestore.Timestamp.now();
 
     let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
-    statusHistory.push({ status, timestamp: currentTimestamp });
+    statusHistory.push({ status, timestamp: now });
 
-    const originalTimestamp = docSnap.exists && docSnap.data().timestamp
-      ? docSnap.data().timestamp
-      : currentTimestamp;
-
-    await docRef.set({
-      location,
-      estimatedDate,
-      statusHistory,
-      timestamp: originalTimestamp  // ✅ keep original
-    });
+    if (docSnap.exists) {
+      await docRef.update({
+        location,
+        estimatedDate,
+        statusHistory
+      });
+    } else {
+      await docRef.set({
+        location,
+        estimatedDate,
+        statusHistory,
+        timestamp: now
+      });
+    }
 
     alert("✅ Tracking info saved.");
     ["trackNumber", "trackStatus", "trackLocation", "estimatedDate"].forEach(id => document.getElementById(id).value = "");
@@ -288,31 +292,28 @@
     if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
     const confirmPass = prompt("Enter admin password to apply bulk update:");
     if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-
     const fromDate = new Date(`${date}T${start}`);
     const toDate = new Date(`${date}T${end}`);
     const snapshot = await db.collection("tracking").get();
     const batch = db.batch();
-
     snapshot.docs.forEach(doc => {
       const data = doc.data();
       const entryDate = data.timestamp?.toDate();
       if (entryDate >= fromDate && entryDate <= toDate) {
         const history = data.statusHistory || [];
         history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-        batch.set(doc.ref, {
+        batch.update(doc.ref, {
           location: location || data.location,
           estimatedDate: data.estimatedDate || '',
-          statusHistory: history,
-          timestamp: data.timestamp  // ✅ keep original timestamp
+          statusHistory: history
         });
       }
     });
-
     await batch.commit();
     alert("✅ Bulk update applied to selected date and time range.");
     loadAllEntries();
   }
 </script>
+
 </body>
 </html>
