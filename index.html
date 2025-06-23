@@ -12,19 +12,26 @@
       background: #fff;
       margin: 0;
       padding: 0;
-      padding-bottom: 250px; /* 🛠️ Prevent overlap with support form */
     }
 
     header {
       background: #D7282F;
       color: #fff;
-      text-align: center;
-      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 20px;
+    }
+
+    header img {
+      height: 50px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     header h1 {
-      margin: 0;
-      font-size: 1.6em;
+      font-size: 1.5em;
+      margin-left: 15px;
     }
 
     nav {
@@ -142,30 +149,13 @@
       text-decoration: none;
     }
 
-    .support-btn {
-      position: fixed;
-      bottom: 70px;
-      right: 20px;
-      background-color: #D7282F;
-      color: white;
-      padding: 12px 18px;
-      border-radius: 25px;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      z-index: 1000;
-    }
-
     .support-form {
-      position: fixed;
-      bottom: 130px;
-      right: 20px;
-      width: 300px;
+      max-width: 600px;
+      margin: 40px auto;
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       padding: 1em;
-      display: none;
-      z-index: 1001;
     }
 
     .support-form input, .support-form textarea {
@@ -208,8 +198,13 @@
   </style>
 </head>
 <body>
+
   <header>
-    <h1>JNK Express Padala</h1>
+    <div style="display: flex; align-items: center;">
+      <img src="logo.jpg" alt="Logo" />
+      <h1>JNK Express Padala</h1>
+    </div>
+    <a href="admin.html" style="color:white; text-decoration:none; font-weight:bold;">Login</a>
   </header>
 
   <nav>
@@ -230,6 +225,17 @@
     <div id="mapContainer" class="map-box"></div>
   </div>
 
+  <div class="support-form">
+    <h3 style="text-align:center; color:#D7282F;">Need Support?</h3>
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="Name" placeholder="Your Name" required />
+      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
+      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
+
   <div class="services-section">
     <h3>Our Services</h3>
     <p><strong>Padala:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
@@ -240,11 +246,11 @@
   <div class="news-section">
     <h4>📍 Pick-up Locations</h4>
     <ul>
-      <li>Main Branch: Urban Finds by JNK...</li>
-      <li>Tilik: Near NFA's Warehouse...</li>
-      <li>Vigo/Dangay: Near Dangay Church</li>
-      <li>Tagbac: 104 Guijo St., Extension</li>
-      <li>Binacas: 213 Kasoy St.</li>
+      <li>Main Branch: Urban Finds by JNK. Brgy. Araw at Bituin</li>
+      <li>Tilik: Near NFA Warehouse</li>
+      <li>Dangay: Near Dangay Church</li>
+      <li>Tagbac: 104 Guijo St. Ext</li>
+      <li>Binacas: 213 Kasoy St., Plaza</li>
       <li>Cabra: 037 Bayabas St., Libis</li>
     </ul>
   </div>
@@ -254,20 +260,6 @@
     <p>Call Us: 09295299486 / 09612520005</p>
     <p>Email: jhonyhix@gmail.com</p>
     <p>Mon–Fri: 8am–5pm</p>
-  </div>
-
-  <!-- Floating Support Button -->
-  <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
-
-  <!-- Support Form -->
-  <div class="support-form" id="supportForm">
-    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
-      <input type="hidden" name="_captcha" value="false">
-      <input type="text" name="Name" placeholder="Your Name" required />
-      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
-      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
-      <button type="submit">Send Message</button>
-    </form>
   </div>
 
   <footer>
@@ -330,7 +322,7 @@
               </iframe>`;
           }
         } else {
-          resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+          resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet processed.<br>Please double-check your tracking number or <a href='#' onclick='alert(\"Use the support form below.\")'>contact support</a>.";
         }
       } catch (error) {
         resultDiv.innerHTML = "Error fetching data.";
@@ -339,11 +331,6 @@
 
       loadingDiv.style.display = 'none';
       resultDiv.style.display = 'block';
-    }
-
-    function toggleSupportForm() {
-      const form = document.getElementById('supportForm');
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
     }
   </script>
 </body>
