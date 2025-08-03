@@ -275,34 +275,40 @@
   }
 
   async function bulkUpdateByTimeRange() {
-    const date = document.getElementById("bulkDate").value;
-    const start = document.getElementById("startTime").value;
-    const end = document.getElementById("endTime").value;
-    const status = document.getElementById("bulkStatus").value;
-    const location = document.getElementById("bulkLocation").value.trim();
-    if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
-    const confirmPass = prompt("Enter admin password to apply bulk update:");
-    if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-    const fromDate = new Date(`${date}T${start}`);
-    const toDate = new Date(`${date}T${end}`);
-    const snapshot = await db.collection("tracking").get();
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const entryDate = data.timestamp?.toDate();
-      if (entryDate >= fromDate && entryDate <= toDate) {
-        const history = data.statusHistory || [];
-        history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-        batch.update(doc.ref, {
-          location: location || data.location,
-          estimatedDate: data.estimatedDate || '',
-          statusHistory: history
-        });
-      }
-    });
-    await batch.commit();
-    alert("✅ Bulk update applied.");
-    loadAllEntries();
-  }
+  const date = document.getElementById("bulkDate").value;
+  const start = document.getElementById("startTime").value;
+  const end = document.getElementById("endTime").value;
+  const status = document.getElementById("bulkStatus").value;
+  const location = document.getElementById("bulkLocation").value.trim();
+
+  if (!date || !start || !end || !status) return alert("Fill all date/time/status fields.");
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
+  const fromDate = new Date(`${date}T${start}`);
+  const toDate = new Date(`${date}T${end}`);
+  const snapshot = await db.collection("tracking").get();
+  const batch = db.batch();
+  const now = firebase.firestore.Timestamp.now();
+
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const entryDate = data.timestamp?.toDate();
+    if (entryDate >= fromDate && entryDate <= toDate) {
+      const history = data.statusHistory || [];
+      history.push({ status, timestamp: now });
+      batch.update(doc.ref, {
+        location: location || data.location,
+        estimatedDate: data.estimatedDate || '',
+        statusHistory: history,
+        timestamp: now  // ✅ This ensures it's re-ordered correctly
+      });
+    }
+  });
+
+  await batch.commit();
+  alert("✅ Bulk update applied.");
+  loadAllEntries();
+}
 </script></body>
 </html>
