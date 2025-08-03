@@ -29,6 +29,7 @@
     .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+    #receiptArea { display: none; }
   </style>
 </head>
 <body>
@@ -40,6 +41,9 @@
 
   <div id="adminSection" style="display:none;">
     <input type="text" id="trackNumber" placeholder="Tracking Number" />
+    <input type="text" id="parcelName" placeholder="Parcel Name" />
+    <input type="text" id="barangay" placeholder="Barangay" />
+    <input type="number" id="price" placeholder="Price (PHP)" />
     <button onclick="startScanner()">📷 Scan</button>
     <div id="scannerContainer" style="display:none">
       <div id="scanner" style="width:100%"></div>
@@ -56,10 +60,11 @@
     <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
     <input type="date" id="estimatedDate" />
     <button onclick="saveTracking()">Add / Update</button>
+    <button onclick="printReceipt()">🖨️ Print Receipt</button>
 
     <div class="top-bar">
       <input type="text" id="searchInput" placeholder="Search tracking number..." />
-<button onclick="renderEntries()">🔍 Search</button>
+      <button onclick="renderEntries()">🔍 Search</button>
     </div>
 
     <div class="top-bar">
@@ -89,6 +94,11 @@
       <button onclick="prevPage()">Previous</button>
       <button onclick="nextPage()">Next</button>
     </div>
+  </div>
+
+  <!-- Hidden Receipt Content -->
+  <div id="receiptArea">
+    <div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div>
   </div>
 
 <script>
@@ -123,22 +133,19 @@
 
   let scanner;
   function startScanner() {
-    const container = document.getElementById("scannerContainer");
-    container.style.display = "block";
+    document.getElementById("scannerContainer").style.display = "block";
     scanner = new Html5Qrcode("scanner");
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
+    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
       (decodedText) => {
         document.getElementById("trackNumber").value = decodedText.trim();
         stopScanner();
+        saveTracking(); // Save and print on scan
+        printReceipt();
       },
-      () => {}
-    );
+      () => {});
   }
   function stopScanner() {
-    const container = document.getElementById("scannerContainer");
-    container.style.display = "none";
+    document.getElementById("scannerContainer").style.display = "none";
     if (scanner) scanner.stop().then(() => scanner.clear()).catch(() => {});
   }
 
@@ -152,28 +159,48 @@
     const docRef = db.collection("tracking").doc(number);
     const docSnap = await docRef.get();
     const now = firebase.firestore.Timestamp.now();
-
     let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
     statusHistory.push({ status, timestamp: now });
 
-    if (docSnap.exists) {
-      await docRef.update({
-        location,
-        estimatedDate,
-        statusHistory
-      });
-    } else {
-      await docRef.set({
-        location,
-        estimatedDate,
-        statusHistory,
-        timestamp: now
-      });
-    }
+    const trackingData = {
+      location,
+      estimatedDate,
+      statusHistory,
+      timestamp: now
+    };
+
+    await (docSnap.exists ? docRef.update(trackingData) : docRef.set(trackingData));
 
     alert("✅ Tracking info saved.");
-    ["trackNumber", "trackStatus", "trackLocation", "estimatedDate"].forEach(id => document.getElementById(id).value = "");
+    ["trackNumber", "trackStatus", "trackLocation", "estimatedDate", "parcelName", "barangay", "price"]
+      .forEach(id => document.getElementById(id).value = "");
     loadAllEntries();
+  }
+
+  function printReceipt() {
+    const number = document.getElementById("trackNumber").value.trim();
+    const name = document.getElementById("parcelName").value.trim();
+    const barangay = document.getElementById("barangay").value.trim();
+    const price = document.getElementById("price").value.trim();
+    const quote = "Thank you for your support";
+
+    if (!name || !barangay || !price || !number) return alert("Please fill parcel name, barangay, price, and tracking number.");
+
+    const content = `
+      <div style="text-align:center; font-size:10pt;">
+        <strong>${name}</strong><br>
+        Brgy: ${barangay}<br>
+        Price: ₱${price}<br>
+        Tracking #: ${number}<br><br>
+        <em>${quote}</em>
+      </div>`;
+
+    const receipt = document.getElementById("receiptContent");
+    receipt.innerHTML = content;
+
+    const printWin = window.open('', '_blank', 'width=200,height=200');
+    printWin.document.write(`<html><head><title>Print</title></head><body onload="window.print();window.close()">${content}</body></html>`);
+    printWin.document.close();
   }
 
   async function deleteEntry(id) {
@@ -204,8 +231,7 @@
     const search = document.getElementById("searchInput").value.toUpperCase();
     const entriesDiv = document.getElementById("entries");
     entriesDiv.innerHTML = "";
-
-    let filtered = allEntries.filter(e => e.id.includes(search));
+    const filtered = allEntries.filter(e => e.id.includes(search));
     const start = (currentPage - 1) * pageSize;
     const paginated = filtered.slice(start, start + pageSize);
     paginated.forEach(entry => {
@@ -227,15 +253,8 @@
     });
   }
 
-  function sameDay(d1, d2) {
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
-  }
-
   function nextPage() {
-    const search = document.getElementById("searchInput").value.toUpperCase();
-    const filtered = allEntries.filter(e => e.id.includes(search));
+    const filtered = allEntries.filter(e => e.id.includes(document.getElementById("searchInput").value.toUpperCase()));
     const totalPages = Math.ceil(filtered.length / pageSize);
     if (currentPage < totalPages) currentPage++;
     renderEntries();
@@ -247,23 +266,12 @@
   }
 
   function exportCSVByDateRange() {
-    const fromDate = document.getElementById("exportFrom").value;
-    const toDate = document.getElementById("exportTo").value;
-    if (!fromDate || !toDate) return alert("Please select both start and end dates.");
-
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
+    const from = new Date(document.getElementById("exportFrom").value);
+    const to = new Date(document.getElementById("exportTo").value);
     to.setHours(23, 59, 59, 999);
 
-    const filtered = allEntries.filter(entry => {
-      const entryDate = entry.timestamp;
-      return entryDate >= from && entryDate <= to;
-    });
-
-    if (filtered.length === 0) {
-      alert("No entries found in selected date range.");
-      return;
-    }
+    const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
+    if (filtered.length === 0) return alert("No entries found in selected date range.");
 
     const data = filtered.map(e => {
       const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
@@ -310,10 +318,9 @@
       }
     });
     await batch.commit();
-    alert("✅ Bulk update applied to selected date and time range.");
+    alert("✅ Bulk update applied.");
     loadAllEntries();
   }
 </script>
-
 </body>
 </html>
