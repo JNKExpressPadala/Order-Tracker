@@ -174,19 +174,37 @@ async function printAndSave() {
   // Receipt content with logo and layout
   const logoUrl = "logo.jpg"; // Replace with your actual logo if needed
  const content = `
-  <div style="text-align:center; font-size:9pt; line-height:1.2; width:190px;">
-    <img src="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/assets/logo.jpg" style="max-width:60px; margin-bottom:2px;" /><br>
-    <strong>JNK Express Padala</strong><br>
-    ${name}<br>
-    Brgy: ${barangay}<br>
-    ₱${price}<br>
-    #${number}<br>
-    <em>Thank you!</em>
-  </div>`;
+    <div style="width: 48mm; height: 78mm; padding: 1mm; font-size: 10pt; font-family: monospace; text-align: center;">
+      <img src="${logoUrl}" style="width: 30mm; margin-bottom: 2mm;" /><br>
+      <strong style="font-size: 11pt;">JNK Express Padala</strong><br><br>
+      <strong>${name}</strong><br>
+      Brgy: ${barangay}<br>
+      Price: ₱${price}<br>
+      Tracking #: ${number}<br>
+      <small>${new Date().toLocaleString()}</small><br><br>
+      <em>Thank you for your support</em>
+    </div>`;
 
   const printWin = window.open('', '_blank', 'width=200,height=200');
-printWin.document.write(`<html><head><title>Print</title></head><body onload="window.print();window.close()">${content}</body></html>`);
-printWin.document.close();
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>Print</title>
+       <style>
+  @page {
+    size: 50mm 80mm portrait;
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    width: 50mm;
+    height: 80mm;
+  }
+</style>
+      </head>
+      <body onload="window.print(); window.close();">${content}</body>
+    </html>`);
+  printWin.document.close();
 
   // Clear fields
   ["trackNumber", "parcelName", "barangay", "price", "trackStatus", "trackLocation", "estimatedDate"]
