@@ -72,6 +72,7 @@
       <button onclick="exportCSVByDateRange()">Export CSV by Date</button>
     </div>
 
+    <!-- ORIGINAL single-day bulk inputs (kept as requested) -->
     <div class="top-bar">
       <input type="date" id="bulkDate" />
       <input type="time" id="startTime" />
@@ -85,6 +86,44 @@
       </select>
       <input type="text" id="bulkLocation" placeholder="Optional New Location" />
       <button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
+    </div>
+
+    <!-- NEW FROM–TO bulk inputs -->
+    <h3>Bulk Update (From → To)</h3>
+    <div class="top-bar">
+      <div style="flex:1 1 180px">
+        <label>From Date</label>
+        <input type="date" id="bulkFromDate" />
+      </div>
+      <div style="flex:1 1 160px">
+        <label>From Time</label>
+        <input type="time" id="bulkFromTime" />
+      </div>
+      <div style="flex:1 1 180px">
+        <label>To Date</label>
+        <input type="date" id="bulkToDate" />
+      </div>
+      <div style="flex:1 1 160px">
+        <label>To Time</label>
+        <input type="time" id="bulkToTime" />
+      </div>
+      <div style="flex:1 1 240px">
+        <label>New Status</label>
+        <select id="bulkStatusNew">
+          <option value="">Update Status to...</option>
+          <option>Package Received</option>
+          <option>In Transit</option>
+          <option>Arrived</option>
+          <option>For Pick-up</option>
+        </select>
+      </div>
+      <div style="flex:1 1 260px">
+        <label>Optional New Location</label>
+        <input type="text" id="bulkLocationNew" placeholder="Optional New Location" />
+      </div>
+      <div style="flex:1 1 200px; align-self:flex-end">
+        <button onclick="bulkUpdateByFromTo()">Apply FROM–TO Bulk Update</button>
+      </div>
     </div>
 
     <h3>All Tracking Entries</h3>
@@ -129,6 +168,7 @@ function login() {
   }
 }
 
+let scanner;
 function startScanner() {
   document.getElementById("scannerContainer").style.display = "block";
   scanner = new Html5Qrcode("scanner");
@@ -173,7 +213,7 @@ async function printAndSave() {
 
   // Receipt content with logo and layout
   const logoUrl = "logo.jpg"; // Replace with your actual logo if needed
- const content = `
+  const content = `
     <div style="width: 48mm; height: 78mm; padding: 1mm; font-size: 10pt; font-family: monospace; text-align: center;">
       <img src="${logoUrl}" style="width: 30mm; margin-bottom: 2mm;" /><br>
       <strong style="font-size: 11pt;">JNK Express Padala</strong><br><br>
@@ -298,6 +338,7 @@ async function deleteEntry(id) {
   loadAllEntries();
 }
 
+/* ---------- ORIGINAL bulkUpdateByTimeRange (kept) ---------- */
 async function bulkUpdateByTimeRange() {
   const date = document.getElementById("bulkDate").value;
   const start = document.getElementById("startTime").value;
@@ -307,25 +348,88 @@ async function bulkUpdateByTimeRange() {
   if (!date || !start || !end || !status) return alert("Fill all fields.");
   const confirmPass = prompt("Enter admin password to apply bulk update:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
   const fromDate = new Date(`${date}T${start}`);
   const toDate = new Date(`${date}T${end}`);
-  const snapshot = await db.collection("tracking").get();
+
+  // Prefer querying by range for performance
+  const snapshot = await db.collection("tracking")
+    .where("timestamp", ">=", firebase.firestore.Timestamp.fromDate(fromDate))
+    .where("timestamp", "<=", firebase.firestore.Timestamp.fromDate(toDate))
+    .get();
+
   const batch = db.batch();
   snapshot.docs.forEach(doc => {
     const data = doc.data();
-    const entryDate = data.timestamp?.toDate();
-    if (entryDate >= fromDate && entryDate <= toDate) {
-      const history = data.statusHistory || [];
-      history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-      batch.update(doc.ref, {
-        location: location || data.location,
-        estimatedDate: data.estimatedDate || '',
-        statusHistory: history
-      });
-    }
+    const history = data.statusHistory || [];
+    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+    batch.update(doc.ref, {
+      location: location || data.location,
+      estimatedDate: data.estimatedDate || '',
+      statusHistory: history
+    });
   });
   await batch.commit();
-  alert("✅ Bulk update applied.");
+  alert(`✅ Bulk update applied to ${snapshot.size} items.`);
+  loadAllEntries();
+}
+
+/* ---------- NEW FROM–TO bulk update ---------- */
+async function bulkUpdateByFromTo() {
+  // New inputs
+  const fromDateStr = document.getElementById("bulkFromDate").value;
+  const fromTimeStr = document.getElementById("bulkFromTime").value;
+  const toDateStr   = document.getElementById("bulkToDate").value;
+  const toTimeStr   = document.getElementById("bulkToTime").value;
+
+  const status = document.getElementById("bulkStatusNew").value || document.getElementById("bulkStatus").value;
+  const location = (document.getElementById("bulkLocationNew").value || document.getElementById("bulkLocation").value).trim();
+
+  // Fallback to original single-day inputs if new ones are incomplete
+  let fromDateTime, toDateTime;
+  if (fromDateStr && fromTimeStr && toDateStr && toTimeStr) {
+    fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
+    toDateTime   = new Date(`${toDateStr}T${toTimeStr}`);
+  } else {
+    const date = document.getElementById("bulkDate").value;
+    const start = document.getElementById("startTime").value;
+    const end = document.getElementById("endTime").value;
+    if (!(date && start && end)) {
+      return alert("Fill all FROM and TO date/time, or use the original single-day fields.");
+    }
+    fromDateTime = new Date(`${date}T${start}`);
+    toDateTime   = new Date(`${date}T${end}`);
+  }
+
+  if (!status) return alert("Choose a status.");
+  if (toDateTime < fromDateTime) return alert("TO must be after FROM.");
+
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
+  const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
+  const toTs   = firebase.firestore.Timestamp.fromDate(toDateTime);
+
+  // Range query
+  const snapshot = await db.collection("tracking")
+    .where("timestamp", ">=", fromTs)
+    .where("timestamp", "<=", toTs)
+    .get();
+
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const history = data.statusHistory || [];
+    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+    batch.update(doc.ref, {
+      location: location || data.location,
+      estimatedDate: data.estimatedDate || '',
+      statusHistory: history
+    });
+  });
+
+  await batch.commit();
+  alert(`✅ FROM–TO bulk update applied to ${snapshot.size} items.`);
   loadAllEntries();
 }
 </script>
