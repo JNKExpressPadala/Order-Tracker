@@ -339,67 +339,35 @@ async function deleteEntry(id) {
 }
 
 /* ---------- ORIGINAL bulkUpdateByTimeRange (kept) ---------- */
+/* — replaced below: the function now prefers FROM–TO inputs; kept for backward compatibility and
+   the UI still contains the original single-date inputs (bulkDate/startTime/endTime). */
+
 async function bulkUpdateByTimeRange() {
-  const date = document.getElementById("bulkDate").value;
-  const start = document.getElementById("startTime").value;
-  const end = document.getElementById("endTime").value;
-  const status = document.getElementById("bulkStatus").value;
-  const location = document.getElementById("bulkLocation").value.trim();
-  if (!date || !start || !end || !status) return alert("Fill all fields.");
-  const confirmPass = prompt("Enter admin password to apply bulk update:");
-  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+  // Try to use FROM–TO inputs first
+  const fromDateStr = document.getElementById("bulkFromDate")?.value;
+  const fromTimeStr = document.getElementById("bulkFromTime")?.value || "00:00";
+  const toDateStr   = document.getElementById("bulkToDate")?.value;
+  const toTimeStr   = document.getElementById("bulkToTime")?.value || "23:59";
 
-  const fromDate = new Date(`${date}T${start}`);
-  const toDate = new Date(`${date}T${end}`);
-
-  // Prefer querying by range for performance
-  const snapshot = await db.collection("tracking")
-    .where("timestamp", ">=", firebase.firestore.Timestamp.fromDate(fromDate))
-    .where("timestamp", "<=", firebase.firestore.Timestamp.fromDate(toDate))
-    .get();
-
-  const batch = db.batch();
-  snapshot.docs.forEach(doc => {
-    const data = doc.data();
-    const history = data.statusHistory || [];
-    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-    batch.update(doc.ref, {
-      location: location || data.location,
-      estimatedDate: data.estimatedDate || '',
-      statusHistory: history
-    });
-  });
-  await batch.commit();
-  alert(`✅ Bulk update applied to ${snapshot.size} items.`);
-  loadAllEntries();
-}
-
-/* ---------- NEW FROM–TO bulk update ---------- */
-async function bulkUpdateByFromTo() {
-  // New inputs
-  const fromDateStr = document.getElementById("bulkFromDate").value;
-  const fromTimeStr = document.getElementById("bulkFromTime").value;
-  const toDateStr   = document.getElementById("bulkToDate").value;
-  const toTimeStr   = document.getElementById("bulkToTime").value;
-
-  const status = document.getElementById("bulkStatusNew").value || document.getElementById("bulkStatus").value;
-  const location = (document.getElementById("bulkLocationNew").value || document.getElementById("bulkLocation").value).trim();
-
-  // Fallback to original single-day inputs if new ones are incomplete
+  // Fallback to single-day inputs if FROM–TO aren't provided
   let fromDateTime, toDateTime;
-  if (fromDateStr && fromTimeStr && toDateStr && toTimeStr) {
+  if (fromDateStr && toDateStr) {
     fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
     toDateTime   = new Date(`${toDateStr}T${toTimeStr}`);
   } else {
+    // Fallback to old single-day inputs
     const date = document.getElementById("bulkDate").value;
     const start = document.getElementById("startTime").value;
     const end = document.getElementById("endTime").value;
     if (!(date && start && end)) {
-      return alert("Fill all FROM and TO date/time, or use the original single-day fields.");
+      return alert("Fill all fields: either use the FROM–TO inputs or the original single-day fields.");
     }
     fromDateTime = new Date(`${date}T${start}`);
     toDateTime   = new Date(`${date}T${end}`);
   }
+
+  const status = document.getElementById("bulkStatusNew")?.value || document.getElementById("bulkStatus")?.value;
+  const location = (document.getElementById("bulkLocationNew")?.value || document.getElementById("bulkLocation")?.value || "").trim();
 
   if (!status) return alert("Choose a status.");
   if (toDateTime < fromDateTime) return alert("TO must be after FROM.");
@@ -410,15 +378,21 @@ async function bulkUpdateByFromTo() {
   const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
   const toTs   = firebase.firestore.Timestamp.fromDate(toDateTime);
 
-  // Range query
+  // Query documents in the range
   const snapshot = await db.collection("tracking")
     .where("timestamp", ">=", fromTs)
     .where("timestamp", "<=", toTs)
     .get();
 
+  if (snapshot.empty) {
+    alert("No entries found in the selected range.");
+    return;
+  }
+
   const batch = db.batch();
   snapshot.docs.forEach(doc => {
     const data = doc.data();
+    // Keep previous history, append new item
     const history = data.statusHistory || [];
     history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
     batch.update(doc.ref, {
@@ -429,8 +403,14 @@ async function bulkUpdateByFromTo() {
   });
 
   await batch.commit();
-  alert(`✅ FROM–TO bulk update applied to ${snapshot.size} items.`);
+  alert(`✅ Bulk update applied to ${snapshot.size} items.`);
   loadAllEntries();
+}
+
+/* ---------- NEW FROM–TO bulk update (alias) ---------- */
+/* kept for explicit button that calls this name */
+async function bulkUpdateByFromTo() {
+  return bulkUpdateByTimeRange();
 }
 </script>
 </body>
