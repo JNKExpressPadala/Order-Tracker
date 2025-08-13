@@ -5,217 +5,340 @@
   <title>Admin Panel - JNK Express</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f4f4f4; }
-    .controls { margin-bottom: 20px; }
-    .controls input, .controls select, .controls button { margin-right: 10px; }
-    #pagination { margin-top: 20px; }
+    body { font-family: sans-serif; background: #fff3f3; padding: 20px; max-width: 800px; margin: auto; }
+    h2 { color: #D7282F; }
+    input, select, button {
+      width: 100%; padding: 12px; margin-top: 10px;
+      font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
+    }
+    button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
+    .item {
+      background: #fff; padding: 10px; margin: 10px 0;
+      border-left: 5px solid #D7282F; border-radius: 4px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .item-content { width: 100%; }
+    .delete-btn {
+      background: #aaa; color: white; border: none;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;
+    }
+    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+    .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
+    .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+    #receiptArea { display: none; }
   </style>
 </head>
 <body>
+  <h2>JNK Admin Panel</h2>
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="login()">Login</button>
+  <p id="loginMessage" style="color:red;"></p>
 
-<h1>JNK Express Admin Panel</h1>
+  <div id="adminSection" style="display:none;">
+    <input type="text" id="trackNumber" placeholder="Tracking Number" />
+    <input type="text" id="parcelName" placeholder="Parcel Name" />
+    <input type="text" id="barangay" placeholder="Barangay" />
+    <input type="number" id="price" placeholder="Price (PHP)" />
+    <select id="trackStatus">
+      <option value="">Select Status</option>
+      <option>Package Received</option>
+      <option>In Transit</option>
+      <option>Arrived</option>
+      <option>For Pick-up</option>
+    </select>
+    <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
+    <input type="date" id="estimatedDate" />
+    <button onclick="saveTracking()">Add / Update</button>
+    <button onclick="printAndSave()">🖨️ Print Receipt</button>
 
-<div class="controls">
-  <input type="text" id="parcelName" placeholder="Parcel Name">
-  <input type="text" id="customerName" placeholder="Customer Name">
-  <input type="text" id="barangay" placeholder="Barangay">
-  <input type="number" id="price" placeholder="Price">
-  <input type="text" id="trackingNumber" placeholder="Tracking Number">
-  <select id="statusSelect">
-    <option>Package Received</option>
-    <option>In Transit</option>
-    <option>Out for Delivery</option>
-    <option>Delivered</option>
-  </select>
-  <button id="printReceipt">Print Receipt</button>
-</div>
+    <button onclick="startScanner()">📷 Scan</button>
+    <div id="scannerContainer" style="display:none">
+      <div id="scanner" style="width:100%"></div>
+      <button onclick="stopScanner()">❌ Cancel</button>
+    </div>
 
-<div>
-  <div id="reader" style="width:300px;"></div>
-</div>
+    <div class="top-bar">
+      <input type="text" id="searchInput" placeholder="Search tracking number..." />
+      <button onclick="renderEntries()">🔍 Search</button>
+    </div>
 
-<hr>
+    <div class="top-bar">
+      <input type="date" id="exportFrom" />
+      <input type="date" id="exportTo" />
+      <button onclick="exportCSVByDateRange()">Export CSV by Date</button>
+    </div>
 
-<!-- CSV Export by Date -->
-<h3>Export to CSV</h3>
-<input type="date" id="exportFromDate">
-<input type="date" id="exportToDate">
-<button id="exportCSV">Export CSV</button>
+    <div class="top-bar">
+      <input type="date" id="bulkFromDate" />
+      <input type="time" id="bulkFromTime" />
+      <input type="date" id="bulkToDate" />
+      <input type="time" id="bulkToTime" />
+      <select id="bulkStatus">
+        <option value="">Update Status to...</option>
+        <option>Package Received</option>
+        <option>In Transit</option>
+        <option>Arrived</option>
+        <option>For Pick-up</option>
+      </select>
+      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+      <button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
+    </div>
 
-<!-- Bulk Update FROM–TO -->
-<h3>Bulk Update Status</h3>
-<label>From Date:</label>
-<input type="date" id="bulkFromDate">
-<input type="time" id="bulkFromTime">
-<label>To Date:</label>
-<input type="date" id="bulkToDate">
-<input type="time" id="bulkToTime">
-<select id="bulkStatus">
-  <option>Package Received</option>
-  <option>In Transit</option>
-  <option>Out for Delivery</option>
-  <option>Delivered</option>
-</select>
-<button id="applyBulkUpdate">Apply Bulk Update</button>
+    <h3>All Tracking Entries</h3>
+    <div id="entries"></div>
+    <div class="pagination">
+      <button onclick="prevPage()">Previous</button>
+      <button onclick="nextPage()">Next</button>
+    </div>
+  </div>
 
-<hr>
-
-<input type="text" id="searchInput" placeholder="Search...">
-<table id="parcelTable">
-  <thead>
-    <tr>
-      <th>Tracking Number</th>
-      <th>Parcel Name</th>
-      <th>Customer Name</th>
-      <th>Barangay</th>
-      <th>Price</th>
-      <th>Status</th>
-      <th>Date</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<div id="pagination"></div>
+  <div id="receiptArea">
+    <div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div>
+  </div>
 
 <script>
-  const firebaseConfig = {
-    // your Firebase config here
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+const firebaseConfig = {
+  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+  authDomain: "jnk-ordertracker.firebaseapp.com",
+  projectId: "jnk-ordertracker",
+  storageBucket: "jnk-ordertracker.appspot.com",
+  messagingSenderId: "421193030070",
+  appId: "1:421193030070:web:078e39980237bc41f64917"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-  // Auto-fill Barangay from customer name
-  document.getElementById('customerName').addEventListener('input', async function() {
-    const name = this.value.trim();
-    if (name.length > 0) {
-      const docRef = db.collection('customers').doc(name);
-      const docSnap = await docRef.get();
-      if (docSnap.exists) {
-        document.getElementById('barangay').value = docSnap.data().barangay || '';
-      }
-    }
-  });
+const USERNAME = "JNK";
+const PASSWORD = "11223344$";
+let allEntries = [];
+let currentPage = 1;
+const pageSize = 10;
 
-  // Save & print receipt
-  document.getElementById('printReceipt').addEventListener('click', async function() {
-    const parcelName = document.getElementById('parcelName').value.trim();
-    const customerName = document.getElementById('customerName').value.trim();
-    const barangay = document.getElementById('barangay').value.trim();
-    const price = parseFloat(document.getElementById('price').value);
-    const trackingNumber = document.getElementById('trackingNumber').value.trim();
-    const status = document.getElementById('statusSelect').value;
-
-    if (!parcelName || !customerName || !barangay || !price || !trackingNumber) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    // Save to customers collection
-    await db.collection('customers').doc(customerName).set({ barangay });
-
-    // Save to tracking collection
-    const now = new Date();
-    await db.collection('tracking').doc(trackingNumber).set({
-      trackingNumber,
-      parcelName,
-      customerName,
-      barangay,
-      price,
-      status,
-      date: now.toISOString(),
-      statusHistory: firebase.firestore.FieldValue.arrayUnion({ status, date: now.toISOString() })
-    });
-
-    // Print receipt
-    const printWindow = window.open('', '', 'width=300,height=400');
-    printWindow.document.write(`
-      <html><body style="font-family: Arial; font-size: 12px; text-align:center;">
-        <img src="https://raw.githubusercontent.com/yourgithub/logo.png" width="50"><br>
-        <strong>JNK Express Padala</strong><br>
-        Parcel: ${parcelName}<br>
-        Barangay: ${barangay}<br>
-        Price: ₱${price}<br>
-        Tracking #: ${trackingNumber}<br>
-        <em>Thank you for your support</em>
-      </body></html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  });
-
-  // Barcode scanner
-  function onScanSuccess(decodedText) {
-    document.getElementById('trackingNumber').value = decodedText;
-    document.getElementById('printReceipt').click();
+function login() {
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
+  if (user === USERNAME && pass === PASSWORD) {
+    document.getElementById("adminSection").style.display = "block";
+    document.getElementById("loginMessage").innerText = "";
+    loadAllEntries();
+  } else {
+    document.getElementById("loginMessage").innerText = "Invalid login.";
   }
-  const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-  html5QrcodeScanner.render(onScanSuccess);
+}
 
-  // Bulk update FROM–TO
-  document.getElementById('applyBulkUpdate').addEventListener('click', async function() {
-    const fromDate = document.getElementById('bulkFromDate').value;
-    const fromTime = document.getElementById('bulkFromTime').value || '00:00';
-    const toDate = document.getElementById('bulkToDate').value;
-    const toTime = document.getElementById('bulkToTime').value || '23:59';
-    const status = document.getElementById('bulkStatus').value;
+let scanner;
+function startScanner() {
+  document.getElementById("scannerContainer").style.display = "block";
+  scanner = new Html5Qrcode("scanner");
+  scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      document.getElementById("trackNumber").value = decodedText.trim();
+      stopScanner();
+      printAndSave();
+    },
+    () => {}
+  );
+}
+function stopScanner() {
+  document.getElementById("scannerContainer").style.display = "none";
+  if (scanner) scanner.stop().then(() => scanner.clear()).catch(() => {});
+}
 
-    if (!fromDate || !toDate) {
-      alert('Please select both FROM and TO dates');
-      return;
-    }
+async function printAndSave() {
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const name = document.getElementById("parcelName").value.trim();
+  const barangay = document.getElementById("barangay").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
+  const estimatedDate = document.getElementById("estimatedDate").value;
+  const now = firebase.firestore.Timestamp.now();
 
-    const start = new Date(`${fromDate}T${fromTime}`);
-    const end = new Date(`${toDate}T${toTime}`);
+  if (!number || !name || !barangay || !price || !status) return alert("Complete all fields");
 
-    const snapshot = await db.collection('tracking').get();
-    snapshot.forEach(async doc => {
+  const docRef = db.collection("tracking").doc(number);
+  const docSnap = await docRef.get();
+  let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
+  statusHistory.push({ status, timestamp: now });
+
+  await docRef.set({
+    location,
+    estimatedDate,
+    statusHistory,
+    timestamp: now
+  });
+
+  const logoUrl = "logo.jpg";
+  const content = `
+    <div style="width: 48mm; height: 78mm; padding: 1mm; font-size: 10pt; font-family: monospace; text-align: center;">
+      <img src="${logoUrl}" style="width: 30mm; margin-bottom: 2mm;" /><br>
+      <strong style="font-size: 11pt;">JNK Express Padala</strong><br><br>
+      <strong>${name}</strong><br>
+      Brgy: ${barangay}<br>
+      Price: ₱${price}<br>
+      Tracking #: ${number}<br>
+      <small>${new Date().toLocaleString()}</small><br><br>
+      <em>Salamat sa tiwala KA-JNK!!</em>
+    </div>`;
+
+  const printWin = window.open('', '_blank', 'width=200,height=200');
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>Print</title>
+       <style>
+  @page {
+    size: 50mm 80mm portrait;
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    width: 50mm;
+    height: 80mm;
+  }
+</style>
+      </head>
+      <body onload="window.print(); window.close();">${content}</body>
+    </html>`);
+  printWin.document.close();
+
+  ["trackNumber", "parcelName", "barangay", "price", "trackStatus", "trackLocation", "estimatedDate"]
+    .forEach(id => document.getElementById(id).value = "");
+
+  loadAllEntries();
+}
+
+function loadAllEntries() {
+  db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    allEntries = snapshot.docs.map(doc => {
       const data = doc.data();
-      const itemDate = new Date(data.date);
-      if (itemDate >= start && itemDate <= end) {
-        await db.collection('tracking').doc(doc.id).update({
-          status,
-          statusHistory: firebase.firestore.FieldValue.arrayUnion({ status, date: new Date().toISOString() })
-        });
-      }
+      return {
+        id: doc.id,
+        location: data.location || '-',
+        statusHistory: data.statusHistory || [],
+        estimatedDate: data.estimatedDate || '-',
+        timestamp: data.timestamp?.toDate() || null,
+      };
     });
+    renderEntries();
+  });
+}
 
-    alert('Bulk update applied.');
+function renderEntries() {
+  const search = document.getElementById("searchInput").value.toUpperCase();
+  const entriesDiv = document.getElementById("entries");
+  entriesDiv.innerHTML = "";
+  const filtered = allEntries.filter(e => e.id.includes(search));
+  const start = (currentPage - 1) * pageSize;
+  const paginated = filtered.slice(start, start + pageSize);
+  paginated.forEach(entry => {
+    const timeline = entry.statusHistory.map(h => {
+      const date = h.timestamp?.toDate().toLocaleString() || 'N/A';
+      return `- [${date}] ${h.status}`;
+    }).join("<br>");
+    entriesDiv.innerHTML += `
+      <div class='item'>
+        <div class='item-content'>
+          <strong>${entry.id}</strong><br>
+          Location: ${entry.location}<br>
+          Estimated Delivery: ${entry.estimatedDate}<br>
+          <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
+          Timeline:<div class='timeline'>${timeline}</div>
+        </div>
+        <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
+      </div>`;
+  });
+}
+
+function nextPage() {
+  const filtered = allEntries.filter(e => e.id.includes(document.getElementById("searchInput").value.toUpperCase()));
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  if (currentPage < totalPages) currentPage++;
+  renderEntries();
+}
+
+function prevPage() {
+  if (currentPage > 1) currentPage--;
+  renderEntries();
+}
+
+function exportCSVByDateRange() {
+  const from = new Date(document.getElementById("exportFrom").value);
+  const to = new Date(document.getElementById("exportTo").value);
+  to.setHours(23, 59, 59, 999);
+  const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
+  if (filtered.length === 0) return alert("No entries found in selected date range.");
+  const data = filtered.map(e => {
+    const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
+    return {
+      TrackingNumber: e.id,
+      Location: e.location,
+      EstimatedDelivery: e.estimatedDate,
+      StatusTimeline: status
+    };
+  });
+  const csv = Papa.unparse(data);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `tracking_export_${filtered.length}_items_${Date.now()}.csv`;
+  link.click();
+}
+
+async function deleteEntry(id) {
+  const confirmPass = prompt("Enter admin password to delete:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+  await db.collection("tracking").doc(id).delete();
+  alert("Deleted.");
+  loadAllEntries();
+}
+
+async function bulkUpdateByTimeRange() {
+  const fromDateStr = document.getElementById("bulkFromDate").value;
+  const fromTimeStr = document.getElementById("bulkFromTime").value || "00:00";
+  const toDateStr = document.getElementById("bulkToDate").value;
+  const toTimeStr = document.getElementById("bulkToTime").value || "23:59";
+  const status = document.getElementById("bulkStatus").value;
+  const location = document.getElementById("bulkLocation").value.trim();
+
+  if (!fromDateStr || !toDateStr || !status) return alert("Fill all date/time and status fields.");
+  const fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
+  const toDateTime = new Date(`${toDateStr}T${toTimeStr}`);
+  if (toDateTime < fromDateTime) return alert("TO date/time must be after FROM date/time.");
+
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
+  const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
+  const toTs = firebase.firestore.Timestamp.fromDate(toDateTime);
+
+  const snapshot = await db.collection("tracking")
+    .where("timestamp", ">=", fromTs)
+    .where("timestamp", "<=", toTs)
+    .get();
+
+  if (snapshot.empty) return alert("No entries found in selected range.");
+
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const history = data.statusHistory || [];
+    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+    batch.update(doc.ref, {
+      location: location || data.location,
+      estimatedDate: data.estimatedDate || '',
+      statusHistory: history
+    });
   });
 
-  // CSV Export
-  document.getElementById('exportCSV').addEventListener('click', async function() {
-    const fromDate = document.getElementById('exportFromDate').value;
-    const toDate = document.getElementById('exportToDate').value;
-    if (!fromDate || !toDate) {
-      alert('Please select date range');
-      return;
-    }
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    let csvContent = "data:text/csv;charset=utf-8,Tracking Number,Parcel Name,Customer Name,Barangay,Price,Status,Date\n";
-    const snapshot = await db.collection('tracking').get();
-    snapshot.forEach(doc => {
-      const d = doc.data();
-      const itemDate = new Date(d.date);
-      if (itemDate >= start && itemDate <= end) {
-        csvContent += `${d.trackingNumber},${d.parcelName},${d.customerName},${d.barangay},${d.price},${d.status},${d.date}\n`;
-      }
-    });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `export_${fromDate}_to_${toDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-  });
-
+  await batch.commit();
+  alert(`✅ Bulk update applied to ${snapshot.size} entries.`);
+  loadAllEntries();
+}
 </script>
-
 </body>
 </html>
