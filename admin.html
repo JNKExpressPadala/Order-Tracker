@@ -392,13 +392,12 @@ async function bulkUpdateByTimeRange() {
   const batch = db.batch();
   snapshot.docs.forEach(doc => {
     const data = doc.data();
-    // Keep previous history, append new item
-    const history = data.statusHistory || [];
-    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+    // Append new history item using arrayUnion for safer concurrent writes
     batch.update(doc.ref, {
       location: location || data.location,
       estimatedDate: data.estimatedDate || '',
-      statusHistory: history
+      statusHistory: firebase.firestore.FieldValue.arrayUnion({ status, timestamp: firebase.firestore.Timestamp.now() }),
+      status: status
     });
   });
 
