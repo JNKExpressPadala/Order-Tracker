@@ -5,7 +5,7 @@
   <title>Admin Panel - JNK Express</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     body { font-family: sans-serif; background: #fff3f3; padding: 20px; max-width: 800px; margin: auto; }
@@ -40,7 +40,10 @@
 
   <div id="adminSection" style="display:none;">
     <input type="text" id="trackNumber" placeholder="Tracking Number" />
-    <input type="text" id="parcelName" placeholder="Parcel Name" />
+    <!-- Parcel Name now uses a datalist for autofill -->
+    <input type="text" id="parcelName" placeholder="Parcel Name" list="customersList" autocomplete="off" />
+    <datalist id="customersList"></datalist>
+
     <input type="text" id="barangay" placeholder="Barangay" />
     <input type="number" id="price" placeholder="Price (PHP)" />
     <select id="trackStatus">
@@ -66,12 +69,14 @@
       <button onclick="renderEntries()">🔍 Search</button>
     </div>
 
+    <!-- Export Printed Receipts (FROM–TO) -->
     <div class="top-bar">
       <input type="date" id="exportFrom" />
       <input type="date" id="exportTo" />
-      <button onclick="exportCSVByDateRange()">Export CSV by Date</button>
+      <button onclick="exportPrintedReceipts()">📤 Export Printed Receipts to Excel</button>
     </div>
 
+    <!-- Bulk update (FROM–TO) -->
     <div class="top-bar">
       <input type="date" id="bulkFromDate" />
       <input type="time" id="bulkFromTime" />
@@ -96,10 +101,6 @@
     </div>
   </div>
 
-  <div id="receiptArea">
-    <div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div>
-  </div>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
@@ -118,6 +119,7 @@ let allEntries = [];
 let currentPage = 1;
 const pageSize = 10;
 
+// --- Login ---
 function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
@@ -125,11 +127,13 @@ function login() {
     document.getElementById("adminSection").style.display = "block";
     document.getElementById("loginMessage").innerText = "";
     loadAllEntries();
+    setupCustomersAutocomplete();
   } else {
     document.getElementById("loginMessage").innerText = "Invalid login.";
   }
 }
 
+// --- Scanner ---
 let scanner;
 function startScanner() {
   document.getElementById("scannerContainer").style.display = "block";
@@ -148,7 +152,144 @@ function stopScanner() {
   if (scanner) scanner.stop().then(() => scanner.clear()).catch(() => {});
 }
 
+// --- Customers helpers ---
+function customerKey(name) {
+  return (name || "").trim().toUpperCase();
+}
+
+async function upsertCustomer(name, barangay, price) {
+  const key = customerKey(name);
+  if (!key) return;
+  const ref = db.collection("customers").doc(key);
+  const now = firebase.firestore.Timestamp.now();
+  // Merge updates
+  await ref.set(
+    {
+      name: key,
+      barangay: (barangay || "").trim(),
+      lastPrice: price ? Number(price) : null,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+}
+
+function setupCustomersAutocomplete() {
+  const list = document.getElementById("customersList");
+  const nameInput = document.getElementById("parcelName");
+
+  // Live populate datalist
+  db.collection("customers").orderBy("name", "asc").onSnapshot(snap => {
+    list.innerHTML = "";
+    snap.forEach(doc => {
+      const c = doc.data();
+      const opt = document.createElement("option");
+      opt.value = c.name || doc.id;
+      opt.label = c.barangay ? `${c.name} — ${c.barangay}` : (c.name || doc.id);
+      list.appendChild(opt);
+    });
+  });
+
+  // Autofill barangay + price when name matches an existing customer
+  let lookupTimer = null;
+  const doLookup = async () => {
+    const key = customerKey(nameInput.value);
+    if (!key) return;
+    const ref = db.collection("customers").doc(key);
+    const doc = await ref.get();
+    if (doc.exists) {
+      const c = doc.data();
+      if (c?.barangay) document.getElementById("barangay").value = c.barangay;
+      if (c?.lastPrice != null) document.getElementById("price").value = c.lastPrice;
+    }
+  };
+
+  nameInput.addEventListener("input", () => {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(doLookup, 250);
+  });
+  nameInput.addEventListener("change", doLookup);
+  nameInput.addEventListener("blur", doLookup);
+}
+
+// --- Save + Print ---
 async function printAndSave() {
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const name = document.getElementById("parcelName").value.trim();
+  const barangay = document.getElementById("barangay").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
+  const estimatedDate = document.getElementById("estimatedDate").value;
+  const now = firebase.firestore.Timestamp.now();
+
+  if (!number || !name || !barangay || !price || !status) return alert("Complete all fields");
+
+  // tracking doc
+  const docRef = db.collection("tracking").doc(number);
+  const docSnap = await docRef.get();
+  let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
+  statusHistory.push({ status, timestamp: now });
+
+  await docRef.set({
+    location,
+    estimatedDate,
+    statusHistory,
+    timestamp: now
+  });
+
+  // printed_receipts record
+  await db.collection("printed_receipts").add({
+    trackingNumber: number,
+    parcelName: name,
+    barangay,
+    price: Number(price),
+    status,
+    location,
+    estimatedDate,
+    printedAt: now
+  });
+
+  // customers upsert (for autofill next time)
+  await upsertCustomer(name, barangay, price);
+
+  // Print layout
+  const logoUrl = "logo.jpg";
+  const content = `
+    <div style="width: 48mm; height: 78mm; padding: 1mm; font-size: 10pt; font-family: monospace; text-align: center;">
+      <img src="${logoUrl}" style="width: 30mm; margin-bottom: 2mm;" /><br>
+      <strong style="font-size: 11pt;">JNK Express Padala</strong><br><br>
+      <strong>${name}</strong><br>
+      Brgy: ${barangay}<br>
+      Price: ₱${price}<br>
+      Tracking #: ${number}<br>
+      <small>${new Date().toLocaleString()}</small><br><br>
+      <em>Salamat sa tiwala KA-JNK!!</em>
+    </div>`;
+
+  const printWin = window.open('', '_blank', 'width=200,height=200');
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>Print</title>
+        <style>
+          @page { size: 50mm 80mm portrait; margin: 0; }
+          body { margin: 0; width: 50mm; height: 80mm; }
+        </style>
+      </head>
+      <body onload="window.print(); window.close();">${content}</body>
+    </html>`);
+  printWin.document.close();
+
+  // Clear inputs
+  ["trackNumber", "parcelName", "barangay", "price", "trackStatus", "trackLocation", "estimatedDate"]
+    .forEach(id => document.getElementById(id).value = "");
+
+  loadAllEntries();
+}
+
+// Optional simple save (kept as before)
+async function saveTracking() {
   const number = document.getElementById("trackNumber").value.trim().toUpperCase();
   const name = document.getElementById("parcelName").value.trim();
   const barangay = document.getElementById("barangay").value.trim();
@@ -172,46 +313,14 @@ async function printAndSave() {
     timestamp: now
   });
 
-  const logoUrl = "logo.jpg";
-  const content = `
-    <div style="width: 48mm; height: 78mm; padding: 1mm; font-size: 10pt; font-family: monospace; text-align: center;">
-      <img src="${logoUrl}" style="width: 30mm; margin-bottom: 2mm;" /><br>
-      <strong style="font-size: 11pt;">JNK Express Padala</strong><br><br>
-      <strong>${name}</strong><br>
-      Brgy: ${barangay}<br>
-      Price: ₱${price}<br>
-      Tracking #: ${number}<br>
-      <small>${new Date().toLocaleString()}</small><br><br>
-      <em>Salamat sa tiwala KA-JNK!!</em>
-    </div>`;
+  // Also upsert customer on manual Add/Update
+  await upsertCustomer(name, barangay, price);
 
-  const printWin = window.open('', '_blank', 'width=200,height=200');
-  printWin.document.write(`
-    <html>
-      <head>
-        <title>Print</title>
-       <style>
-  @page {
-    size: 50mm 80mm portrait;
-    margin: 0;
-  }
-  body {
-    margin: 0;
-    width: 50mm;
-    height: 80mm;
-  }
-</style>
-      </head>
-      <body onload="window.print(); window.close();">${content}</body>
-    </html>`);
-  printWin.document.close();
-
-  ["trackNumber", "parcelName", "barangay", "price", "trackStatus", "trackLocation", "estimatedDate"]
-    .forEach(id => document.getElementById(id).value = "");
-
+  alert("Saved.");
   loadAllEntries();
 }
 
+// --- Listing + search ---
 function loadAllEntries() {
   db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     allEntries = snapshot.docs.map(doc => {
@@ -266,29 +375,45 @@ function prevPage() {
   renderEntries();
 }
 
-function exportCSVByDateRange() {
-  const from = new Date(document.getElementById("exportFrom").value);
-  const to = new Date(document.getElementById("exportTo").value);
-  to.setHours(23, 59, 59, 999);
-  const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
-  if (filtered.length === 0) return alert("No entries found in selected date range.");
-  const data = filtered.map(e => {
-    const status = e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ");
+// --- Export printed receipts to Excel (FROM–TO) ---
+async function exportPrintedReceipts() {
+  const fromInput = document.getElementById("exportFrom").value;
+  const toInput = document.getElementById("exportTo").value;
+  if (!fromInput || !toInput) return alert("Select both FROM and TO dates");
+
+  const fromDate = new Date(fromInput);
+  const toDate = new Date(toInput);
+  toDate.setHours(23, 59, 59, 999);
+
+  const snapshot = await db.collection("printed_receipts")
+    .where("printedAt", ">=", firebase.firestore.Timestamp.fromDate(fromDate))
+    .where("printedAt", "<=", firebase.firestore.Timestamp.fromDate(toDate))
+    .orderBy("printedAt", "asc")
+    .get();
+
+  if (snapshot.empty) return alert("No printed receipts found in that date range.");
+
+  const data = snapshot.docs.map(doc => {
+    const d = doc.data();
     return {
-      TrackingNumber: e.id,
-      Location: e.location,
-      EstimatedDelivery: e.estimatedDate,
-      StatusTimeline: status
+      TrackingNumber: d.trackingNumber || "",
+      ParcelName: d.parcelName || "",
+      Barangay: d.barangay || "",
+      Price: d.price != null ? d.price : "",
+      Status: d.status || "",
+      Location: d.location || "",
+      EstimatedDelivery: d.estimatedDate || "",
+      PrintedAt: d.printedAt?.toDate ? d.printedAt.toDate().toLocaleString() : ""
     };
   });
-  const csv = Papa.unparse(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `tracking_export_${filtered.length}_items_${Date.now()}.csv`;
-  link.click();
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Printed Receipts");
+  XLSX.writeFile(wb, `printed_receipts_${fromInput}_to_${toInput}.xlsx`);
 }
 
+// --- Delete ---
 async function deleteEntry(id) {
   const confirmPass = prompt("Enter admin password to delete:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
@@ -297,6 +422,7 @@ async function deleteEntry(id) {
   loadAllEntries();
 }
 
+// --- Bulk update (FROM–TO) ---
 async function bulkUpdateByTimeRange() {
   const fromDateStr = document.getElementById("bulkFromDate").value;
   const fromTimeStr = document.getElementById("bulkFromTime").value || "00:00";
@@ -313,12 +439,9 @@ async function bulkUpdateByTimeRange() {
   const confirmPass = prompt("Enter admin password to apply bulk update:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
 
-  const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
-  const toTs = firebase.firestore.Timestamp.fromDate(toDateTime);
-
   const snapshot = await db.collection("tracking")
-    .where("timestamp", ">=", fromTs)
-    .where("timestamp", "<=", toTs)
+    .where("timestamp", ">=", firebase.firestore.Timestamp.fromDate(fromDateTime))
+    .where("timestamp", "<=", firebase.firestore.Timestamp.fromDate(toDateTime))
     .get();
 
   if (snapshot.empty) return alert("No entries found in selected range.");
