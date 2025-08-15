@@ -29,13 +29,11 @@
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
     #receiptArea { display: none; }
-    .logout-btn { background: #555; }
   </style>
 </head>
 <body>
   <h2>JNK Admin Panel</h2>
-
-  <!-- LOGIN SECTION -->
+  
   <div id="loginSection">
     <input type="text" id="username" placeholder="Username" />
     <input type="password" id="password" placeholder="Password" />
@@ -43,9 +41,8 @@
     <p id="loginMessage" style="color:red;"></p>
   </div>
 
-  <!-- ADMIN SECTION -->
   <div id="adminSection" style="display:none;">
-    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    <button onclick="logout()">🚪 Logout</button>
 
     <input type="text" id="trackNumber" placeholder="Tracking Number" />
     <input type="text" id="parcelName" placeholder="Parcel Name" />
@@ -74,11 +71,10 @@
       <button onclick="renderEntries()">🔍 Search</button>
     </div>
 
-    <!-- NEW EXPORT EXCEL FROM-TO -->
     <div class="top-bar">
       <input type="date" id="excelFrom" />
       <input type="date" id="excelTo" />
-      <button onclick="exportExcelByDateRange()">📄 Export Excel by Date</button>
+      <button onclick="exportExcelByDateRange()">📊 Export Excel by Date</button>
     </div>
 
     <div class="top-bar">
@@ -127,27 +123,25 @@ let allEntries = [];
 let currentPage = 1;
 const pageSize = 10;
 
-// LOGIN
 function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
   if (user === USERNAME && pass === PASSWORD) {
     document.getElementById("loginSection").style.display = "none";
     document.getElementById("adminSection").style.display = "block";
-    document.getElementById("loginMessage").innerText = "";
     loadAllEntries();
   } else {
     document.getElementById("loginMessage").innerText = "Invalid login.";
   }
 }
+
 function logout() {
-  document.getElementById("adminSection").style.display = "none";
   document.getElementById("loginSection").style.display = "block";
+  document.getElementById("adminSection").style.display = "none";
   document.getElementById("username").value = "";
   document.getElementById("password").value = "";
 }
 
-// BARCODE SCANNER
 let scanner;
 function startScanner() {
   document.getElementById("scannerContainer").style.display = "block";
@@ -157,7 +151,8 @@ function startScanner() {
       document.getElementById("trackNumber").value = decodedText.trim();
       stopScanner();
       printAndSave();
-    }
+    },
+    () => {}
   );
 }
 function stopScanner() {
@@ -165,7 +160,6 @@ function stopScanner() {
   if (scanner) scanner.stop().then(() => scanner.clear()).catch(() => {});
 }
 
-// PRINT & SAVE
 async function printAndSave() {
   const number = document.getElementById("trackNumber").value.trim().toUpperCase();
   const name = document.getElementById("parcelName").value.trim();
@@ -184,7 +178,10 @@ async function printAndSave() {
   statusHistory.push({ status, timestamp: now });
 
   await docRef.set({
+    parcelName: name,
+    barangay: barangay,
     location,
+    price,
     estimatedDate,
     statusHistory,
     timestamp: now
@@ -208,10 +205,10 @@ async function printAndSave() {
     <html>
       <head>
         <title>Print</title>
-       <style>
-  @page { size: 50mm 80mm portrait; margin: 0; }
-  body { margin: 0; width: 50mm; height: 80mm; }
-</style>
+        <style>
+          @page { size: 50mm 80mm portrait; margin: 0; }
+          body { margin: 0; width: 50mm; height: 80mm; }
+        </style>
       </head>
       <body onload="window.print(); window.close();">${content}</body>
     </html>`);
@@ -223,14 +220,16 @@ async function printAndSave() {
   loadAllEntries();
 }
 
-// LOAD & RENDER
 function loadAllEntries() {
   db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     allEntries = snapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
+        parcelName: data.parcelName || '-',
+        barangay: data.barangay || '-',
         location: data.location || '-',
+        price: data.price || '-',
         statusHistory: data.statusHistory || [],
         estimatedDate: data.estimatedDate || '-',
         timestamp: data.timestamp?.toDate() || null,
@@ -239,6 +238,7 @@ function loadAllEntries() {
     renderEntries();
   });
 }
+
 function renderEntries() {
   const search = document.getElementById("searchInput").value.toUpperCase();
   const entriesDiv = document.getElementById("entries");
@@ -255,7 +255,10 @@ function renderEntries() {
       <div class='item'>
         <div class='item-content'>
           <strong>${entry.id}</strong><br>
+          Name: ${entry.parcelName}<br>
+          Barangay: ${entry.barangay}<br>
           Location: ${entry.location}<br>
+          Price: ₱${entry.price}<br>
           Estimated Delivery: ${entry.estimatedDate}<br>
           <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
           Timeline:<div class='timeline'>${timeline}</div>
@@ -264,29 +267,43 @@ function renderEntries() {
       </div>`;
   });
 }
-function nextPage() { if (currentPage < Math.ceil(allEntries.length / pageSize)) currentPage++; renderEntries(); }
-function prevPage() { if (currentPage > 1) currentPage--; renderEntries(); }
 
-// EXPORT TO EXCEL (FROM–TO)
+function nextPage() {
+  const filtered = allEntries.filter(e => e.id.includes(document.getElementById("searchInput").value.toUpperCase()));
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  if (currentPage < totalPages) currentPage++;
+  renderEntries();
+}
+
+function prevPage() {
+  if (currentPage > 1) currentPage--;
+  renderEntries();
+}
+
 function exportExcelByDateRange() {
   const from = new Date(document.getElementById("excelFrom").value);
   const to = new Date(document.getElementById("excelTo").value);
   to.setHours(23, 59, 59, 999);
+
   const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
   if (filtered.length === 0) return alert("No entries found in selected date range.");
+
   const data = filtered.map(e => ({
     TrackingNumber: e.id,
+    ParcelName: e.parcelName || '-',
+    Barangay: e.barangay || '-',
     Location: e.location,
+    Price: e.price || '-',
     EstimatedDelivery: e.estimatedDate,
     StatusTimeline: e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ")
   }));
+
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Tracking Data");
   XLSX.writeFile(wb, `tracking_export_${filtered.length}_items_${Date.now()}.xlsx`);
 }
 
-// DELETE
 async function deleteEntry(id) {
   const confirmPass = prompt("Enter admin password to delete:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
@@ -295,7 +312,6 @@ async function deleteEntry(id) {
   loadAllEntries();
 }
 
-// BULK UPDATE
 async function bulkUpdateByTimeRange() {
   const fromDateStr = document.getElementById("bulkFromDate").value;
   const fromTimeStr = document.getElementById("bulkFromTime").value || "00:00";
@@ -303,16 +319,25 @@ async function bulkUpdateByTimeRange() {
   const toTimeStr = document.getElementById("bulkToTime").value || "23:59";
   const status = document.getElementById("bulkStatus").value;
   const location = document.getElementById("bulkLocation").value.trim();
+
   if (!fromDateStr || !toDateStr || !status) return alert("Fill all date/time and status fields.");
   const fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
   const toDateTime = new Date(`${toDateStr}T${toTimeStr}`);
   if (toDateTime < fromDateTime) return alert("TO date/time must be after FROM date/time.");
+
   const confirmPass = prompt("Enter admin password to apply bulk update:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
   const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
   const toTs = firebase.firestore.Timestamp.fromDate(toDateTime);
-  const snapshot = await db.collection("tracking").where("timestamp", ">=", fromTs).where("timestamp", "<=", toTs).get();
+
+  const snapshot = await db.collection("tracking")
+    .where("timestamp", ">=", fromTs)
+    .where("timestamp", "<=", toTs)
+    .get();
+
   if (snapshot.empty) return alert("No entries found in selected range.");
+
   const batch = db.batch();
   snapshot.docs.forEach(doc => {
     const data = doc.data();
@@ -324,6 +349,7 @@ async function bulkUpdateByTimeRange() {
       statusHistory: history
     });
   });
+
   await batch.commit();
   alert(`✅ Bulk update applied to ${snapshot.size} entries.`);
   loadAllEntries();
