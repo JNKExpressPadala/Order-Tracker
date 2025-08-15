@@ -288,14 +288,12 @@ function exportExcelByDateRange() {
   const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
   if (filtered.length === 0) return alert("No entries found in selected date range.");
 
+  // Only include the 4 columns requested
   const data = filtered.map(e => ({
     TrackingNumber: e.id,
     ParcelName: e.parcelName || '-',
     Barangay: e.barangay || '-',
-    Location: e.location,
-    Price: e.price || '-',
-    EstimatedDelivery: e.estimatedDate,
-    StatusTimeline: e.statusHistory.map(s => `${s.timestamp?.toDate().toLocaleString()} - ${s.status}`).join(" | ")
+    Price: e.price || '-'
   }));
 
   const ws = XLSX.utils.json_to_sheet(data);
