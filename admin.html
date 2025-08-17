@@ -3,101 +3,241 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel - JNK Express</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <!-- Excel (SheetJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- QR Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    body { font-family: sans-serif; background: #fff3f3; padding: 20px; max-width: 800px; margin: auto; }
-    h2 { color: #D7282F; }
+    :root {
+      --jnk: #D7282F;
+      --ink: #333;
+      --bg: #fff3f3;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: var(--bg); padding: 20px; max-width: 1100px; margin: auto; color: var(--ink); }
+    h2, h3 { color: var(--jnk); margin: 0.4em 0; }
     input, select, button {
       width: 100%; padding: 12px; margin-top: 10px;
-      font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
+      font-size: 1em; border-radius: 8px; border: 1px solid #ddd; background: #fff;
     }
-    button { background-color: #D7282F; color: white; border: none; margin-bottom: 20px; cursor: pointer; }
+    button { background-color: var(--jnk); color: white; border: none; margin-bottom: 12px; cursor: pointer; }
+    button.secondary { background: #888; }
+    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-12 { grid-column: span 12; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+    .card {
+      background: var(--card); padding: 14px; border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
     .item {
-      background: #fff; padding: 10px; margin: 10px 0;
-      border-left: 5px solid #D7282F; border-radius: 4px;
-      display: flex; justify-content: space-between; align-items: flex-start;
+      background: #fff; padding: 12px; margin: 10px 0;
+      border-left: 5px solid var(--jnk); border-radius: 8px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
     }
-    .item-content { width: 100%; }
-    .delete-btn {
-      background: #aaa; color: white; border: none;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;
-    }
-    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+    .item-content { width: 100%; font-size: 0.96em; line-height: 1.35em; }
+    .delete-btn { background: #aaa; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
     .timeline { margin-top: 5px; padding-left: 10px; font-size: 0.95em; color: #333; }
     .top-bar { display: flex; gap: 10px; flex-wrap: wrap; }
     #receiptArea { display: none; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
+    .tab-btn {
+      background: #fff; color: var(--jnk); border: 1px solid var(--jnk);
+      padding: 10px 14px; border-radius: 999px; cursor: pointer; font-weight: bold;
+    }
+    .tab-btn.active { background: var(--jnk); color: #fff; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* KPI cards */
+    .kpi {
+      display: flex; flex-direction: column; gap: 6px;
+      background: #fff; padding: 14px; border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    .kpi .label { font-size: 0.9em; color: #666; }
+    .kpi .value { font-size: 1.4em; font-weight: bold; color: var(--jnk); }
+
+    @media (max-width: 800px) {
+      .col-6 { grid-column: span 12; }
+      .col-4 { grid-column: span 12; }
+      .col-3 { grid-column: span 6; }
+    }
   </style>
 </head>
 <body>
   <h2>JNK Admin Panel</h2>
-  
-  <div id="loginSection">
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p id="loginMessage" style="color:red;"></p>
+
+  <!-- Login -->
+  <div id="loginSection" class="card">
+    <div class="row">
+      <div class="col-6">
+        <input type="text" id="username" placeholder="Username" />
+      </div>
+      <div class="col-6">
+        <input type="password" id="password" placeholder="Password" />
+      </div>
+      <div class="col-12">
+        <button onclick="login()">Login</button>
+        <p id="loginMessage" style="color:red; margin:0;"></p>
+      </div>
+    </div>
   </div>
 
+  <!-- Admin Area -->
   <div id="adminSection" style="display:none;">
-    <button onclick="logout()">🚪 Logout</button>
-
-    <input type="text" id="trackNumber" placeholder="Tracking Number" />
-    <input type="text" id="parcelName" placeholder="Parcel Name" />
-    <input type="text" id="barangay" placeholder="Barangay" />
-    <input type="number" id="price" placeholder="Price (PHP)" />
-    <select id="trackStatus">
-      <option value="">Select Status</option>
-      <option>Package Received</option>
-      <option>In Transit</option>
-      <option>Arrived</option>
-      <option>For Pick-up</option>
-    </select>
-    <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
-    <input type="date" id="estimatedDate" />
-    <button onclick="saveTracking()">Add / Update</button>
-    <button onclick="printAndSave()">🖨️ Print Receipt</button>
-
-    <button onclick="startScanner()">📷 Scan</button>
-    <div id="scannerContainer" style="display:none">
-      <div id="scanner" style="width:100%"></div>
-      <button onclick="stopScanner()">❌ Cancel</button>
-    </div>
-
     <div class="top-bar">
-      <input type="text" id="searchInput" placeholder="Search tracking number..." />
-      <button onclick="renderEntries()">🔍 Search</button>
+      <button onclick="logout()" class="secondary">🚪 Logout</button>
     </div>
 
-    <div class="top-bar">
-      <input type="date" id="excelFrom" />
-      <input type="date" id="excelTo" />
-      <button onclick="exportExcelByDateRange()">📊 Export Excel by Date</button>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button id="tabManage" class="tab-btn active" onclick="showTab('manage')">Manage</button>
+      <button id="tabAnalytics" class="tab-btn" onclick="showTab('analytics')">Analytics</button>
     </div>
 
-    <div class="top-bar">
-      <input type="date" id="bulkFromDate" />
-      <input type="time" id="bulkFromTime" />
-      <input type="date" id="bulkToDate" />
-      <input type="time" id="bulkToTime" />
-      <select id="bulkStatus">
-        <option value="">Update Status to...</option>
-        <option>Package Received</option>
-        <option>In Transit</option>
-        <option>Arrived</option>
-        <option>For Pick-up</option>
-      </select>
-      <input type="text" id="bulkLocation" placeholder="Optional New Location" />
-      <button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
+    <!-- MANAGE TAB -->
+    <div id="panelManage" class="tab-panel active">
+      <div class="card">
+        <div class="row">
+          <div class="col-6"><input type="text" id="trackNumber" placeholder="Tracking Number" /></div>
+          <div class="col-6"><input type="text" id="parcelName" placeholder="Parcel Name" /></div>
+          <div class="col-4"><input type="text" id="barangay" placeholder="Barangay" /></div>
+          <div class="col-4"><input type="number" id="price" placeholder="Price (PHP)" /></div>
+          <div class="col-4">
+            <select id="trackStatus">
+              <option value="">Select Status</option>
+              <option>Package Received</option>
+              <option>In Transit</option>
+              <option>Arrived</option>
+              <option>For Pick-up</option>
+            </select>
+          </div>
+          <div class="col-6"><input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" /></div>
+          <div class="col-6"><input type="date" id="estimatedDate" /></div>
+
+          <div class="col-6"><button onclick="saveTracking()">Add / Update</button></div>
+          <div class="col-6"><button onclick="printAndSave()">🖨️ Print Receipt</button></div>
+
+          <div class="col-12">
+            <button onclick="startScanner()">📷 Scan</button>
+            <div id="scannerContainer" style="display:none; margin-top:10px;">
+              <div id="scanner" style="width:100%"></div>
+              <button onclick="stopScanner()" class="secondary" style="margin-top:10px;">❌ Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="top-bar">
+          <input type="text" id="searchInput" placeholder="Search tracking number..." />
+          <button onclick="renderEntries()">🔍 Search</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="top-bar">
+          <input type="date" id="excelFrom" />
+          <input type="date" id="excelTo" />
+          <button onclick="exportExcelByDateRange()">📊 Export Excel by Date</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="row">
+          <div class="col-3"><input type="date" id="bulkFromDate" /></div>
+          <div class="col-3"><input type="time" id="bulkFromTime" /></div>
+          <div class="col-3"><input type="date" id="bulkToDate" /></div>
+          <div class="col-3"><input type="time" id="bulkToTime" /></div>
+          <div class="col-6">
+            <select id="bulkStatus">
+              <option value="">Update Status to...</option>
+              <option>Package Received</option>
+              <option>In Transit</option>
+              <option>Arrived</option>
+              <option>For Pick-up</option>
+            </select>
+          </div>
+          <div class="col-6"><input type="text" id="bulkLocation" placeholder="Optional New Location" /></div>
+          <div class="col-12"><button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button></div>
+        </div>
+      </div>
+
+      <h3>All Tracking Entries</h3>
+      <div id="entries"></div>
+      <div class="pagination">
+        <button onclick="prevPage()">Previous</button>
+        <button onclick="nextPage()">Next</button>
+      </div>
     </div>
 
-    <h3>All Tracking Entries</h3>
-    <div id="entries"></div>
-    <div class="pagination">
-      <button onclick="prevPage()">Previous</button>
-      <button onclick="nextPage()">Next</button>
+    <!-- ANALYTICS TAB -->
+    <div id="panelAnalytics" class="tab-panel">
+      <div class="card">
+        <div class="row">
+          <div class="col-4"><input type="date" id="anaFrom" /></div>
+          <div class="col-4"><input type="date" id="anaTo" /></div>
+          <div class="col-4"><button onclick="renderAnalytics()">Update Analytics</button></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <div class="col-3">
+          <div class="kpi">
+            <div class="label">Total Entries</div>
+            <div id="kpiTotal" class="value">0</div>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="kpi">
+            <div class="label">Overall Price (₱)</div>
+            <div id="kpiPrice" class="value">0</div>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="kpi">
+            <div class="label">Avg Price (₱)</div>
+            <div id="kpiAvg" class="value">0</div>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="kpi">
+            <div class="label">Distinct Barangays</div>
+            <div id="kpiBarangays" class="value">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <div class="col-12 card">
+          <h3>Daily Entries</h3>
+          <canvas id="chartDaily" height="120"></canvas>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <div class="col-6 card">
+          <h3>Status Distribution</h3>
+          <canvas id="chartStatus" height="180"></canvas>
+        </div>
+        <div class="col-6 card">
+          <h3>Price by Barangay</h3>
+          <canvas id="chartBarangay" height="180"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -106,6 +246,7 @@
   </div>
 
 <script>
+/* ===================== FIREBASE ===================== */
 const firebaseConfig = {
   apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
   authDomain: "jnk-ordertracker.firebaseapp.com",
@@ -117,12 +258,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/* ===================== STATE ===================== */
 const USERNAME = "JNK";
 const PASSWORD = "11223344$";
 let allEntries = [];
 let currentPage = 1;
 const pageSize = 10;
 
+let scanner;
+let chartDaily, chartStatus, chartBarangay;
+
+/* ===================== AUTH ===================== */
 function login() {
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
@@ -134,7 +280,6 @@ function login() {
     document.getElementById("loginMessage").innerText = "Invalid login.";
   }
 }
-
 function logout() {
   document.getElementById("loginSection").style.display = "block";
   document.getElementById("adminSection").style.display = "none";
@@ -142,11 +287,33 @@ function logout() {
   document.getElementById("password").value = "";
 }
 
-let scanner;
+/* ===================== TABS ===================== */
+function showTab(which) {
+  document.getElementById('tabManage').classList.toggle('active', which === 'manage');
+  document.getElementById('tabAnalytics').classList.toggle('active', which === 'analytics');
+  document.getElementById('panelManage').classList.toggle('active', which === 'manage');
+  document.getElementById('panelAnalytics').classList.toggle('active', which === 'analytics');
+  if (which === 'analytics') {
+    // Default analytics range: last 30 days
+    const anaFrom = document.getElementById('anaFrom');
+    const anaTo = document.getElementById('anaTo');
+    if (!anaFrom.value || !anaTo.value) {
+      const to = new Date();
+      const from = new Date(); from.setDate(to.getDate() - 29);
+      anaFrom.valueAsDate = from;
+      anaTo.valueAsDate = to;
+    }
+    renderAnalytics();
+  }
+}
+
+/* ===================== QR SCANNER ===================== */
 function startScanner() {
   document.getElementById("scannerContainer").style.display = "block";
   scanner = new Html5Qrcode("scanner");
-  scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
     (decodedText) => {
       document.getElementById("trackNumber").value = decodedText.trim();
       stopScanner();
@@ -158,6 +325,51 @@ function startScanner() {
 function stopScanner() {
   document.getElementById("scannerContainer").style.display = "none";
   if (scanner) scanner.stop().then(() => scanner.clear()).catch(() => {});
+}
+
+/* ===================== HELPERS ===================== */
+function num(val) {
+  if (val === null || val === undefined) return 0;
+  const n = parseFloat(String(val).toString().replace(/[^0-9.-]/g,""));
+  return isNaN(n) ? 0 : n;
+}
+function formatPeso(n) {
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 }).format(n);
+}
+
+/* ===================== CREATE / UPDATE ===================== */
+async function saveTracking() {
+  // keeps Add/Update without printing
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const name = document.getElementById("parcelName").value.trim();
+  const barangay = document.getElementById("barangay").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
+  const estimatedDate = document.getElementById("estimatedDate").value;
+  const now = firebase.firestore.Timestamp.now();
+
+  if (!number || !name || !barangay || !price || !status) return alert("Complete all fields");
+
+  const docRef = db.collection("tracking").doc(number);
+  const docSnap = await docRef.get();
+  let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
+  statusHistory.push({ status, timestamp: now });
+
+  await docRef.set({
+    parcelName: name,
+    barangay: barangay,
+    location,
+    price,
+    estimatedDate,
+    statusHistory,
+    timestamp: now
+  });
+
+  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
+    .forEach(id => document.getElementById(id).value = "");
+
+  loadAllEntries();
 }
 
 async function printAndSave() {
@@ -214,12 +426,13 @@ async function printAndSave() {
     </html>`);
   printWin.document.close();
 
-  ["trackNumber", "parcelName", "barangay", "price", "trackStatus", "trackLocation", "estimatedDate"]
+  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
     .forEach(id => document.getElementById(id).value = "");
 
   loadAllEntries();
 }
 
+/* ===================== LOAD & RENDER LIST ===================== */
 function loadAllEntries() {
   db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     allEntries = snapshot.docs.map(doc => {
@@ -257,7 +470,9 @@ function renderEntries() {
           <strong>${entry.id}</strong><br>
           Name: ${entry.parcelName}<br>
           Barangay: ${entry.barangay}<br>
+          Location: ${entry.location}<br>
           Price: ₱${entry.price}<br>
+          Estimated Delivery: ${entry.estimatedDate}<br>
           <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
           Timeline:<div class='timeline'>${timeline}</div>
         </div>
@@ -272,44 +487,58 @@ function nextPage() {
   if (currentPage < totalPages) currentPage++;
   renderEntries();
 }
-
 function prevPage() {
   if (currentPage > 1) currentPage--;
   renderEntries();
 }
 
+/* ===================== EXPORT (with totals row) ===================== */
 function exportExcelByDateRange() {
-  const from = new Date(document.getElementById("excelFrom").value);
-  const to = new Date(document.getElementById("excelTo").value);
+  const fromInput = document.getElementById("excelFrom").value;
+  const toInput = document.getElementById("excelTo").value;
+  if (!fromInput || !toInput) return alert("Please select FROM and TO dates.");
+  const from = new Date(fromInput);
+  const to = new Date(toInput);
   to.setHours(23, 59, 59, 999);
 
-  const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
-  if (filtered.length === 0) return alert("No entries found in selected date range.");
+  const inRange = allEntries.filter(entry => entry.timestamp && entry.timestamp >= from && entry.timestamp <= to);
+  if (inRange.length === 0) return alert("No entries found in selected date range.");
 
-  // Exported data with only 4 columns
-  const data = filtered.map(e => ({
+  // Only the 4 columns you requested
+  const rows = inRange.map(e => ({
     TrackingNumber: e.id,
     ParcelName: e.parcelName || '-',
     Barangay: e.barangay || '-',
-    Price: Number(e.price) || 0
+    Price: num(e.price)
   }));
 
-  // Create sheet
-  const ws = XLSX.utils.json_to_sheet(data);
+  const totalEntries = rows.length;
+  const totalPrice = rows.reduce((acc, r) => acc + num(r.Price), 0);
 
-  // Add totals row at bottom
-  const totalEntries = data.length;
-  const totalPrice = data.reduce((sum, e) => sum + (Number(e.Price) || 0), 0);
-  const totalRowIndex = data.length + 2; // +2 for header and 1-based row index
-  XLSX.utils.sheet_add_aoa(ws, [
-    ["TOTAL ENTRIES", totalEntries, "TOTAL PRICE", totalPrice]
-  ], { origin: `A${totalRowIndex}` });
+  const ws = XLSX.utils.json_to_sheet(rows, { header: ["TrackingNumber","ParcelName","Barangay","Price"] });
+
+  // Append a blank line and totals at the bottom
+  const append = [
+    [], // blank row
+    ["TOTAL ENTRIES", totalEntries],
+    ["TOTAL PRICE (PHP)", totalPrice]
+  ];
+  XLSX.utils.sheet_add_aoa(ws, append, { origin: -1 });
+
+  // Simple number format for Price column (D)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = 1; R <= rows.length; ++R) { // data rows start at row 2 (1-indexed)
+    const cellAddr = XLSX.utils.encode_cell({ r: R, c: 3 }); // column D (0=A)
+    if (!ws[cellAddr]) continue;
+    ws[cellAddr].t = 'n';
+  }
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Tracking Data");
-  XLSX.writeFile(wb, `tracking_export_${filtered.length}_items_${Date.now()}.xlsx`);
+  XLSX.writeFile(wb, `tracking_export_${totalEntries}_items_${Date.now()}.xlsx`);
 }
 
+/* ===================== DELETE & BULK ===================== */
 async function deleteEntry(id) {
   const confirmPass = prompt("Enter admin password to delete:");
   if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
@@ -359,6 +588,104 @@ async function bulkUpdateByTimeRange() {
   await batch.commit();
   alert(`✅ Bulk update applied to ${snapshot.size} entries.`);
   loadAllEntries();
+}
+
+/* ===================== ANALYTICS ===================== */
+function renderAnalytics() {
+  // get date range
+  const fromInput = document.getElementById('anaFrom').value;
+  const toInput = document.getElementById('anaTo').value;
+  if (!fromInput || !toInput) return;
+
+  const from = new Date(fromInput);
+  const to = new Date(toInput);
+  to.setHours(23,59,59,999);
+
+  const entries = allEntries.filter(e => e.timestamp && e.timestamp >= from && e.timestamp <= to);
+
+  // KPIs
+  const total = entries.length;
+  const priceSum = entries.reduce((acc, e) => acc + num(e.price), 0);
+  const avgPrice = total > 0 ? (priceSum / total) : 0;
+  const distinctBarangays = new Set(entries.map(e => (e.barangay || '-').trim())).size;
+
+  document.getElementById('kpiTotal').innerText = String(total);
+  document.getElementById('kpiPrice').innerText = priceSum.toLocaleString('en-PH', {style:'currency', currency:'PHP'});
+  document.getElementById('kpiAvg').innerText = avgPrice.toLocaleString('en-PH', {style:'currency', currency:'PHP'});
+  document.getElementById('kpiBarangays').innerText = String(distinctBarangays);
+
+  // Daily counts (by YYYY-MM-DD)
+  const dailyMap = {};
+  entries.forEach(e => {
+    const d = e.timestamp;
+    const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+    dailyMap[key] = (dailyMap[key] || 0) + 1;
+  });
+  // Generate ordered dates between from..to
+  const labels = [];
+  const dailyCounts = [];
+  for (let d = new Date(from); d <= to; d.setDate(d.getDate()+1)) {
+    const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+    labels.push(key);
+    dailyCounts.push(dailyMap[key] || 0);
+  }
+
+  // Status distribution (latest status per entry is last history item)
+  const statusMap = {};
+  entries.forEach(e => {
+    const last = (e.statusHistory || [])[ (e.statusHistory || []).length - 1 ];
+    const status = last ? last.status : 'Unknown';
+    statusMap[status] = (statusMap[status] || 0) + 1;
+  });
+  const statusLabels = Object.keys(statusMap);
+  const statusValues = statusLabels.map(k => statusMap[k]);
+
+  // Price by Barangay (sum)
+  const brgyMap = {};
+  entries.forEach(e => {
+    const b = (e.barangay || '-').trim() || '-';
+    brgyMap[b] = (brgyMap[b] || 0) + num(e.price);
+  });
+  // sort top 12 barangays by total price
+  const brgyPairs = Object.entries(brgyMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const brgyLabels = brgyPairs.map(p=>p[0]);
+  const brgyValues = brgyPairs.map(p=>p[1]);
+
+  // Render charts (destroy if already created)
+  const ctxDaily = document.getElementById('chartDaily').getContext('2d');
+  if (chartDaily) chartDaily.destroy();
+  chartDaily = new Chart(ctxDaily, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Entries', data: dailyCounts, tension: 0.25, fill: false }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } },
+      scales: { x: { ticks: { maxRotation: 60, minRotation: 0 } } }
+    }
+  });
+
+  const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: { labels: statusLabels, datasets: [{ data: statusValues }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  const ctxBarangay = document.getElementById('chartBarangay').getContext('2d');
+  if (chartBarangay) chartBarangay.destroy();
+  chartBarangay = new Chart(ctxBarangay, {
+    type: 'bar',
+    data: { labels: brgyLabels, datasets: [{ label: 'Total Price (PHP)', data: brgyValues }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } },
+      scales: {
+        y: { beginAtZero: true },
+        x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 0 } }
+      }
+    }
+  });
 }
 </script>
 </body>
