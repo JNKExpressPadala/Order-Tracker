@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -76,9 +76,14 @@
     .leaderboard-card {
       background: #fff; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.08);
       padding: 15px; margin: 10px 0; display: flex; justify-content: space-between;
-      font-size: 1em; font-weight: 500;
+      font-size: 1em; font-weight: 500; align-items: center;
     }
     .leaderboard-rank { font-weight: bold; color: #D7282F; }
+
+    /* 🔥 Highlight top 3 */
+    .leaderboard-card.top1 { background: #ffeaa7; font-weight: bold; }
+    .leaderboard-card.top2 { background: #dfe6e9; font-weight: bold; }
+    .leaderboard-card.top3 { background: #fab1a0; font-weight: bold; }
 
     footer {
       background: #D7282F; color: white; text-align: center;
@@ -257,7 +262,7 @@
         }
 
         leaderboardDiv.innerHTML = sorted.map(([name, count], idx) => `
-          <div class="leaderboard-card">
+          <div class="leaderboard-card top${idx+1 <= 3 ? idx+1 : ''}">
             <span class="leaderboard-rank">#${idx+1}</span>
             <span>${name}</span>
             <span>${count} parcels</span>
