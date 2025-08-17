@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,46 +9,31 @@
   <style>
     body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
     header {
-  background: #D7282F;
-  color: #fff;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-header img {
-  height: 50px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.6em;
-  flex: 1;
-}
-
-.admin-link {
-  color: white;
-  text-decoration: none;
-  background: rgba(255,255,255,0.1);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.95em;
-}
-
-.admin-link:hover {
-  background: white;
-  color: #D7282F;
-}
+      background: #D7282F;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    header img { height: 50px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    header h1 { margin: 0; font-size: 1.6em; flex: 1; }
+    .admin-link {
+      color: white; text-decoration: none; background: rgba(255,255,255,0.1);
+      padding: 6px 12px; border-radius: 6px; font-size: 0.95em;
+    }
+    .admin-link:hover { background: white; color: #D7282F; }
 
     nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
     nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
     nav button:hover { background: #D7282F; color: #fff; }
 
-    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
+    .container {
+      max-width: 600px; margin: 20px auto; background: white;
+      border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 2em; text-align: center;
+    }
     input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
     .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
     .tracking-bar input { flex: 1; }
@@ -64,70 +49,49 @@ header h1 {
     .footer-link { display: block; margin-top: 20px; color: #D7282F; text-decoration: none; }
 
     .support-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      background-color: #D7282F;
-      color: white;
-      padding: 12px 18px;
-      border-radius: 25px;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      z-index: 1000;
+      position: fixed; bottom: 90px; right: 20px; background-color: #D7282F; color: white;
+      padding: 12px 18px; border-radius: 25px; font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000;
     }
     .support-form {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      width: 300px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      padding: 1em;
-      display: none;
-      z-index: 1001;
+      position: fixed; bottom: 150px; right: 20px; width: 300px;
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1em;
+      display: none; z-index: 1001;
     }
     .support-form input, .support-form textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      font-size: 1em;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      width: 100%; padding: 10px; margin-top: 8px; font-size: 1em;
+      border-radius: 6px; border: 1px solid #ccc;
     }
     .support-form button {
-      background: #D7282F;
-      color: white;
-      border: none;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
+      background: #D7282F; color: white; border: none; margin-top: 10px;
+      padding: 10px; border-radius: 6px; cursor: pointer;
     }
 
-    .info-section, .services-section, .news-section {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 10px 20px;
+    .info-section, .services-section, .news-section, .leaderboard-section {
+      max-width: 600px; margin: 20px auto; padding: 10px 20px;
     }
-    .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
+    .info-section h4, .services-section h3, .news-section h4, .leaderboard-section h3 { color: #D7282F; }
+
+    .leaderboard-card {
+      background: #fff; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+      padding: 15px; margin: 10px 0; display: flex; justify-content: space-between;
+      font-size: 1em; font-weight: 500;
+    }
+    .leaderboard-rank { font-weight: bold; color: #D7282F; }
 
     footer {
-      background: #D7282F;
-      color: white;
-      text-align: center;
-      padding: 15px;
-      font-size: 0.9em;
-      margin-top: 50px;
+      background: #D7282F; color: white; text-align: center;
+      padding: 15px; font-size: 0.9em; margin-top: 50px;
     }
   </style>
 </head>
 <body>
   <header>
-  <img src="logo.jpg" alt="Logo" />
-  <h1>JNK Express Padala</h1>
-  <a href="admin.html" class="admin-link">Login</a>
-</header>
+    <img src="logo.jpg" alt="Logo" />
+    <h1>JNK Express Padala</h1>
+    <a href="admin.html" class="admin-link">Login</a>
+  </header>
 
   <nav>
     <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
@@ -145,6 +109,12 @@ header h1 {
     <div id="loading">⏳ Loading...</div>
     <div id="statusResult" class="status-box"></div>
     <div id="mapContainer" class="map-box"></div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard-section">
+    <h3>🏆 Top 10 Customers (This Month)</h3>
+    <div id="leaderboard"></div>
   </div>
 
   <div class="services-section">
@@ -262,6 +232,45 @@ header h1 {
       const form = document.getElementById('supportForm');
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     }
+
+    // --- Leaderboard Logic (Top 10 Customers for current month) ---
+    async function loadLeaderboard() {
+      const leaderboardDiv = document.getElementById('leaderboard');
+      leaderboardDiv.innerHTML = "Loading...";
+
+      try {
+        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const snapshot = await db.collection("tracking").where("createdAt", ">=", startOfMonth).get();
+
+        let counts = {};
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const customer = data.customerName || "Unknown";
+          counts[customer] = (counts[customer] || 0) + 1;
+        });
+
+        let sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+        if (sorted.length === 0) {
+          leaderboardDiv.innerHTML = "<p>No entries this month.</p>";
+          return;
+        }
+
+        leaderboardDiv.innerHTML = sorted.map(([name, count], idx) => `
+          <div class="leaderboard-card">
+            <span class="leaderboard-rank">#${idx+1}</span>
+            <span>${name}</span>
+            <span>${count} parcels</span>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+        leaderboardDiv.innerHTML = "<p>Error loading leaderboard.</p>";
+      }
+    }
+
+    loadLeaderboard();
+    setInterval(loadLeaderboard, 60000); // refresh every 1 minute
   </script>
 </body>
 </html>
