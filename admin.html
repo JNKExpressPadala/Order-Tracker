@@ -257,9 +257,7 @@ function renderEntries() {
           <strong>${entry.id}</strong><br>
           Name: ${entry.parcelName}<br>
           Barangay: ${entry.barangay}<br>
-          Location: ${entry.location}<br>
           Price: ₱${entry.price}<br>
-          Estimated Delivery: ${entry.estimatedDate}<br>
           <strong>Encoded:</strong> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
           Timeline:<div class='timeline'>${timeline}</div>
         </div>
@@ -288,15 +286,25 @@ function exportExcelByDateRange() {
   const filtered = allEntries.filter(entry => entry.timestamp >= from && entry.timestamp <= to);
   if (filtered.length === 0) return alert("No entries found in selected date range.");
 
-  // Only include the 4 columns requested
+  // Exported data with only 4 columns
   const data = filtered.map(e => ({
     TrackingNumber: e.id,
     ParcelName: e.parcelName || '-',
     Barangay: e.barangay || '-',
-    Price: e.price || '-'
+    Price: Number(e.price) || 0
   }));
 
+  // Create sheet
   const ws = XLSX.utils.json_to_sheet(data);
+
+  // Add totals row at bottom
+  const totalEntries = data.length;
+  const totalPrice = data.reduce((sum, e) => sum + (Number(e.Price) || 0), 0);
+  const totalRowIndex = data.length + 2; // +2 for header and 1-based row index
+  XLSX.utils.sheet_add_aoa(ws, [
+    ["TOTAL ENTRIES", totalEntries, "TOTAL PRICE", totalPrice]
+  ], { origin: `A${totalRowIndex}` });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Tracking Data");
   XLSX.writeFile(wb, `tracking_export_${filtered.length}_items_${Date.now()}.xlsx`);
