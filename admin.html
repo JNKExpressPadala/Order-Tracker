@@ -2,449 +2,335 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel - JNK Express</title>
+<title>JNK Admin Panel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
+<!-- XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Original CSS preserved -->
+<!-- html2canvas & jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Html5Qrcode -->
+<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f2f2f2; margin:0; padding:0;}
-header { background-color:#34495e; color:#fff; padding:15px 20px; font-size:20px; text-align:center; }
-nav { display:flex; background-color:#2c3e50; }
-nav button { flex:1; padding:12px; background:#2c3e50; color:#fff; border:none; cursor:pointer; font-size:16px; transition:0.3s; }
-nav button.active { background:#1abc9c; }
-section { display:none; padding:20px; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+header { background:#004080; color:#fff; padding:10px; text-align:center; font-size:1.3em; }
+nav { display:flex; gap:5px; padding:5px; background:#eee; }
+nav button { flex:1; padding:8px; font-size:0.9em; cursor:pointer; }
+section { display:none; padding:10px; }
 section.active { display:block; }
-table { width:100%; border-collapse: collapse; margin-top:15px; background-color:#fff; }
-th, td { border:1px solid #ddd; padding:10px; text-align:center; }
-th { background-color:#34495e; color:#fff; }
-tr.low-stock { background-color:#f8d7da; }
-.form-inline input, .form-inline select { padding:6px; margin:3px; font-size:14px; }
-.btn { padding:8px 15px; border:none; cursor:pointer; margin:5px; font-size:14px; }
-.btn-primary { background-color:#1abc9c; color:#fff; }
-.btn-secondary { background-color:#3498db; color:#fff; }
-.btn-danger { background-color:#e74c3c; color:#fff; }
-canvas { max-width:500px; margin:20px auto; display:block; }
-.receipt-frame { display:none; }
+.item { display:flex; justify-content:space-between; background:#fff; margin-bottom:5px; padding:5px; border-radius:4px; box-shadow:0 0 2px #ccc; }
+.muted { color:#666; font-size:0.85em; }
+.small { font-size:0.75em; }
+input, select, button { padding:5px; margin:2px 0; }
+#scannerContainer { display:none; position:relative; width:300px; height:300px; background:#000; }
 </style>
 </head>
 <body>
 
-<header>📦 Admin Panel - JNK Express</header>
-
+<header>JNK Admin Panel</header>
 <nav>
-  <button class="tab-btn active" data-tab="tracking">Parcel Tracking</button>
-  <button class="tab-btn" data-tab="products">Products</button>
-  <button class="tab-btn" data-tab="sales">JNK Products Sales</button>
+<button onclick="openTab('parcelsTab')">Parcels</button>
+<button onclick="openTab('productsTab')">Products</button>
+<button onclick="openTab('analyticsTab')">Analytics</button>
 </nav>
 
-<!-- PARCEL TRACKING SECTION -->
-<section id="tracking" class="active">
+<!-- ========================== PARCELS ========================== -->
+<section id="parcelsTab" class="active">
 <h2>Parcel Tracking</h2>
-<div id="trackingArea">
-
-<!-- Parcel form -->
-<div class="form-inline">
-<input type="text" id="parcelName" placeholder="Parcel Name">
-<input type="text" id="parcelBarangay" placeholder="Barangay">
-<input type="text" id="parcelTracking" placeholder="Tracking Number">
-<input type="number" id="parcelPrice" placeholder="Price">
+<div>
+<label>Tracking #: <input id="parcelTracking"></label>
+<label>Parcel Name: <input id="parcelName"></label>
+<label>Barangay: <input id="parcelBarangay"></label>
+<label>Price: <input id="parcelPrice"></label>
+<label>Status:
 <select id="parcelStatus">
-<option value="Package Received">Package Received</option>
-<option value="In Transit">In Transit</option>
-<option value="Out for Delivery">Out for Delivery</option>
-<option value="Delivered">Delivered</option>
-</select>
-<button class="btn btn-primary" onclick="addParcel()">Add Parcel</button>
+<option>Package Received</option>
+<option>In Transit</option>
+<option>Delivered</option>
+<option>Returned</option>
+</select></label>
+<button onclick="printParcelReceipt()">Print Receipt & Save</button>
 </div>
-
-<!-- Parcels table -->
-<table id="parcelsTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Tracking #</th>
-<th>Parcel Name</th>
-<th>Barangay</th>
-<th>Price</th>
-<th>Status</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-<!-- Search / Filter -->
-<div class="form-inline">
-<input type="text" id="searchParcel" placeholder="Search by tracking # or name">
-<button class="btn btn-secondary" onclick="searchParcelFunc()">Search</button>
-<button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
-</div>
-
-<!-- Bulk update & export -->
-<div class="form-inline">
-<button class="btn btn-secondary" onclick="exportParcels()">Export Parcels CSV</button>
-<button class="btn btn-secondary" onclick="bulkUpdateStatus()">Bulk Update Status</button>
-</div>
-
-<!-- Pagination -->
-<div id="paginationControls" class="form-inline">
-<button class="btn btn-secondary" onclick="prevPage()">Prev</button>
-<span id="currentPage">1</span>
-<button class="btn btn-secondary" onclick="nextPage()">Next</button>
-</div>
-</div> <!-- End of trackingArea -->
+<div id="parcelList"></div>
+<div id="parcelScannerContainer"></div>
 </section>
 
-<!-- PRODUCTS SECTION -->
-<section id="products">
-<h2>Manage Products - Urban Finds by JNK</h2>
-<div class="form-inline">
-<input type="text" id="productName" placeholder="Product Name">
-<input type="number" id="productCost" placeholder="Cost Price">
-<input type="number" id="productPrice" placeholder="Selling Price">
-<input type="number" id="productStock" placeholder="Stock Qty">
-<button class="btn btn-primary" onclick="addOrUpdateProduct()">Add / Update</button>
+<!-- ========================== PRODUCTS ========================== -->
+<section id="productsTab">
+<h2>Product Management & Sales</h2>
+<div>
+<h3>Add/Edit Product</h3>
+<label>Barcode: <input id="prodBarcode"></label>
+<label>Name: <input id="prodName"></label>
+<label>Category: <input id="prodCategory"></label>
+<label>Price: <input id="prodPrice" type="number"></label>
+<label>Stock: <input id="prodStock" type="number"></label>
+<label>Notes: <input id="prodNotes"></label>
+<button onclick="saveProduct()">Save Product</button>
+<button onclick="exportProductsExcel()">Export Products</button>
 </div>
-<table id="productsTable">
-<thead>
-<tr>
-<th>Name</th>
-<th>Cost</th>
-<th>Price</th>
-<th>Stock</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-<button class="btn btn-secondary" onclick="exportProducts()">Export Products</button>
+
+<div>
+<h3>Record Sale</h3>
+<label>Barcode: <input id="saleBarcode"></label>
+<label>Qty: <input id="saleQty" type="number" value="1"></label>
+<label>Buyer: <input id="saleBuyer"></label>
+<label>Note: <input id="saleNote"></label>
+<button onclick="recordSale()">Record Sale</button>
+<button onclick="startSaleScanner()">Scan to Sell</button>
+<div id="scannerContainer"></div>
+</div>
+
+<div id="productList"></div>
+<div id="salesList"></div>
 </section>
 
-<!-- SALES SECTION -->
-<section id="sales">
-<h2>JNK Products Sales</h2>
-<div class="form-inline">
-<select id="saleProduct"></select>
-<input type="number" id="saleQty" placeholder="Quantity" min="1">
-<select id="salePayment">
-<option value="Cash">Cash</option>
-<option value="GCash">GCash</option>
-<option value="Maya">Maya</option>
-<option value="Credit">Credit</option>
-</select>
-<input type="text" id="saleCustomer" placeholder="Customer (optional)">
-<button class="btn btn-primary" onclick="recordSale()">Record Sale & Print</button>
-<button class="btn btn-secondary" onclick="exportSales()">Export Sales CSV</button>
+<!-- ========================== ANALYTICS ========================== -->
+<section id="analyticsTab">
+<h2>Analytics</h2>
+<div>
+<label>From: <input type="date" id="anaFrom"></label>
+<label>To: <input type="date" id="anaTo"></label>
+<button onclick="loadAnalytics()">Load</button>
+<button onclick="exportAnalyticsExcel()">Export Excel</button>
+<button onclick="exportAnalyticsPDF()">Export PDF</button>
+<button onclick="quickRange('today')">Today</button>
+<button onclick="quickRange('week')">This Week</button>
+<button onclick="quickRange('month')">This Month</button>
 </div>
-<table id="salesTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Product</th>
-<th>Qty</th>
-<th>Price</th>
-<th>Total</th>
-<th>Payment</th>
-<th>Customer</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-<h3>Analytics</h3>
-<canvas id="salesChart"></canvas>
-<canvas id="paymentChart"></canvas>
+<div id="kpis">
+<div>Total Parcels: <span id="kpiParcels"></span></div>
+<div>Total Revenue: <span id="kpiRevenue"></span></div>
+<div>Avg Price: <span id="kpiAvg"></span></div>
+<div>Repeat Customers: <span id="kpiRepeat"></span></div>
+</div>
+<canvas id="chartParcels"></canvas>
+<canvas id="chartRevenue"></canvas>
+<canvas id="chartBarangay"></canvas>
+<table id="topBarangaysTable"><thead><tr><th>Barangay</th><th>Parcels</th></tr></thead><tbody></tbody></table>
 </section>
-
-<!-- Hidden iframe for receipt printing -->
-<iframe id="receiptFrame" class="receipt-frame"></iframe>
 
 <script>
-// Firebase configuration (your real config)
+// ========================== TABS ==========================
+function openTab(id){
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ========================== FIREBASE INIT ==========================
 const firebaseConfig = {
-apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-authDomain: "jnk-ordertracker.firebaseapp.com",
-projectId: "jnk-ordertracker",
-storageBucket: "jnk-ordertracker.firebasestorage.app",
-messagingSenderId: "421193030070",
-appId: "1:421193030070:web:078e39980237bc41f64917"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const PASSWORD = "admin123";
 
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-btn.addEventListener('click',()=> {
-document.querySelectorAll('section').forEach(sec=>sec.classList.remove('active'));
-document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-document.getElementById(btn.dataset.tab).classList.add('active');
-btn.classList.add('active');
-});
-});
-
-// PARCEL TRACKING FUNCTIONS
-function addParcel(){
-const name=document.getElementById('parcelName').value;
-const barangay=document.getElementById('parcelBarangay').value;
-const tracking=document.getElementById('parcelTracking').value;
-const price=parseFloat(document.getElementById('parcelPrice').value)||0;
-const status=document.getElementById('parcelStatus').value;
-if(!name||!tracking){ alert('Name and Tracking required'); return; }
-db.collection('parcels').add({
-name, barangay, tracking, price, status, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-}).then(()=>{ alert('Parcel added'); loadParcels(); });
+// ========================== PARCEL FUNCTIONS ==========================
+let allEntries = [];
+async function loadAllParcels(){
+  const snap = await db.collection('tracking').orderBy('timestamp','desc').get();
+  allEntries = snap.docs.map(d=>({id:d.id, ...d.data(), timestamp:d.data().timestamp?.toDate()}));
 }
-// Load parcels from Firestore
-function loadParcels(){
-  db.collection('parcels').orderBy('timestamp','desc').get().then(snapshot=>{
-    const tbody=document.querySelector('#parcelsTable tbody');
-    tbody.innerHTML='';
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${data.timestamp?new Date(data.timestamp.seconds*1000).toLocaleString():''}</td>
-        <td>${data.tracking}</td>
-        <td>${data.name}</td>
-        <td>${data.barangay}</td>
-        <td>${data.price}</td>
-        <td>${data.status}</td>
-        <td>
-          <button class="btn btn-primary" onclick="editParcel('${doc.id}')">Edit</button>
-          <button class="btn btn-danger" onclick="deleteParcel('${doc.id}')">Delete</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  });
+function printParcelReceipt(){
+  const id = document.getElementById('parcelTracking').value.trim();
+  const name = document.getElementById('parcelName').value.trim();
+  const barangay = document.getElementById('parcelBarangay').value.trim();
+  const price = document.getElementById('parcelPrice').value.trim();
+  const status = document.getElementById('parcelStatus').value;
+
+  if(!id) return alert('Tracking number required.');
+  const docRef = db.collection('tracking').doc(id);
+  const data = {
+    parcelName:name, barangay, price:Number(price)||0,
+    statusHistory:[{status,timestamp:firebase.firestore.Timestamp.now()}],
+    timestamp:firebase.firestore.Timestamp.now()
+  };
+  docRef.set(data, {merge:true});
+  
+  const receiptWin = window.open('','_blank');
+  receiptWin.document.write(`<pre style="font-family:monospace;text-align:center">
+<img src="https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/logo.jpg" width="80">
+JNK EXPRESS
+----------------------------
+Tracking #: ${id}
+Name: ${name}
+Barangay: ${barangay}
+Price: ₱${price}
+Status: ${status}
+----------------------------
+Thank you for your support
+</pre>`);
+  receiptWin.print();
+  receiptWin.close();
+  alert('Parcel saved and printed.');
+  loadAllParcels();
 }
 
-// Search / Filter
-function searchParcelFunc(){
-  const query=document.getElementById('searchParcel').value.toLowerCase();
-  document.querySelectorAll('#parcelsTable tbody tr').forEach(tr=>{
-    tr.style.display=tr.innerText.toLowerCase().includes(query)?'':'none';
-  });
-}
-function clearSearch(){ document.getElementById('searchParcel').value=''; searchParcelFunc(); }
+// ========================== PRODUCTS ==========================
+async function saveProduct(){
+  const barcode = (document.getElementById('prodBarcode').value || '').trim();
+  const name = (document.getElementById('prodName').value || '').trim();
+  const category = (document.getElementById('prodCategory').value || '').trim();
+  const price = Number(document.getElementById('prodPrice').value) || 0;
+  const stock = Number(document.getElementById('prodStock').value) || 0;
+  const notes = (document.getElementById('prodNotes').value || '').trim();
+  if(!barcode || !name || !category) return alert('Barcode, name and category required.');
 
-// Pagination (simple)
-let currentPage=1; const itemsPerPage=10;
-function prevPage(){ if(currentPage>1){ currentPage--; renderPage(); } }
-function nextPage(){ currentPage++; renderPage(); }
-function renderPage(){/* implement page slicing if needed */}
-
-// Bulk update
-function bulkUpdateStatus(){
-  const newStatus=prompt('Enter new status:'); if(!newStatus)return;
-  db.collection('parcels').get().then(snapshot=>{
-    snapshot.forEach(doc=>{
-      db.collection('parcels').doc(doc.id).update({status:newStatus});
-    });
-    alert('Bulk update complete'); loadParcels();
-  });
-}
-
-// Export parcels placeholder
-function exportParcels(){ /* implement CSV export if needed */ }
-
-// PRODUCTS CRUD
-function addOrUpdateProduct(){
-  const name=document.getElementById('productName').value;
-  const cost=parseFloat(document.getElementById('productCost').value)||0;
-  const price=parseFloat(document.getElementById('productPrice').value)||0;
-  const stock=parseInt(document.getElementById('productStock').value)||0;
-  if(!name){ alert('Product name required'); return; }
-
-  db.collection('products').where('name','==',name).get().then(snapshot=>{
-    if(snapshot.empty){
-      db.collection('products').add({name,cost,price,stock}).then(()=>{ loadProducts(); });
-    } else {
-      snapshot.forEach(doc=>{
-        db.collection('products').doc(doc.id).update({
-          cost, price, stock: firebase.firestore.FieldValue.increment(stock)
-        });
-      });
-    }
-  });
-}
-
-function loadProducts(){
-  db.collection('products').get().then(snapshot=>{
-    const tbody=document.querySelector('#productsTable tbody');
-    const selectSale=document.getElementById('saleProduct');
-    tbody.innerHTML=''; selectSale.innerHTML='';
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${data.name}</td>
-        <td>${data.cost}</td>
-        <td>${data.price}</td>
-        <td>${data.stock}</td>
-        <td><button class="btn btn-danger" onclick="deleteProduct('${doc.id}')">Delete</button></td>
-      `;
-      tbody.appendChild(tr);
-      const option=document.createElement('option'); option.value=data.name; option.text=data.name; selectSale.appendChild(option);
-    });
-  });
-}
-
-function deleteProduct(id){ if(confirm('Delete product?')) db.collection('products').doc(id).delete().then(()=>{ loadProducts(); }); }
-// RECORD SALES & PRINT RECEIPT
-function recordSale(){
-  const productName=document.getElementById('saleProduct').value;
-  const qty=parseInt(document.getElementById('saleQty').value)||1;
-  const payment=document.getElementById('salePayment').value;
-  const customer=document.getElementById('saleCustomer').value||'';
-  if(!productName){ alert('Select product'); return; }
-
-  db.collection('products').where('name','==',productName).get().then(snapshot=>{
-    if(snapshot.empty){ alert('Product not found'); return; }
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      if(data.stock<qty){ alert('Insufficient stock'); return; }
-      const total=data.price*qty;
-
-      // Save sale
-      db.collection('sales').add({
-        product:productName,
-        qty,
-        price:data.price,
-        total,
-        payment,
-        customer,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(()=>{
-        // Deduct stock
-        db.collection('products').doc(doc.id).update({stock:firebase.firestore.FieldValue.increment(-qty)});
-        loadProducts(); loadSales(); 
-        printSaleReceipt(productName,qty,data.price,total,payment,customer);
-        alert('Sale recorded');
-      });
-    });
-  });
-}
-
-// LOAD SALES TABLE
-function loadSales(){
-  db.collection('sales').orderBy('timestamp','desc').get().then(snapshot=>{
-    const tbody=document.querySelector('#salesTable tbody'); tbody.innerHTML='';
-    const salesData=[]; const paymentData={};
-    snapshot.forEach(doc=>{
-      const data=doc.data();
-      const tr=document.createElement('tr');
-      const dateStr=data.timestamp?new Date(data.timestamp.seconds*1000).toLocaleString():'';
-      tr.innerHTML=`<td>${dateStr}</td><td>${data.product}</td><td>${data.qty}</td><td>${data.price}</td><td>${data.total}</td><td>${data.payment}</td><td>${data.customer}</td>`;
-      tbody.appendChild(tr);
-      salesData.push(data.total);
-      paymentData[data.payment]=(paymentData[data.payment]||0)+data.total;
-    });
-    drawSalesChart(salesData); drawPaymentChart(paymentData);
-  });
-}
-
-// PRINT RECEIPT
-function printSaleReceipt(name,qty,price,total,payment,customer){
-  const iframe=document.getElementById('receiptFrame');
-  const content=`<html><head><style>
-  body{font-family:monospace; width:50mm;}
-  h2{text-align:center;} p{margin:2px;}
-  </style></head><body>
-  <h2>URBAN FINDS by JNK</h2>
-  <p>Product: ${name}</p>
-  <p>Qty: ${qty}</p>
-  <p>Price: ${price}</p>
-  <p>Total: ${total}</p>
-  <p>Payment: ${payment}</p>
-  <p>Customer: ${customer}</p>
-  <p>Thank you for your support!</p>
-  </body></html>`;
-  iframe.contentDocument.open(); iframe.contentDocument.write(content); iframe.contentDocument.close();
-  iframe.contentWindow.focus(); iframe.contentWindow.print();
-}
-
-// EXPORT SALES
-function exportSales(){ /* implement CSV export if needed */ }
-
-// ANALYTICS CHARTS
-function drawSalesChart(salesData){
-  const ctx=document.getElementById('salesChart').getContext('2d');
-  new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:salesData.map((_,i)=>i+1),
-      datasets:[{label:'Sales Total',data:salesData,borderColor:'green',fill:false}]
-    }
-  });
-}
-function drawPaymentChart(paymentData){
-  const ctx=document.getElementById('paymentChart').getContext('2d');
-  new Chart(ctx,{
-    type:'pie',
-    data:{
-      labels:Object.keys(paymentData),
-      datasets:[{data:Object.values(paymentData),backgroundColor:['#1abc9c','#3498db','#e74c3c','#9b59b6']}]
-    }
-  });
-}
-// INITIALIZATION
-window.onload = function(){
-  loadParcels();
+  await db.collection('products').doc(barcode).set({name, category, price, stock, notes, createdAt:firebase.firestore.Timestamp.now()}, {merge:true});
+  document.getElementById('prodBarcode').value='';
+  document.getElementById('prodName').value='';
+  document.getElementById('prodCategory').value='';
+  document.getElementById('prodPrice').value='';
+  document.getElementById('prodStock').value='';
+  document.getElementById('prodNotes').value='';
   loadProducts();
-  loadSales();
-  initBarcodeScanner();
-};
-
-// BARCODE SCANNER (simple keypress listener for scanner input)
-function initBarcodeScanner(){
-  let barcode='';
-  let interval;
-  document.addEventListener('keypress', function(e){
-    if(interval) clearTimeout(interval);
-    if(e.key==='Enter'){
-      if(barcode.length>3){
-        document.getElementById('parcelTracking').value = barcode;
-        addParcel();
-      }
-      barcode='';
-      return;
-    }
-    barcode += e.key;
-    interval = setTimeout(()=>{ barcode=''; },100);
+  alert('Product saved.');
+}
+async function loadProducts(){
+  const list = document.getElementById('productList');
+  const snap = await db.collection('products').orderBy('createdAt','desc').get();
+  if(snap.empty){ list.innerHTML='<div>No products</div>'; return;}
+  list.innerHTML='';
+  snap.docs.forEach(d=>{
+    const data=d.data();
+    const el=document.createElement('div');
+    el.className='item';
+    el.innerHTML=`
+      <div>
+        <div style="font-weight:700">${d.id} - ${data.name}</div>
+        <div class="muted small">Category:${data.category} | Price: ₱${data.price} | Stock: ${data.stock}</div>
+        <div class="muted small">${data.notes||''}</div>
+      </div>
+      <div>
+        <button onclick="editProduct('${d.id}')">Edit</button>
+        <button onclick="deleteProduct('${d.id}')">Delete</button>
+      </div>`;
+    list.appendChild(el);
   });
 }
+async function editProduct(id){
+  const doc=await db.collection('products').doc(id).get();
+  if(!doc.exists) return alert('Product not found.');
+  const d=doc.data();
+  document.getElementById('prodBarcode').value=id;
+  document.getElementById('prodName').value=d.name||'';
+  document.getElementById('prodCategory').value=d.category||'';
+  document.getElementById('prodPrice').value=d.price||'';
+  document.getElementById('prodStock').value=d.stock||'';
+  document.getElementById('prodNotes').value=d.notes||'';
+}
+async function deleteProduct(id){
+  const confirmPass=prompt('Enter admin password to delete product:');
+  if(confirmPass!==PASSWORD) return alert('Incorrect password.');
+  await db.collection('products').doc(id).delete();
+  loadProducts();
+  alert('Deleted product.');
+}
 
-// EDIT / DELETE PARCEL HELPERS
-function editParcel(id){
-  db.collection('parcels').doc(id).get().then(doc=>{
-    const data=doc.data();
-    document.getElementById('parcelName').value=data.name;
-    document.getElementById('parcelBarangay').value=data.barangay;
-    document.getElementById('parcelTracking').value=data.tracking;
-    document.getElementById('parcelPrice').value=data.price;
-    document.getElementById('parcelStatus').value=data.status;
-    if(confirm('Update parcel now?')){ 
-      db.collection('parcels').doc(id).update({
-        name:data.name, barangay:data.barangay, tracking:data.tracking, price:data.price, status:data.status
-      }).then(()=>{ loadParcels(); });
-    }
+// SALES
+let saleScanner;
+async function recordSale(){
+  const barcode=document.getElementById('saleBarcode').value.trim();
+  const qty=Number(document.getElementById('saleQty').value)||1;
+  const buyer=document.getElementById('saleBuyer').value.trim();
+  const note=document.getElementById('saleNote').value.trim();
+  if(!barcode||qty<=0) return alert('Barcode and positive qty required.');
+
+  const prodRef=db.collection('products').doc(barcode);
+  const snap=await prodRef.get();
+  if(!snap.exists) return alert('Product not found.');
+  const prod=snap.data();
+  const price=Number(prod.price)||0;
+  const total=price*qty;
+  const sale={productId:barcode, productName:prod.name, category:prod.category, qty, price, total, buyer, note, timestamp:firebase.firestore.Timestamp.now()};
+  await db.collection('sales').add(sale);
+
+  // decrement stock
+  await prodRef.update({stock:Math.max(0,(prod.stock||0)-qty)});
+
+  // print receipt
+  const win=window.open('','_blank');
+  win.document.write(`<pre style="font-family:monospace;text-align:center">
+URBAN FINDS by JNK
+----------------------------
+Product: ${prod.name}
+Barcode: ${barcode}
+Qty: ${qty}
+Price: ₱${price}
+Total: ₱${total}
+Buyer: ${buyer}
+${note ? 'Note: '+note : ''}
+----------------------------
+Thank you for your purchase
+</pre>`);
+  win.print();
+  win.close();
+
+  document.getElementById('saleBarcode').value='';
+  document.getElementById('saleQty').value=1;
+  document.getElementById('saleBuyer').value='';
+  document.getElementById('saleNote').value='';
+  loadProducts(); loadSales();
+  alert('Sale recorded and printed.');
+}
+async function loadSales(){
+  const list=document.getElementById('salesList');
+  const snap=await db.collection('sales').orderBy('timestamp','desc').limit(50).get();
+  if(snap.empty){ list.innerHTML='<div>No recent sales</div>'; return;}
+  list.innerHTML='';
+  snap.docs.forEach(d=>{
+    const data=d.data();
+    const el=document.createElement('div');
+    el.className='item';
+    el.innerHTML=`
+      <div>
+        <div style="font-weight:700">${data.productName} (${data.productId})</div>
+        <div class="muted small">Qty: ${data.qty} | Price: ₱${data.price} | Total: ₱${data.total}</div>
+        <div class="muted small">${data.buyer || ''} ${data.note ? '• '+data.note : ''}</div>
+        <div class="muted small">${data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : ''}</div>
+      </div>`;
+    list.appendChild(el);
   });
 }
-function deleteParcel(id){ if(confirm('Delete parcel?')) db.collection('parcels').doc(id).delete().then(()=>{ loadParcels(); }); }
+function startSaleScanner(){
+  if(!saleScanner) saleScanner=new Html5Qrcode("scannerContainer");
+  document.getElementById('scannerContainer').style.display='block';
+  saleScanner.start({facingMode:"environment"},{fps:10,qrbox:250},decoded=>{
+    document.getElementById('saleBarcode').value=decoded.trim();
+    stopSaleScanner();
+  },()=>{});
+}
+function stopSaleScanner(){
+  document.getElementById('scannerContainer').style.display='none';
+  if(saleScanner) saleScanner.stop().then(()=>saleScanner.clear()).catch(()=>{});
+}
 
-// CSV EXPORT PLACEHOLDER FUNCTIONS
-function exportProducts(){ /* implement CSV export if needed */ }
-function exportSales(){ /* implement CSV export if needed */ }
-function exportParcels(){ /* implement CSV export if needed */ }
+// Export Products
+async function exportProductsExcel(){
+  const snap=await db.collection('products').get();
+  const aoa=[["Barcode","Name","Category","Price","Stock","Notes","CreatedAt"]];
+  snap.docs.forEach(d=>{
+    const x=d.data();
+    aoa.push([d.id,x.name||'',x.category||'',x.price||0,x.stock||0,x.notes||'',x.createdAt?.toDate ? x.createdAt.toDate().toLocaleString():'']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Products");
+  XLSX.writeFile(wb,`products_${Date.now()}.xlsx`);
+}
 
+// INIT
+function initOnLogin(){ loadProducts(); loadSales(); loadAllParcels(); }
+initOnLogin();
+db.collection && db.collection('products').onSnapshot && db.collection('products').onSnapshot(()=>loadProducts());
+db.collection && db.collection('sales').onSnapshot && db.collection('sales').onSnapshot(()=>loadSales());
 </script>
 </body>
 </html>
