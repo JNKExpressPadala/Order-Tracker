@@ -2,40 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel - JNK Express & Urban Finds</title>
+<title>Admin Panel - JNK Express</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-<!-- Chart.js for analytics -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- Original CSS preserved -->
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f5f7fb; }
-header { background:#2b3d52; color:#fff; padding:15px; text-align:center; font-size:20px; }
-nav { display:flex; background:#34495e; }
-nav button { flex:1; padding:12px; border:none; background:#34495e; color:#fff; cursor:pointer; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f2f2f2; margin:0; padding:0;}
+header { background-color:#34495e; color:#fff; padding:15px 20px; font-size:20px; text-align:center; }
+nav { display:flex; background-color:#2c3e50; }
+nav button { flex:1; padding:12px; background:#2c3e50; color:#fff; border:none; cursor:pointer; font-size:16px; transition:0.3s; }
 nav button.active { background:#1abc9c; }
 section { display:none; padding:20px; }
 section.active { display:block; }
-table { width:100%; border-collapse: collapse; margin-top:15px; background:#fff; }
+table { width:100%; border-collapse: collapse; margin-top:15px; background-color:#fff; }
 th, td { border:1px solid #ddd; padding:10px; text-align:center; }
-th { background:#2c3e50; color:#fff; }
-tr.low-stock { background:#f8d7da; }
-.form-inline input, .form-inline select { padding:6px; margin:3px; }
-.btn { padding:8px 15px; border:none; cursor:pointer; margin:5px; }
-.btn-primary { background:#1abc9c; color:#fff; }
-.btn-danger { background:#e74c3c; color:#fff; }
-.btn-secondary { background:#3498db; color:#fff; }
+th { background-color:#34495e; color:#fff; }
+tr.low-stock { background-color:#f8d7da; }
+.form-inline input, .form-inline select { padding:6px; margin:3px; font-size:14px; }
+.btn { padding:8px 15px; border:none; cursor:pointer; margin:5px; font-size:14px; }
+.btn-primary { background-color:#1abc9c; color:#fff; }
+.btn-secondary { background-color:#3498db; color:#fff; }
+.btn-danger { background-color:#e74c3c; color:#fff; }
 canvas { max-width:500px; margin:20px auto; display:block; }
 .receipt-frame { display:none; }
 </style>
 </head>
 <body>
 
-<header>📦 Admin Panel - JNK Express & Urban Finds</header>
+<header>📦 Admin Panel - JNK Express</header>
 
 <nav>
   <button class="tab-btn active" data-tab="tracking">Parcel Tracking</button>
@@ -43,11 +44,12 @@ canvas { max-width:500px; margin:20px auto; display:block; }
   <button class="tab-btn" data-tab="sales">JNK Products Sales</button>
 </nav>
 
+<!-- PARCEL TRACKING SECTION -->
 <section id="tracking" class="active">
 <h2>Parcel Tracking</h2>
 <div id="trackingArea">
 
-<!-- PARCEL TRACKING FORM -->
+<!-- Parcel form -->
 <div class="form-inline">
 <input type="text" id="parcelName" placeholder="Parcel Name">
 <input type="text" id="parcelBarangay" placeholder="Barangay">
@@ -62,7 +64,7 @@ canvas { max-width:500px; margin:20px auto; display:block; }
 <button class="btn btn-primary" onclick="addParcel()">Add Parcel</button>
 </div>
 
-<!-- PARCELS TABLE -->
+<!-- Parcels table -->
 <table id="parcelsTable">
 <thead>
 <tr>
@@ -78,20 +80,20 @@ canvas { max-width:500px; margin:20px auto; display:block; }
 <tbody></tbody>
 </table>
 
-<!-- PARCEL SEARCH / FILTER -->
+<!-- Search / Filter -->
 <div class="form-inline">
 <input type="text" id="searchParcel" placeholder="Search by tracking # or name">
 <button class="btn btn-secondary" onclick="searchParcelFunc()">Search</button>
 <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
 </div>
 
-<!-- EXISTING BULK UPDATE / EXPORT BUTTONS -->
+<!-- Bulk update & export -->
 <div class="form-inline">
 <button class="btn btn-secondary" onclick="exportParcels()">Export Parcels CSV</button>
 <button class="btn btn-secondary" onclick="bulkUpdateStatus()">Bulk Update Status</button>
 </div>
 
-<!-- Existing pagination controls -->
+<!-- Pagination -->
 <div id="paginationControls" class="form-inline">
 <button class="btn btn-secondary" onclick="prevPage()">Prev</button>
 <span id="currentPage">1</span>
@@ -165,7 +167,7 @@ canvas { max-width:500px; margin:20px auto; display:block; }
 <iframe id="receiptFrame" class="receipt-frame"></iframe>
 
 <script>
-// Firebase configuration
+// Firebase configuration (your real config)
 const firebaseConfig = {
 apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
 authDomain: "jnk-ordertracker.firebaseapp.com",
@@ -188,14 +190,13 @@ btn.classList.add('active');
 });
 
 // PARCEL TRACKING FUNCTIONS
-function addParcel() {
-// fetch values
-const name = document.getElementById('parcelName').value;
-const barangay = document.getElementById('parcelBarangay').value;
-const tracking = document.getElementById('parcelTracking').value;
-const price = parseFloat(document.getElementById('parcelPrice').value) || 0;
-const status = document.getElementById('parcelStatus').value;
-if(!name || !tracking) { alert('Name and Tracking required'); return; }
+function addParcel(){
+const name=document.getElementById('parcelName').value;
+const barangay=document.getElementById('parcelBarangay').value;
+const tracking=document.getElementById('parcelTracking').value;
+const price=parseFloat(document.getElementById('parcelPrice').value)||0;
+const status=document.getElementById('parcelStatus').value;
+if(!name||!tracking){ alert('Name and Tracking required'); return; }
 db.collection('parcels').add({
 name, barangay, tracking, price, status, timestamp: firebase.firestore.FieldValue.serverTimestamp()
 }).then(()=>{ alert('Parcel added'); loadParcels(); });
@@ -203,13 +204,13 @@ name, barangay, tracking, price, status, timestamp: firebase.firestore.FieldValu
 // Load parcels from Firestore
 function loadParcels(){
   db.collection('parcels').orderBy('timestamp','desc').get().then(snapshot=>{
-    const tbody = document.querySelector('#parcelsTable tbody');
+    const tbody=document.querySelector('#parcelsTable tbody');
     tbody.innerHTML='';
     snapshot.forEach(doc=>{
-      const data = doc.data();
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${data.timestamp ? new Date(data.timestamp.seconds*1000).toLocaleString() : ''}</td>
+      const data=doc.data();
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${data.timestamp?new Date(data.timestamp.seconds*1000).toLocaleString():''}</td>
         <td>${data.tracking}</td>
         <td>${data.name}</td>
         <td>${data.barangay}</td>
@@ -225,44 +226,51 @@ function loadParcels(){
   });
 }
 
+// Search / Filter
 function searchParcelFunc(){
-  const query = document.getElementById('searchParcel').value.toLowerCase();
+  const query=document.getElementById('searchParcel').value.toLowerCase();
   document.querySelectorAll('#parcelsTable tbody tr').forEach(tr=>{
-    tr.style.display = tr.innerText.toLowerCase().includes(query)?'':'none';
+    tr.style.display=tr.innerText.toLowerCase().includes(query)?'':'none';
   });
 }
 function clearSearch(){ document.getElementById('searchParcel').value=''; searchParcelFunc(); }
 
 // Pagination (simple)
 let currentPage=1; const itemsPerPage=10;
-function prevPage(){ if(currentPage>1){currentPage--; renderPage(); }}
+function prevPage(){ if(currentPage>1){ currentPage--; renderPage(); } }
 function nextPage(){ currentPage++; renderPage(); }
 function renderPage(){/* implement page slicing if needed */}
 
 // Bulk update
-function bulkUpdateStatus(){ const newStatus = prompt('Enter new status:'); if(!newStatus) return;
-db.collection('parcels').get().then(snapshot=>{
-  snapshot.forEach(doc=>{ db.collection('parcels').doc(doc.id).update({status:newStatus}); });
-  alert('Bulk update complete'); loadParcels();
-});}
+function bulkUpdateStatus(){
+  const newStatus=prompt('Enter new status:'); if(!newStatus)return;
+  db.collection('parcels').get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      db.collection('parcels').doc(doc.id).update({status:newStatus});
+    });
+    alert('Bulk update complete'); loadParcels();
+  });
+}
 
-// Export parcels
-function exportParcels(){/* implement CSV export */}
+// Export parcels placeholder
+function exportParcels(){ /* implement CSV export if needed */ }
 
-// PRODUCT FUNCTIONS
+// PRODUCTS CRUD
 function addOrUpdateProduct(){
   const name=document.getElementById('productName').value;
   const cost=parseFloat(document.getElementById('productCost').value)||0;
   const price=parseFloat(document.getElementById('productPrice').value)||0;
   const stock=parseInt(document.getElementById('productStock').value)||0;
   if(!name){ alert('Product name required'); return; }
-  // check if product exists
+
   db.collection('products').where('name','==',name).get().then(snapshot=>{
     if(snapshot.empty){
       db.collection('products').add({name,cost,price,stock}).then(()=>{ loadProducts(); });
     } else {
       snapshot.forEach(doc=>{
-        db.collection('products').doc(doc.id).update({cost,price,stock:firebase.firestore.FieldValue.increment(stock)});
+        db.collection('products').doc(doc.id).update({
+          cost, price, stock: firebase.firestore.FieldValue.increment(stock)
+        });
       });
     }
   });
@@ -270,12 +278,12 @@ function addOrUpdateProduct(){
 
 function loadProducts(){
   db.collection('products').get().then(snapshot=>{
-    const tbody = document.querySelector('#productsTable tbody');
-    const selectSale = document.getElementById('saleProduct');
+    const tbody=document.querySelector('#productsTable tbody');
+    const selectSale=document.getElementById('saleProduct');
     tbody.innerHTML=''; selectSale.innerHTML='';
     snapshot.forEach(doc=>{
-      const data = doc.data();
-      const tr = document.createElement('tr');
+      const data=doc.data();
+      const tr=document.createElement('tr');
       tr.innerHTML=`
         <td>${data.name}</td>
         <td>${data.cost}</td>
@@ -284,10 +292,11 @@ function loadProducts(){
         <td><button class="btn btn-danger" onclick="deleteProduct('${doc.id}')">Delete</button></td>
       `;
       tbody.appendChild(tr);
-      const option = document.createElement('option'); option.value=data.name; option.text=data.name; selectSale.appendChild(option);
+      const option=document.createElement('option'); option.value=data.name; option.text=data.name; selectSale.appendChild(option);
     });
   });
 }
+
 function deleteProduct(id){ if(confirm('Delete product?')) db.collection('products').doc(id).delete().then(()=>{ loadProducts(); }); }
 // RECORD SALES & PRINT RECEIPT
 function recordSale(){
@@ -297,13 +306,13 @@ function recordSale(){
   const customer=document.getElementById('saleCustomer').value||'';
   if(!productName){ alert('Select product'); return; }
 
-  // Get product price & stock
   db.collection('products').where('name','==',productName).get().then(snapshot=>{
     if(snapshot.empty){ alert('Product not found'); return; }
     snapshot.forEach(doc=>{
       const data=doc.data();
       if(data.stock<qty){ alert('Insufficient stock'); return; }
       const total=data.price*qty;
+
       // Save sale
       db.collection('sales').add({
         product:productName,
@@ -316,7 +325,8 @@ function recordSale(){
       }).then(()=>{
         // Deduct stock
         db.collection('products').doc(doc.id).update({stock:firebase.firestore.FieldValue.increment(-qty)});
-        loadProducts(); loadSales(); printSaleReceipt(productName,qty,data.price,total,payment,customer);
+        loadProducts(); loadSales(); 
+        printSaleReceipt(productName,qty,data.price,total,payment,customer);
         alert('Sale recorded');
       });
     });
@@ -327,8 +337,7 @@ function recordSale(){
 function loadSales(){
   db.collection('sales').orderBy('timestamp','desc').get().then(snapshot=>{
     const tbody=document.querySelector('#salesTable tbody'); tbody.innerHTML='';
-    const salesData=[];
-    const paymentData={};
+    const salesData=[]; const paymentData={};
     snapshot.forEach(doc=>{
       const data=doc.data();
       const tr=document.createElement('tr');
@@ -363,16 +372,28 @@ function printSaleReceipt(name,qty,price,total,payment,customer){
 }
 
 // EXPORT SALES
-function exportSales(){/* implement CSV export */}
+function exportSales(){ /* implement CSV export if needed */ }
 
 // ANALYTICS CHARTS
 function drawSalesChart(salesData){
   const ctx=document.getElementById('salesChart').getContext('2d');
-  new Chart(ctx,{type:'line',data:{labels:salesData.map((_,i)=>i+1),datasets:[{label:'Sales Total',data:salesData, borderColor:'green',fill:false}]}});
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:salesData.map((_,i)=>i+1),
+      datasets:[{label:'Sales Total',data:salesData,borderColor:'green',fill:false}]
+    }
+  });
 }
 function drawPaymentChart(paymentData){
   const ctx=document.getElementById('paymentChart').getContext('2d');
-  new Chart(ctx,{type:'pie',data:{labels:Object.keys(paymentData),datasets:[{data:Object.values(paymentData),backgroundColor:['#1abc9c','#3498db','#e74c3c','#9b59b6']}]}})
+  new Chart(ctx,{
+    type:'pie',
+    data:{
+      labels:Object.keys(paymentData),
+      datasets:[{data:Object.values(paymentData),backgroundColor:['#1abc9c','#3498db','#e74c3c','#9b59b6']}]
+    }
+  });
 }
 // INITIALIZATION
 window.onload = function(){
@@ -382,19 +403,18 @@ window.onload = function(){
   initBarcodeScanner();
 };
 
-// BARCODE SCANNER (example integration)
+// BARCODE SCANNER (simple keypress listener for scanner input)
 function initBarcodeScanner(){
-  // You can use any scanner library; here is a simple keypress listener
-  let barcode = '';
+  let barcode='';
   let interval;
   document.addEventListener('keypress', function(e){
     if(interval) clearTimeout(interval);
-    if(e.key === 'Enter'){
+    if(e.key==='Enter'){
       if(barcode.length>3){
         document.getElementById('parcelTracking').value = barcode;
         addParcel();
       }
-      barcode = '';
+      barcode='';
       return;
     }
     barcode += e.key;
@@ -402,7 +422,7 @@ function initBarcodeScanner(){
   });
 }
 
-// HELPER FUNCTIONS
+// EDIT / DELETE PARCEL HELPERS
 function editParcel(id){
   db.collection('parcels').doc(id).get().then(doc=>{
     const data=doc.data();
@@ -420,10 +440,10 @@ function editParcel(id){
 }
 function deleteParcel(id){ if(confirm('Delete parcel?')) db.collection('parcels').doc(id).delete().then(()=>{ loadParcels(); }); }
 
-// CSV EXPORT PLACEHOLDER (implement as needed)
-function exportProducts(){/* generate CSV from products table */ }
-function exportSales(){/* generate CSV from sales table */ }
-function exportParcels(){/* generate CSV from parcels table */ }
+// CSV EXPORT PLACEHOLDER FUNCTIONS
+function exportProducts(){ /* implement CSV export if needed */ }
+function exportSales(){ /* implement CSV export if needed */ }
+function exportParcels(){ /* implement CSV export if needed */ }
 
 </script>
 </body>
