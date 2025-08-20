@@ -30,6 +30,1139 @@
     }
     *{box-sizing:border-box}
     body{
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin:0; padding:24px;
+    }
+    h1,h2,h3{color:var(--brand); margin:0 0 12px}
+    .wrap{max-width:1100px; margin:auto}
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+    input, select, button, textarea{
+      width:100%; padding:10px; margin-top:10px;
+      font-size:1rem; border-radius:10px; border:1px solid #ddd;
+    }
+    button{
+      background:var(--brand); color:#fff; border:none; cursor:pointer;
+      transition:.12s transform ease;
+    }
+    button:hover{ transform: translateY(-1px); }
+
+    .tabs{ display:flex; gap:8px; margin:16px 0 20px; flex-wrap:wrap; align-items:center;}
+    .tab-btn{
+      padding:10px 14px; border-radius:999px; border:1px solid var(--brand);
+      background:#fff; color:var(--brand); font-weight:600; cursor:pointer;
+    }
+    .tab-btn.active{ background:var(--brand); color:#fff; }
+    .section{ display:none; }
+    .section.show{ display:block; }
+
+    .grid{ display:grid; gap:12px; }
+    @media (min-width:720px){ .grid.two{ grid-template-columns: 1fr 1fr; } }
+    @media (min-width:1000px){ .grid.three{ grid-template-columns: 1fr 1fr 1fr; } }
+
+    .item{
+      background:#fff; padding:12px; margin:10px 0;
+      border-left:5px solid var(--brand); border-radius:8px;
+      display:flex; gap:10px; justify-content:space-between; align-items:flex-start;
+      box-shadow:0 4px 16px rgba(0,0,0,.06);
+    }
+    .item .meta{color:var(--muted); font-size:.95rem}
+    .timeline{ margin-top:8px; padding-left:6px; font-size:.92rem; color:#333; }
+    .delete-btn{ background:#999; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+
+    .top-bar{ display:flex; gap:10px; flex-wrap:wrap; }
+    .pagination{ display:flex; justify-content:center; gap:10px; margin:14px 0; }
+
+    .kpis{ display:grid; gap:12px; grid-template-columns: repeat(2,1fr); }
+    @media (min-width:760px){ .kpis{ grid-template-columns: repeat(4,1fr); } }
+    .kpi{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+    .kpi .label{ color:var(--muted); font-size:.9rem }
+    .kpi .value{ font-size:1.6rem; font-weight:800 }
+    .chart-card{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+    .table{ width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; box-shadow:var(--shadow) }
+    .table th, .table td{ padding:10px 12px; border-bottom:1px solid #eee; text-align:left; }
+    .table th{ background:#fff6f6; color:#b61e24 }
+
+    /* product list / cards */
+    .product-card{
+      background:#fff; border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,.06);
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+    }
+    .muted{ color:var(--muted); font-size:.95rem; }
+
+    #receiptArea{ display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>JNK Admin Panel</h2>
+
+    <!-- LOGIN -->
+    <div id="loginSection" class="card">
+      <div class="grid two">
+        <div><input type="text" id="username" placeholder="Username" /></div>
+        <div><input type="password" id="password" placeholder="Password" /></div>
+      </div>
+      <div class="top-bar" style="margin-top:10px;">
+        <button onclick="login()">Login</button>
+        <div style="flex:1"></div>
+        <small class="muted">User: JNK / Pass: 11223344$</small>
+      </div>
+      <p id="loginMessage" style="color:#b61e24; margin:8px 2px 0;"></p>
+    </div>
+
+    <!-- APP -->
+    <div id="appSection" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
+        <button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
+        <button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
+        <div style="flex:1"></div>
+        <button class="tab-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- MANAGE SECTION -->
+      <div id="manageSection" class="section show">
+        <div class="card">
+          <h3>Add / Update Tracking Entry</h3>
+          <div class="grid two">
+            <input type="text" id="trackNumber" placeholder="Tracking Number" />
+            <input type="text" id="parcelName" placeholder="Parcel Name" />
+            <input type="text" id="barangay" placeholder="Barangay" />
+            <input type="number" id="price" placeholder="Price (PHP)" />
+            <select id="trackStatus">
+              <option value="">Select Status</option>
+              <option>Package Received</option>
+              <option>In Transit</option>
+              <option>Arrived</option>
+              <option>For Pick-up</option>
+            </select>
+            <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
+            <input type="date" id="estimatedDate" />
+          </div>
+          <div class="top-bar" style="margin-top:12px;">
+            <button onclick="saveTracking()">Add / Update</button>
+            <button onclick="printAndSave()">🖨️ Print Receipt</button>
+            <button onclick="startScanner()">📷 Scan Tracking</button>
+            <div style="flex:1"></div>
+            <small class="muted">Saving writes timestamp field used for analytics</small>
+          </div>
+
+          <div id="scannerContainer" style="display:none; margin-top:10px;">
+            <div id="scanner" style="width:100%"></div>
+            <div class="top-bar" style="margin-top:8px;">
+              <button class="delete-btn" onclick="stopScanner()">❌ Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div class="top-bar">
+            <input type="text" id="searchInput" placeholder="Search tracking number..." />
+            <button onclick="currentPage=1; renderEntries()">🔍 Search</button>
+            <div style="flex:1"></div>
+            <button onclick="loadAllEntries()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div class="top-bar">
+            <input type="date" id="excelFrom" />
+            <input type="date" id="excelTo" />
+            <button onclick="exportExcelByDateRange()">📊 Export Excel by Date (4 cols + totals)</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h3>Bulk Update by Time Range</h3>
+          <div class="grid two">
+            <div class="grid two">
+              <input type="date" id="bulkFromDate" />
+              <input type="time" id="bulkFromTime" />
+            </div>
+            <div class="grid two">
+              <input type="date" id="bulkToDate" />
+              <input type="time" id="bulkToTime" />
+            </div>
+            <select id="bulkStatus">
+              <option value="">Update Status to...</option>
+              <option>Package Received</option>
+              <option>In Transit</option>
+              <option>Arrived</option>
+              <option>For Pick-up</option>
+            </select>
+            <input type="text" id="bulkLocation" placeholder="Optional New Location" />
+          </div>
+          <div class="top-bar" style="margin-top:10px;">
+            <button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <h3>All Tracking Entries</h3>
+          <div id="entries"></div>
+          <div class="pagination">
+            <button onclick="prevPage()">Previous</button>
+            <button onclick="nextPage()">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS SECTION -->
+      <div id="productsSection" class="section">
+        <div class="card">
+          <h3>Products (Inventory & Sales)</h3>
+          <div class="grid two">
+            <input type="text" id="prodBarcode" placeholder="Barcode (ID)" />
+            <input type="text" id="prodName" placeholder="Product Name" />
+            <select id="prodCategory">
+              <option value="">Category</option>
+              <option>Beauty</option>
+              <option>Clothes</option>
+              <option>Other</option>
+            </select>
+            <input type="number" id="prodPrice" placeholder="Price (PHP)" />
+            <input type="number" id="prodStock" placeholder="Stock (qty)" />
+            <div>
+              <button onclick="addOrUpdateProduct()">Save Product</button>
+            </div>
+          </div>
+
+          <div class="top-bar" style="margin-top:12px;">
+            <input type="text" id="prodSearch" placeholder="Search products by name or barcode..." />
+            <button onclick="renderProducts()">Search</button>
+            <div style="flex:1"></div>
+            <button onclick="startScannerForProduct()">📷 Scan Product</button>
+            <button onclick="refreshProducts()">Refresh</button>
+          </div>
+
+          <div id="productsList" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h3>Record Sale (scan to auto-fill)</h3>
+          <div class="grid two">
+            <input type="text" id="saleProductId" placeholder="Product Barcode / ID" />
+            <input type="number" id="saleQty" placeholder="Quantity" value="1" />
+            <input type="text" id="saleCustomer" placeholder="Customer Name (optional)" />
+            <div>
+              <button onclick="recordSaleFromForm()">Record Sale</button>
+            </div>
+          </div>
+          <div class="top-bar" style="margin-top:10px;">
+            <button onclick="showSalesLog()">View Recent Sales</button>
+            <button onclick="exportSalesExcel()">Export Sales (Excel)</button>
+          </div>
+          <div id="salesLog" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS SECTION -->
+      <div id="analyticsSection" class="section">
+        <div class="card">
+          <h3>Analytics</h3>
+          <div class="top-bar">
+            <input type="date" id="anaFrom" />
+            <input type="date" id="anaTo" />
+            <button onclick="loadAnalytics()">Refresh</button>
+            <button onclick="quickRange('today')">Today</button>
+            <button onclick="quickRange('week')">This Week</button>
+            <button onclick="quickRange('month')">This Month</button>
+          </div>
+        </div>
+
+        <div class="kpis" style="margin-top:14px;">
+          <div class="kpi">
+            <div class="label">Total Parcels</div>
+            <div class="value" id="kpiParcels">0</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Total Revenue (₱)</div>
+            <div class="value" id="kpiRevenue">0</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Avg Price (₱)</div>
+            <div class="value" id="kpiAvg">0</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Repeat Customers</div>
+            <div class="value" id="kpiRepeat">0</div>
+          </div>
+        </div>
+
+        <div class="grid two" style="margin-top:14px;">
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;">Daily Parcel Count</h4>
+            <canvas id="chartParcels" height="120"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;">Daily Revenue (₱)</h4>
+            <canvas id="chartRevenue" height="120"></canvas>
+          </div>
+        </div>
+
+        <div class="grid two" style="margin-top:14px;">
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;">Barangay Distribution</h4>
+            <canvas id="chartBarangay" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h4 style="margin:0 0 8px;">Top Barangays</h4>
+            <table class="table" id="topBarangaysTable">
+              <thead><tr><th>Barangay</th><th>Parcels</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div class="top-bar" style="margin-top:10px;">
+              <button onclick="exportAnalyticsExcel()">Export Analytics (Excel)</button>
+              <button onclick="exportAnalyticsPDF()">Export Analytics (PDF)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products sales analytics -->
+        <div class="card" style="margin-top:14px;">
+          <h3>Product Sales Analytics</h3>
+          <div class="top-bar">
+            <button onclick="loadProductAnalytics()">Refresh Product Stats</button>
+            <div style="flex:1"></div>
+            <button onclick="exportProductAnalyticsExcel()">Export Product Analytics</button>
+          </div>
+          <div style="margin-top:12px;" class="grid two">
+            <div class="chart-card">
+              <h4 style="margin:0 0 8px;">Top Products (by qty sold)</h4>
+              <canvas id="chartTopProducts" height="140"></canvas>
+            </div>
+            <div class="card">
+              <h4 style="margin:0 0 8px;">Top Products Table</h4>
+              <table class="table" id="topProductsTable">
+                <thead><tr><th>Product</th><th>Category</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Hidden print receipt area -->
+    <div id="receiptArea"><div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div></div>
+  </div>
+
+<script>
+/* ========================== Firebase ========================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+  authDomain: "jnk-ordertracker.firebaseapp.com",
+  projectId: "jnk-ordertracker",
+  storageBucket: "jnk-ordertracker.appspot.com",
+  messagingSenderId: "421193030070",
+  appId: "1:421193030070:web:078e39980237bc41f64917"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ========================== Auth ========================== */
+const USERNAME = "JNK";
+const PASSWORD = "11223344$";
+let allEntries = [];
+let currentPage = 1;
+const pageSize = 10;
+
+function login() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  if (user === USERNAME && pass === PASSWORD) {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("appSection").style.display = "block";
+    showTab('manage');
+    loadAllEntries();
+    quickRange('month'); // default analytics range
+    renderProducts();
+    loadProductAnalytics();
+  } else {
+    document.getElementById("loginMessage").innerText = "Invalid login.";
+  }
+}
+function logout() {
+  document.getElementById("loginSection").style.display = "block";
+  document.getElementById("appSection").style.display = "none";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+}
+
+/* ========================== Tabs ========================== */
+function showTab(which){
+  const m = document.getElementById('manageSection');
+  const p = document.getElementById('productsSection');
+  const a = document.getElementById('analyticsSection');
+  const bm = document.getElementById('tabManageBtn');
+  const bp = document.getElementById('tabProductsBtn');
+  const ba = document.getElementById('tabAnalyticsBtn');
+  m.classList.remove('show'); p.classList.remove('show'); a.classList.remove('show');
+  bm.classList.remove('active'); bp.classList.remove('active'); ba.classList.remove('active');
+  if(which === 'manage'){ m.classList.add('show'); bm.classList.add('active'); }
+  if(which === 'products'){ p.classList.add('show'); bp.classList.add('active'); renderProducts(); }
+  if(which === 'analytics'){ a.classList.add('show'); ba.classList.add('active'); loadAnalytics(); loadProductAnalytics(); }
+}
+
+/* ========================== Scanner (tracking) ========================== */
+let scanner;
+function startScanner() {
+  document.getElementById("scannerContainer").style.display = "block";
+  scanner = new Html5Qrcode("scanner");
+  scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      document.getElementById("trackNumber").value = decodedText.trim().toUpperCase();
+      stopScanner();
+    },
+    () => {}
+  );
+}
+function stopScanner() {
+  document.getElementById("scannerContainer").style.display = "none";
+  if (scanner) scanner.stop().then(() => scanner.clear()).catch(()=>{});
+}
+
+/* ========================== Tracking Add/Update & Print ========================== */
+async function saveTracking() {
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const name = document.getElementById("parcelName").value.trim();
+  const barangay = document.getElementById("barangay").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
+  const estimatedDate = document.getElementById("estimatedDate").value;
+  const now = firebase.firestore.Timestamp.now();
+
+  if (!number || !name || !barangay || !price || !status) {
+    return alert("Complete all fields");
+  }
+  const docRef = db.collection("tracking").doc(number);
+  const docSnap = await docRef.get();
+  let statusHistory = docSnap.exists ? (docSnap.data().statusHistory || []) : [];
+  statusHistory.push({ status, timestamp: now });
+
+  await docRef.set({
+    parcelName: name,
+    barangay: barangay,
+    location,
+    price,
+    estimatedDate,
+    statusHistory,
+    timestamp: now
+  });
+
+  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
+    .forEach(id => document.getElementById(id).value = "");
+  loadAllEntries();
+  alert("✅ Saved.");
+}
+
+async function printAndSave() {
+  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
+  const name = document.getElementById("parcelName").value.trim();
+  const barangay = document.getElementById("barangay").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const status = document.getElementById("trackStatus").value;
+  const location = document.getElementById("trackLocation").value.trim();
+  const estimatedDate = document.getElementById("estimatedDate").value;
+  const now = firebase.firestore.Timestamp.now();
+
+  if (!number || !name || !barangay || !price || !status) return alert("Complete all fields");
+  const docRef = db.collection("tracking").doc(number);
+  const docSnap = await docRef.get();
+  let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
+  statusHistory.push({ status, timestamp: now });
+
+  await docRef.set({
+    parcelName: name,
+    barangay: barangay,
+    location,
+    price,
+    estimatedDate,
+    statusHistory,
+    timestamp: now
+  });
+
+  const logoUrl = "logo.jpg";
+  const content = `
+    <div style="width:48mm;height:78mm;padding:1mm;font-size:10pt;font-family:monospace;text-align:center;">
+      <img src="${logoUrl}" style="width:30mm;margin-bottom:2mm;" /><br>
+      <strong style="font-size:11pt;">JNK Express Padala</strong><br><br>
+      <strong>${name}</strong><br>
+      Brgy: ${barangay}<br>
+      Price: ₱${price}<br>
+      Tracking #: ${number}<br>
+      <small>${new Date().toLocaleString()}</small><br><br>
+      <em>Salamat sa tiwala KA-JNK!!</em>
+    </div>`;
+
+  const printWin = window.open('', '_blank', 'width=200,height=200');
+  printWin.document.write(`
+    <html><head><title>Print</title>
+    <style>@page{size:50mm 80mm portrait;margin:0}body{margin:0;width:50mm;height:80mm}</style>
+    </head><body onload="window.print(); window.close();">${content}</body></html>`);
+  printWin.document.close();
+
+  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
+    .forEach(id => document.getElementById(id).value = "");
+  loadAllEntries();
+}
+
+/* ========================== Load / List / Pagination (tracking) ========================== */
+function loadAllEntries() {
+  db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    allEntries = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        parcelName: data.parcelName || '-',
+        barangay: data.barangay || '-',
+        location: data.location || '-',
+        price: data.price || '-',
+        statusHistory: data.statusHistory || [],
+        estimatedDate: data.estimatedDate || '-',
+        timestamp: data.timestamp?.toDate() || null,
+      };
+    });
+    renderEntries();
+  });
+}
+
+function renderEntries() {
+  const search = document.getElementById("searchInput").value.toUpperCase();
+  const entriesDiv = document.getElementById("entries");
+  entriesDiv.innerHTML = "";
+  const filtered = allEntries.filter(e => e.id.includes(search));
+  const start = (currentPage - 1) * pageSize;
+  const paginated = filtered.slice(start, start + pageSize);
+
+  if (paginated.length === 0) {
+    entriesDiv.innerHTML = `<div class="card">No entries found.</div>`;
+    return;
+  }
+
+  paginated.forEach(entry => {
+    const timeline = (entry.statusHistory || []).map(h => {
+      const date = h.timestamp?.toDate?.().toLocaleString?.() || (h.timestamp && new Date(h.timestamp.seconds*1000).toLocaleString()) || 'N/A';
+      return `- [${date}] ${h.status}`;
+    }).join("<br>");
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `
+      <div>
+        <div style="font-weight:700">${entry.id}</div>
+        <div class='meta'>
+          Name: <b>${entry.parcelName}</b><br>
+          Barangay: ${entry.barangay}<br>
+          Location: ${entry.location}<br>
+          Price: ₱${entry.price}<br>
+          Estimated Delivery: ${entry.estimatedDate}<br>
+          <b>Encoded:</b> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
+          Timeline:<div class='timeline'>${timeline}</div>
+        </div>
+      </div>
+      <div>
+        <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
+      </div>`;
+    entriesDiv.appendChild(el);
+  });
+}
+
+function nextPage() {
+  const filtered = allEntries.filter(e => e.id.includes(document.getElementById("searchInput").value.toUpperCase()));
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  if (currentPage < totalPages) currentPage++;
+  renderEntries();
+}
+function prevPage() {
+  if (currentPage > 1) currentPage--;
+  renderEntries();
+}
+
+/* ========================== Excel Export (tracking 4 cols + totals) ========================== */
+function exportExcelByDateRange() {
+  const fromEl = document.getElementById("excelFrom").value;
+  const toEl = document.getElementById("excelTo").value;
+  if(!fromEl || !toEl){ alert("Please select FROM and TO dates."); return; }
+
+  const from = new Date(fromEl); from.setHours(0,0,0,0);
+  const to = new Date(toEl); to.setHours(23, 59, 59, 999);
+
+  const filtered = allEntries.filter(entry => entry.timestamp && entry.timestamp >= from && entry.timestamp <= to);
+  if (filtered.length === 0) return alert("No entries found in selected date range.");
+
+  const aoa = [["TrackingNumber","ParcelName","Barangay","Price"]];
+  filtered.forEach(e => {
+    const priceNum = Number(e.price) || 0;
+    aoa.push([e.id, e.parcelName || '-', e.barangay || '-', priceNum]);
+  });
+
+  // Totals at bottom
+  const totalEntries = filtered.length;
+  const totalPrice = filtered.reduce((sum, e) => sum + (Number(e.price) || 0), 0);
+  aoa.push([]);
+  aoa.push(["TOTAL ENTRIES", totalEntries]);
+  aoa.push(["TOTAL PRICE", totalPrice]);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tracking Data");
+  XLSX.writeFile(wb, `tracking_export_${filtered.length}_items_${Date.now()}.xlsx`);
+}
+
+/* ========================== Delete ========================== */
+async function deleteEntry(id) {
+  const confirmPass = prompt("Enter admin password to delete:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+  await db.collection("tracking").doc(id).delete();
+  alert("Deleted.");
+}
+
+/* ========================== Bulk Update ========================== */
+async function bulkUpdateByTimeRange() {
+  const fromDateStr = document.getElementById("bulkFromDate").value;
+  const fromTimeStr = document.getElementById("bulkFromTime").value || "00:00";
+  const toDateStr = document.getElementById("bulkToDate").value;
+  const toTimeStr = document.getElementById("bulkToTime").value || "23:59";
+  const status = document.getElementById("bulkStatus").value;
+  const location = document.getElementById("bulkLocation").value.trim();
+
+  if (!fromDateStr || !toDateStr || !status) return alert("Fill all date/time and status fields.");
+  const fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
+  const toDateTime = new Date(`${toDateStr}T${toTimeStr}`);
+  if (toDateTime < fromDateTime) return alert("TO date/time must be after FROM date/time.");
+
+  const confirmPass = prompt("Enter admin password to apply bulk update:");
+  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
+
+  const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
+  const toTs = firebase.firestore.Timestamp.fromDate(toDateTime);
+
+  const snapshot = await db.collection("tracking")
+    .where("timestamp", ">=", fromTs)
+    .where("timestamp", "<=", toTs)
+    .get();
+
+  if (snapshot.empty) return alert("No entries found in selected range.");
+
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const history = data.statusHistory || [];
+    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
+    batch.update(doc.ref, {
+      location: location || data.location || '',
+      estimatedDate: data.estimatedDate || '',
+      statusHistory: history
+    });
+  });
+
+  await batch.commit();
+  alert(`✅ Bulk update applied to ${snapshot.size} entries.`);
+}
+
+/* ========================== Analytics (tracking) ========================== */
+let chartParcels, chartRevenue, chartBarangay;
+
+function quickRange(kind){
+  const fromEl = document.getElementById('anaFrom');
+  const toEl   = document.getElementById('anaTo');
+  const now = new Date();
+  let from = new Date(), to = new Date();
+  if(kind==='today'){ from.setHours(0,0,0,0); to.setHours(23,59,59,999); }
+  else if(kind==='week'){
+    const day = now.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    from = new Date(now); from.setDate(now.getDate() + diff); from.setHours(0,0,0,0);
+    to = new Date(from); to.setDate(from.getDate()+6); to.setHours(23,59,59,999);
+  } else {
+    // this month
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
+  }
+  fromEl.valueAsDate = from;
+  toEl.valueAsDate = to;
+  loadAnalytics();
+}
+
+async function loadAnalytics(){
+  const fromEl = document.getElementById('anaFrom').value;
+  const toEl = document.getElementById('anaTo').value;
+  if(!fromEl || !toEl){ return; }
+
+  const fromDate = new Date(fromEl); fromDate.setHours(0,0,0,0);
+  const toDate = new Date(toEl); toDate.setHours(23,59,59,999);
+
+  const fromTs = firebase.firestore.Timestamp.fromDate(fromDate);
+  const toTs = firebase.firestore.Timestamp.fromDate(toDate);
+
+  const snap = await db.collection('tracking')
+    .where('timestamp','>=', fromTs)
+    .where('timestamp','<=', toTs)
+    .get();
+
+  const rows = snap.docs.map(d => {
+    const x = d.data();
+    return {
+      id: d.id,
+      name: x.parcelName || '-',
+      barangay: x.barangay || '-',
+      price: Number(x.price) || 0,
+      ts: x.timestamp?.toDate ? x.timestamp.toDate() : (x.timestamp && new Date(x.timestamp.seconds*1000)) || null
+    };
+  }).filter(r => !!r.ts);
+
+  // KPIs
+  const totalParcels = rows.length;
+  const totalRevenue = rows.reduce((s,r)=>s+r.price,0);
+  const avgPrice = totalParcels ? (totalRevenue/totalParcels) : 0;
+
+  // Repeat customers (parcelName used as customer key)
+  const nameCount = {};
+  rows.forEach(r => { nameCount[r.name] = (nameCount[r.name]||0)+1; });
+  const repeatCustomers = Object.values(nameCount).filter(c=>c>1).length;
+
+  document.getElementById('kpiParcels').innerText = totalParcels.toLocaleString();
+  document.getElementById('kpiRevenue').innerText = totalRevenue.toLocaleString();
+  document.getElementById('kpiAvg').innerText = avgPrice.toFixed(2);
+  document.getElementById('kpiRepeat').innerText = repeatCustomers.toLocaleString();
+
+  // Group by date
+  const byDate = {};
+  rows.forEach(r => {
+    const d = r.ts.toISOString().slice(0,10);
+    if(!byDate[d]) byDate[d] = {count:0,revenue:0};
+    byDate[d].count += 1;
+    byDate[d].revenue += r.price;
+  });
+  const dates = Object.keys(byDate).sort();
+  const counts = dates.map(d => byDate[d].count);
+  const revenues = dates.map(d => byDate[d].revenue);
+
+  // Barangay distribution
+  const barangayCount = {};
+  rows.forEach(r => {
+    const b = r.barangay || '-';
+    barangayCount[b] = (barangayCount[b]||0)+1;
+  });
+  const barangays = Object.keys(barangayCount).sort((a,b)=>barangayCount[b]-barangayCount[a]);
+  const barangayVals = barangays.map(b => barangayCount[b]);
+
+  // Top barangays table
+  const tbody = document.querySelector('#topBarangaysTable tbody');
+  tbody.innerHTML = '';
+  barangays.slice(0, 10).forEach(b => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${b}</td><td>${barangayCount[b]}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Draw charts
+  drawLineChart('chartParcels', dates, counts, 'Daily Parcels', (c)=>chartParcels=c, chartParcels);
+  drawBarChart('chartRevenue', dates, revenues, 'Daily Revenue', (c)=>chartRevenue=c, chartRevenue);
+  drawPieChart('chartBarangay', barangays.slice(0,8), barangayVals.slice(0,8), (c)=>chartBarangay=c, chartBarangay);
+
+  // Save last analytics dataset for export
+  window.__analyticsRows = rows;
+  window.__analyticsDaily = dates.map((d,i)=>({date:d, parcels:counts[i], revenue:revenues[i]}));
+  window.__analyticsBarangay = barangays.map((b,i)=>({barangay:b, count:barangayCount[b]}));
+}
+
+/* ========================== Chart helpers ========================== */
+function destroyIf(chart){ if(chart){ try{ chart.destroy(); }catch(e){} } }
+function drawLineChart(canvasId, labels, data, label, setRef, oldRef){
+  destroyIf(oldRef);
+  const ctx = document.getElementById(canvasId);
+  const c = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{ label, data, tension:.35, fill:false }]},
+    options:{ responsive:true, plugins:{ legend:{display:true} }, scales:{ x:{ticks:{maxRotation:0}} } }
+  });
+  setRef(c);
+}
+function drawBarChart(canvasId, labels, data, label, setRef, oldRef){
+  destroyIf(oldRef);
+  const ctx = document.getElementById(canvasId);
+  const c = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label, data }]},
+    options:{ responsive:true, plugins:{ legend:{display:true} } }
+  });
+  setRef(c);
+}
+function drawPieChart(canvasId, labels, data, setRef, oldRef){
+  destroyIf(oldRef);
+  const ctx = document.getElementById(canvasId);
+  const c = new Chart(ctx, {
+    type:'pie',
+    data:{ labels, datasets:[{ data }]},
+    options:{ responsive:true, plugins:{ legend:{position:'bottom'} } }
+  });
+  setRef(c);
+}
+
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  const rows = window.__analyticsRows || [];
+  const daily = window.__analyticsDaily || [];
+  const barangay = window.__analyticsBarangay || [];
+
+  const wb = XLSX.utils.book_new();
+
+  const totalParcels = rows.length;
+  const totalRevenue = rows.reduce((s,r)=>s+(r.price||0),0);
+  const avgPrice = totalParcels? totalRevenue/totalParcels : 0;
+  const nameCount = {};
+  rows.forEach(r => nameCount[r.name]=(nameCount[r.name]||0)+1);
+  const repeatCustomers = Object.values(nameCount).filter(c=>c>1).length;
+
+  const s1 = [
+    ["JNK Express - Analytics Summary"], [], ["Total Parcels", totalParcels],
+    ["Total Revenue (₱)", totalRevenue], ["Average Price (₱)", Number(avgPrice.toFixed(2))],
+    ["Repeat Customers", repeatCustomers], [], ["Daily Breakdown"], ["Date", "Parcels", "Revenue (₱)"],
+    ...daily.map(d => [d.date, d.parcels, d.revenue]), [], ["Top Barangays"], ["Barangay", "Parcels"],
+    ...barangay.slice(0,20).map(b => [b.barangay, b.count])
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1), "Analytics");
+
+  const s2 = [["TrackingNumber","ParcelName","Barangay","Price","Date"]];
+  rows.forEach(r => s2.push([r.id, r.name, r.barangay, r.price, r.ts.toLocaleString()]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s2), "Raw");
+
+  XLSX.writeFile(wb, `analytics_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  const node = document.getElementById('analyticsSection');
+  const canvas = await html2canvas(node, { scale: 2, background:'#ffffff' });
+  const imgData = canvas.toDataURL('image/png');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgWidth = pageWidth - 40;
+  const imgHeight = canvas.height * imgWidth / canvas.width;
+  let y = 20;
+  if(imgHeight < pageHeight - 40){
+    pdf.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
+  } else {
+    let sY = 0;
+    const pageImgHeight = pageHeight - 40;
+    while (sY < canvas.height){
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = Math.min(canvas.height - sY, canvas.width * pageImgHeight / imgWidth);
+      const ctx = pageCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, sY, canvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+      const part = pageCanvas.toDataURL('image/png');
+      const partH = pageCanvas.height * imgWidth / pageCanvas.width;
+      pdf.addImage(part, 'PNG', 20, 20, imgWidth, partH);
+      sY += pageCanvas.height;
+      if (sY < canvas.height) pdf.addPage();
+    }
+  }
+  pdf.save(`analytics_${Date.now()}.pdf`);
+}
+
+/* ========================== PRODUCTS: Inventory & Sales ========================== */
+
+/**
+ Collections:
+ - products (doc id = barcode or custom id)
+    { name, category, price, stock, createdAt }
+ - sales (auto id)
+    { productId, productName, category, qty, price, revenue, customerName, timestamp }
+*/
+
+async function addOrUpdateProduct(){
+  const id = document.getElementById('prodBarcode').value.trim();
+  const name = document.getElementById('prodName').value.trim();
+  const category = document.getElementById('prodCategory').value;
+  const price = Number(document.getElementById('prodPrice').value) || 0;
+  const stock = Number(document.getElementById('prodStock').value) || 0;
+
+  if(!id || !name || !category) return alert("Please fill barcode, name and category.");
+  const now = firebase.firestore.Timestamp.now();
+  await db.collection('products').doc(id).set({
+    name, category, price, stock, createdAt: now
+  }, { merge:true });
+
+  document.getElementById('prodBarcode').value='';
+  document.getElementById('prodName').value='';
+  document.getElementById('prodCategory').value='';
+  document.getElementById('prodPrice').value='';
+  document.getElementById('prodStock').value='';
+  alert('✅ Product saved.');
+  renderProducts();
+}
+
+async function renderProducts(){
+  const q = (document.getElementById('prodSearch').value || '').trim().toLowerCase();
+  const list = document.getElementById('productsList');
+  list.innerHTML = '<div class="muted">Loading products...</div>';
+  const snapshot = await db.collection('products').orderBy('createdAt','desc').limit(200).get();
+  const prods = snapshot.docs.map(d => ({ id:d.id, ...d.data() }));
+  const filtered = prods.filter(p => !q || p.id.toLowerCase().includes(q) || (p.name||'').toLowerCase().includes(q));
+  if(filtered.length === 0) { list.innerHTML = '<div class="muted">No products found.</div>'; return; }
+  list.innerHTML = '';
+  filtered.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'product-card';
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:700">${p.name} <small class="muted">(${p.id})</small></div>
+        <div class="muted">${p.category} • ₱${Number(p.price||0).toFixed(2)} • Stock: ${Number(p.stock||0)}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="fillProductForm('${p.id}')">Edit</button>
+        <button onclick="prepareSale('${p.id}','${encodeURIComponent(p.name||'')}')">Sell</button>
+        <button style="background:#999" onclick="deleteProduct('${p.id}')">Delete</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function fillProductForm(id){
+  db.collection('products').doc(id).get().then(doc=>{
+    if(!doc.exists) return alert('Not found');
+    const d = doc.data();
+    document.getElementById('prodBarcode').value = id;
+    document.getElementById('prodName').value = d.name || '';
+    document.getElementById('prodCategory').value = d.category || '';
+    document.getElementById('prodPrice').value = d.price || '';
+    document.getElementById('prodStock').value = d.stock || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+async function deleteProduct(id){
+  const pass = prompt("Enter admin password to delete product:");
+  if(pass !== PASSWORD) return alert("❌ Incorrect password.");
+  await db.collection('products').doc(id).delete();
+  alert('Deleted product.');
+  renderProducts();
+}
+
+/* ========== Product scanning for sales ========== */
+let productScanner;
+function startScannerForProduct(){
+  // reuse scanner area
+  document.getElementById("scannerContainer").style.display = "block";
+  productScanner = new Html5Qrcode("scanner");
+  productScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      // fill sale product id
+      const id = decodedText.trim();
+      document.getElementById('saleProductId').value = id;
+      // also prefill product name if exist
+      db.collection('products').doc(id).get().then(doc=>{
+        if(doc.exists){
+          document.getElementById('saleProductId').value = id;
+          document.getElementById('saleQty').value = 1;
+        } else {
+          alert('Product not found in inventory. You may add it first.');
+        }
+      }).catch(()=>{});
+      stopScanner(); // stop scanner after reading
+    },
+    () => {}
+  );
+}
+function stopScannerForProduct(){
+  document.getElementById("scannerContainer").style.display = "none";
+  if(productScanner) productScanner.stop().then(()=>productScanner.clear()).catch(()=>{});
+}
+
+/* ========== Sales recording ========== */
+async function recordSaleFromForm(){
+  const productId = document.getElementById('saleProductId').value.trim();
+  const qty = Number(document.getElementById('saleQty').value) || 1;
+  const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in';
+
+  if(!productId || qty <= 0) return alert("Fill product and qty.");
+  const prodDoc = await db.collection('products').doc(productId).get();
+  if(!prodDoc.exists) return alert('Product not found in inventory.');
+  const p = prodDoc.data();
+  const price = Number(p.price) || 0;
+  const revenue = price * qty;
+  const now = firebase.firestore.Timestamp.now();
+
+  // create sales doc
+  await db.collection('sales').add({
+    productId, productName: p.name || '', category: p.category || '', qty, price, revenue, customerName: customer, timestamp: now
+  });
+
+  // decrement stock (atomic update)
+  await db.collection('products').doc(productId).update({
+    stock: firebase.firestore.FieldValue.increment(-qty)
+  }).catch(()=>{ /* maybe negative stock allowed */ });
+
+  document.getElementById('saleProductId').value='';
+  document.getElementById('saleQty').value = 1;
+  document.getElementById('saleCustomer').value='';
+
+  alert('✅ Sale recorded.');
+  showSalesLog();
+  renderProducts();
+  loadProductAnalytics();
+}
+
+/* ========== Sales log ========== */
+async function showSalesLog(){
+  const logDiv = document.getElementById('salesLog');
+  logDiv.innerHTML = '<div class="muted">Loading sales...</div>';
+  const snap = await db.collection('sales').orderBy('timestamp','desc').limit(30).get();
+  if(snap.empty){ logDiv.innerHTML = '<div class="muted">No recent sales.</div>'; return; }
+  logDiv.innerHTML = '';
+  snap.docs.forEach(doc=>{
+    const s = doc.data();
+    const ts = s.timestamp?.toDate ? s.timestamp.toDate().toLocaleString() : (s.timestamp && new Date(s.timestamp.seconds*1000).toLocaleString()) || '';
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `<div>
+      <div style="font-weight:700">${s.productName} <small class="muted">(${s.productId})</small></div>
+      <div class="muted">Qty: ${s.qty} • ₱${Number(s.price).toFixed(2)} • Revenue: ₱${Number(s.revenue).toFixed(2)}</div>
+      <div class="muted">Customer: ${s.customerName} • ${ts}</div>
+    </div>`;
+    logDiv.appendChild(el);
+  });
+}
+
+/* ========== Export Sales Excel ========== */
+async function exportSalesExcel(){
+  const snap = await db.collection('sales').orderBy('timestamp','desc').get();
+  const rows = snap.docs.map(d => {
+    const s = d.data();
+    const ts = s.timestamp?.toDate ? s.timestamp.toDate().toLocaleString() : (s.timestamp && new Date(s.timestamp.seconds*1000).toLocaleString()) || '';
+    return [d.id, s.productId, s.productName, s.category, s.qty, s.price, s.revenue, s.customerName || '', ts];
+  });
+  const aoa = [["SaleID","ProductID","ProductName","Category","Qty","UnitPrice","Revenue","Customer","Timestamp"], ...rows];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), "Sales");
+  XLSX.writeFile(wb, `sales_export_${Date.now()}.xlsx`);
+}
+
+/* ========== Product Analytics ========== */
+let chartTopProducts;
+async function loadProductAnalytics(){
+  // get sales for selected analytics range (reuse anaFrom/anaTo if set)
+  const fromEl = document.getElementById('anaFrom').value;
+  const toEl = document.getElementById('anaTo').value;
+  let salesSnap;
+  if(fromEl && toEl){
+    const fromDate = new Date(fromEl); fromDate.setHours(0,0,0,0);
+    const toDate = new Date(toEl); toDate.setHours(23,59,59,999);
+    const fromTs = firebase.firestore.Timestamp.fromDate(fromDate);
+    const toTs = firebase.firestore.Timestamp.fromDate(toDate);
+    salesSnap = await db.collection('sales').where('timestamp','>=',fromTs).where('timestamp','<=',toTs).get();
+  } else {
+    salesSnap = await db.collection('sales').orderBy('timestamp','desc').limit(1000).get();
+  }
+
+  const sales = salesSnap.docs.map(d=>({ id:d.id, ...d.data(), ts: d.data().timestamp?.toDate ? d.data().timestamp.toDate() : (d.data().timestamp && new Date(d.data().timestamp.seconds*1000)) }));
+  // aggregate by product
+  const agg = {};
+  for(const s of sales){
+    const key = s.productId || s.productName || 'Unknown';
+    if(!agg[key]) agg[key] = { productId:s.productId||key, productName:s.productName||key, category:s.category||'Unknown', qty:0, revenue:0 };
+    agg[key].qty += Number(s.qty||0);
+    agg[key].revenue += Number(s.revenue||0);
+  }
+  const arr = Object.values(agg).sort((a,b)=>b.qty - a.qty).slice(0,20);
+
+  // table
+  const tbody = document.querySelector('#topProductsTable tbody');
+  tbody.innerHTML = '';
+  arr.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${a.productName}</td><td>${a.category}</td><td>${a.qty}</td><td>₱${a.revenue.toFixed(2)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // chart
+  const labels = arr.map(a=>a.productName);
+  const data = arr.map(a=>a.qty);
+  destroyIf(chartTopProducts);
+  const ctx = document.getElementById('chartTopProducts');
+  chartTopProducts = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Qty Sold', data }]},
+    options:{ responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{maxRotation:50}} } }
+  });
+
+  // save for export
+  window.__productAnalytics = arr;
+}
+
+/* ========== Export Product Analytics Excel ========== */
+function exportProductAnalyticsExcel(){
+  const data = window.__productAnalytics || [];
+  const s1 = [["ProductName","Category","QtySold","Revenue"], ...data.map(d=>[d.productName, d.category, d.qty, d.revenue])];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1), "TopProducts");
+  XLSX.writeFile(wb, `product_analytics_${Date.now()}.xlsx`);
+}
+
+/* ========== Utilities: products refresh, prepare sale, refresh lists ========== */
+function refreshProducts(){ renderProducts(); }
+function prepareSale(id, encodedName){
+  const name = decodeURIComponent(encodedName || '');
+  document.getElementById('saleProductId').value = id;
+  document.getElementById('saleQty').value = 1;
+  document.getElementById('saleCustomer').value = '';
+  window.scrollTo({ top: document.getElementById('productsSection').offsetTop, behavior:'smooth' });
+}
+
+/* ========================== Export/Print helpers already provided above ========================== */
+
+/* ========================== Init small things ========================== */
+document.addEventListener('DOMContentLoaded', () => {
+  // nothing special
+});
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - JNK Express</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- Charts & Export libs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- QR Scanner -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --brand:#D7282F;
+      --bg:#fff3f3;
+      --card:#fff;
+      --text:#222;
+      --muted:#666;
+      --radius:12px;
+      --shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    body{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
