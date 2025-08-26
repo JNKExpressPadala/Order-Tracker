@@ -234,7 +234,62 @@
           </div>
         </div>
       </div>
+      
+<!-- Loyalty Card Registration -->
+<div class="card p-4 mt-4">
+  <h3 class="text-lg font-bold">Register JNK Loyalty Card</h3>
+  
+  <input id="regCardId" type="text" placeholder="Card ID (e.g., CUST001)" class="border p-2 rounded w-full mb-2">
+  <input id="regName" type="text" placeholder="Customer Name" class="border p-2 rounded w-full mb-2">
+  <input id="regPhone" type="text" placeholder="Phone Number" class="border p-2 rounded w-full mb-2">
+  <input id="regBarangay" type="text" placeholder="Barangay" class="border p-2 rounded w-full mb-2">
+  
+  <button onclick="registerLoyaltyCard()" class="bg-blue-500 text-white px-4 py-2 rounded w-full">
+    Register Loyalty Card
+  </button>
+</div>
 
+<script>
+  const db = firebase.firestore();
+
+  async function registerLoyaltyCard() {
+    const cardId = document.getElementById("regCardId").value.trim();
+    const name = document.getElementById("regName").value.trim();
+    const phone = document.getElementById("regPhone").value.trim();
+    const barangay = document.getElementById("regBarangay").value.trim();
+
+    if (!cardId || !name || !phone) {
+      alert("Card ID, Customer Name, and Phone Number are required!");
+      return;
+    }
+
+    const ref = db.collection("customers").doc(cardId);
+    const docSnap = await ref.get();
+
+    if (docSnap.exists) {
+      alert("This Card ID is already registered!");
+      return;
+    }
+
+    await ref.set({
+      name: name,
+      phone: phone,
+      barangay: barangay || "",
+      points: 0,
+      hasCard: true,
+      history: []
+    });
+
+    alert(`✅ Loyalty card registered for ${name} (ID: ${cardId})`);
+
+    // Clear input fields
+    document.getElementById("regCardId").value = "";
+    document.getElementById("regName").value = "";
+    document.getElementById("regPhone").value = "";
+    document.getElementById("regBarangay").value = "";
+  }
+</script>
+      
       <!-- PRODUCTS SECTION -->
       <div id="productsSection" class="section">
         <div class="card">
