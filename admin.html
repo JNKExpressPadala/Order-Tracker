@@ -141,52 +141,12 @@
     <div id="appSection" style="display:none; margin-top:16px;">
 
       <div class="tabs">
-        <button class="tablinks" onclick="openTab(event, 'loyalty')">Loyalty Card</button>
         <button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
         <button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
         <button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
         <div style="flex:1"></div>
         <button class="tab-btn" onclick="logout()">Logout</button>
       </div>
-
-      <div id="loyalty" class="tabcontent" style="display:none;">
-  <h2>JNK Loyalty Program</h2>
-
-  <!-- Registration Form -->
-  <h3>Register Loyalty Card</h3>
-  <form id="loyaltyForm">
-    <input type="text" id="loyaltyName" placeholder="Customer Name" required>
-    <input type="text" id="loyaltyPhone" placeholder="Phone Number" required>
-    <input type="text" id="loyaltyBarangay" placeholder="Barangay" required>
-    <input type="text" id="loyaltyCardId" placeholder="Card ID / Barcode" required>
-    <button type="submit">Register Card</button>
-  </form>
-
-  <hr>
-
-  <!-- Points Manager -->
-  <h3>Manage Points</h3>
-  <input type="text" id="pointsCardId" placeholder="Scan/Enter Card ID" required>
-  <button onclick="addPoint()">+1 Add Point</button>
-  <button onclick="deductPoint()">-1 Deduct Point</button>
-
-  <hr>
-
-  <!-- Customers Table -->
-  <h3>Loyalty Customers</h3>
-  <table border="1" id="loyaltyTable">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Barangay</th>
-        <th>Card ID</th>
-        <th>Points</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
 
       <!-- MANAGE SECTION -->
       <div id="manageSection" class="section show">
@@ -475,83 +435,6 @@ function showTab(which){
   else if(which==='analytics'){ a.classList.add('show'); ba.classList.add('active'); loadAnalytics(); }
   else if(which==='products'){ p.classList.add('show'); bp.classList.add('active'); loadProducts(); quickProductRange('month'); }
 }
-
-  // Firestore ref
-const loyaltyRef = db.collection("loyalty_cards");
-
-// Register Loyalty Card
-document.getElementById("loyaltyForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("loyaltyName").value;
-  const phone = document.getElementById("loyaltyPhone").value;
-  const barangay = document.getElementById("loyaltyBarangay").value;
-  const cardId = document.getElementById("loyaltyCardId").value;
-
-  if (!cardId) return alert("Card ID required!");
-
-  await loyaltyRef.doc(cardId).set({
-    name,
-    phone,
-    barangay,
-    points: 0
-  });
-
-  alert("Loyalty card registered!");
-  document.getElementById("loyaltyForm").reset();
-});
-
-// Add Point
-async function addPoint() {
-  const cardId = document.getElementById("pointsCardId").value;
-  if (!cardId) return alert("Enter Card ID!");
-  const docRef = loyaltyRef.doc(cardId);
-  const docSnap = await docRef.get();
-
-  if (docSnap.exists) {
-    await docRef.update({ points: firebase.firestore.FieldValue.increment(1) });
-    alert("Point added!");
-  } else {
-    alert("Card not found!");
-  }
-}
-
-// Deduct Point
-async function deductPoint() {
-  const cardId = document.getElementById("pointsCardId").value;
-  if (!cardId) return alert("Enter Card ID!");
-  const docRef = loyaltyRef.doc(cardId);
-  const docSnap = await docRef.get();
-
-  if (docSnap.exists) {
-    const current = docSnap.data().points || 0;
-    if (current > 0) {
-      await docRef.update({ points: firebase.firestore.FieldValue.increment(-1) });
-      alert("Point deducted!");
-    } else {
-      alert("No points available!");
-    }
-  } else {
-    alert("Card not found!");
-  }
-}
-
-// Display Table
-loyaltyRef.onSnapshot((snapshot) => {
-  const tbody = document.querySelector("#loyaltyTable tbody");
-  tbody.innerHTML = "";
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    tbody.innerHTML += `
-      <tr>
-        <td>${data.name}</td>
-        <td>${data.phone}</td>
-        <td>${data.barangay}</td>
-        <td>${doc.id}</td>
-        <td>${data.points}</td>
-      </tr>
-    `;
-  });
-});
 
 /* ========================== Scanner (tracking) ========================== */
 let scanner;
