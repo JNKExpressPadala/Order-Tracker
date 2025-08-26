@@ -49,6 +49,7 @@
       width:100%; padding:10px; margin-top:8px;
       font-size:1rem; border-radius:10px; border:1px solid #ddd;
     }
+    textarea{ resize: vertical; min-height: 72px; }
     button{
       background:var(--brand); color:#fff; border:none; cursor:pointer;
       transition:.12s transform ease;
@@ -143,6 +144,7 @@
       <div class="tabs">
         <button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
         <button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
+        <button class="tab-btn" id="tabLoyaltyBtn" onclick="showTab('loyalty')">Loyalty</button>
         <button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
         <div style="flex:1"></div>
         <button class="tab-btn" onclick="logout()">Logout</button>
@@ -318,6 +320,67 @@
         </div>
       </div>
 
+      <!-- LOYALTY SECTION -->
+      <div id="loyaltySection" class="section">
+        <div class="card">
+          <h3>Loyalty Registration</h3>
+          <div class="grid two">
+            <div>
+              <label class="small muted">Full Name</label>
+              <input type="text" id="loyName" placeholder="Juan Dela Cruz" />
+            </div>
+            <div>
+              <label class="small muted">Phone Number</label>
+              <input type="text" id="loyPhone" placeholder="09xxxxxxxxx" />
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label class="small muted">Complete Address</label>
+              <textarea id="loyAddress" placeholder="House No., Street, Barangay, City/Municipality, Province, ZIP"></textarea>
+            </div>
+            <div>
+              <label class="small muted">Card Number</label>
+              <input type="text" id="loyCard" placeholder="e.g., JNK-2025-0001" />
+            </div>
+            <div>
+              <label class="small muted">&nbsp;</label>
+              <button onclick="generateCard()">Generate Card #</button>
+            </div>
+          </div>
+          <div class="top-bar" style="margin-top:12px;">
+            <button onclick="saveMember()">Save / Update Member</button>
+            <div style="flex:1"></div>
+            <span class="muted small">Fields required: Name, Phone, Address, Card #</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div class="top-bar">
+            <input type="text" id="loySearch" placeholder="Search by name / phone / card..." />
+            <button onclick="renderMembers()">Search</button>
+            <div style="flex:1"></div>
+            <button onclick="loadMembers()">Refresh List</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h4>Registered Loyalty Members</h4>
+          <div class="muted small" id="loyCount" style="margin:6px 0;">0 member(s)</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Card #</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Complete Address</th>
+                <th>Points</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="loyaltyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ANALYTICS SECTION -->
       <div id="analyticsSection" class="section">
         <div class="card">
@@ -408,6 +471,7 @@ function login() {
     quickRange('month');
     loadProducts();
     quickProductRange('month');
+    loadMembers(); // NEW: load loyalty list
   } else {
     msg.innerText = "Invalid login.";
   }
@@ -424,16 +488,19 @@ function showTab(which){
   const m = document.getElementById('manageSection');
   const a = document.getElementById('analyticsSection');
   const p = document.getElementById('productsSection');
+  const l = document.getElementById('loyaltySection');
   const bm = document.getElementById('tabManageBtn');
   const ba = document.getElementById('tabAnalyticsBtn');
   const bp = document.getElementById('tabProductsBtn');
+  const bl = document.getElementById('tabLoyaltyBtn');
 
-  [m,a,p].forEach(el=>el.classList.remove('show'));
-  [bm,ba,bp].forEach(b=>b.classList.remove('active'));
+  [m,a,p,l].forEach(el=>el.classList.remove('show'));
+  [bm,ba,bp,bl].forEach(b=>b.classList.remove('active'));
 
   if(which==='manage'){ m.classList.add('show'); bm.classList.add('active'); }
   else if(which==='analytics'){ a.classList.add('show'); ba.classList.add('active'); loadAnalytics(); }
   else if(which==='products'){ p.classList.add('show'); bp.classList.add('active'); loadProducts(); quickProductRange('month'); }
+  else if(which==='loyalty'){ l.classList.add('show'); bl.classList.add('active'); loadMembers(); }
 }
 
 /* ========================== Scanner (tracking) ========================== */
@@ -535,18 +602,18 @@ async function printAndSave() {
     </div>`;
 
   const printWin = window.open('', '_blank', 'width=200,height=200');
-printWin.document.write(`
-  <html><head><title>Print</title>
-  <style>
-    @page { size: 50mm 80mm portrait; margin:0; }
-    body { margin:0; width:50mm; height:80mm; }
-  </style>
-  </head>
-  <body onload="window.print(); window.close();">
-    ${content}
-  </body></html>
-`);
-printWin.document.close();
+  printWin.document.write(`
+    <html><head><title>Print</title>
+    <style>
+      @page { size: 50mm 80mm portrait; margin:0; }
+      body { margin:0; width:50mm; height:80mm; }
+    </style>
+    </head>
+    <body onload="window.print(); window.close();">
+      ${content}
+    </body></html>
+  `);
+  printWin.document.close();
 
   ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
     .forEach(id => document.getElementById(id).value = "");
@@ -895,10 +962,9 @@ async function exportAnalyticsPDF(){
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imgWidth = pageWidth - 40;
   const imgHeight = canvas.height * imgWidth / canvas.width;
-  let y = 20;
 
   if(imgHeight < pageHeight - 40){
-    pdf.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
+    pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
   } else {
     let sY = 0;
     const pageImgHeight = pageHeight - 40;
@@ -1098,7 +1164,6 @@ async function exportProductsExcel(){
   XLSX.writeFile(wb, `products_${Date.now()}.xlsx`);
 }
 
-
 /* ========================== Product Analytics ========================== */
 let chartTopProducts, chartCategory;
 function quickProductRange(kind){
@@ -1161,6 +1226,85 @@ async function loadProductAnalytics(){
   // Draw charts
   drawBarChart('chartTopProducts', productsSorted.map(p=>p.name || p.id), productsSorted.map(p=>p.qty), 'Top Products', c=>chartTopProducts=c, chartTopProducts);
   drawPieChart('chartCategory', cats, catVals, c=>chartCategory=c, chartCategory);
+}
+
+/* ========================== LOYALTY (Registration + Display) ========================== */
+let loyaltyUnsub = null;
+let loyaltyRows = [];
+
+function generateCard(){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const rand = Math.floor(Math.random()*9000)+1000; // 4 digits
+  document.getElementById('loyCard').value = `JNK-${yyyy}${mm}${dd}-${rand}`;
+}
+
+async function saveMember(){
+  const name = (document.getElementById('loyName').value || '').trim();
+  const phone = (document.getElementById('loyPhone').value || '').trim();
+  const address = (document.getElementById('loyAddress').value || '').trim();
+  const card = (document.getElementById('loyCard').value || '').trim().toUpperCase();
+
+  if(!name || !phone || !address || !card) return alert('Please complete all fields.');
+  if(phone.length < 7) return alert('Phone number looks too short.');
+
+  const docRef = db.collection('loyalty').doc(card);
+  const snap = await docRef.get();
+  const payload = {
+    name, phone, address, cardNumber: card,
+    points: snap.exists ? (Number(snap.data().points)||0) : 0,
+    createdAt: snap.exists ? (snap.data().createdAt || firebase.firestore.Timestamp.now()) : firebase.firestore.Timestamp.now(),
+    updatedAt: firebase.firestore.Timestamp.now()
+  };
+  await docRef.set(payload, { merge: true });
+
+  ['loyName','loyPhone','loyAddress','loyCard'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ Member saved.');
+}
+
+function loadMembers(){
+  if(loyaltyUnsub){ try{ loyaltyUnsub(); }catch(e){} }
+  loyaltyUnsub = db.collection('loyalty').orderBy('createdAt','desc').onSnapshot(snap=>{
+    loyaltyRows = snap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        name: x.name || '',
+        phone: x.phone || '',
+        address: x.address || '',
+        points: Number(x.points)||0,
+        createdAt: x.createdAt?.toDate ? x.createdAt.toDate() : null,
+        cardNumber: x.cardNumber || d.id
+      };
+    });
+    renderMembers();
+  });
+}
+
+function renderMembers(){
+  const q = (document.getElementById('loySearch')?.value || '').toLowerCase();
+  const rows = loyaltyRows.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    r.phone.toLowerCase().includes(q) ||
+    r.cardNumber.toLowerCase().includes(q)
+  );
+  document.getElementById('loyCount').innerText = `${rows.length} member(s)`;
+  const tbody = document.getElementById('loyaltyTableBody');
+  tbody.innerHTML = '';
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.cardNumber}</td>
+      <td>${r.name}</td>
+      <td>${r.phone}</td>
+      <td>${r.address}</td>
+      <td>${r.points.toLocaleString()}</td>
+      <td>${r.createdAt ? r.createdAt.toLocaleString() : '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 /* ========================== Product Sales Export helpers ========================== */
