@@ -1459,6 +1459,58 @@ async function adjustPoints(cardId, delta, reason){
   });
   await loadLoyaltyMembers();
 }
+  /* ========================== Add / Deduct points via direct functions ========================== */
+
+// Add points
+async function addPoints(cardId, pointsToAdd) {
+  if (!cardId || !pointsToAdd) return alert("Card ID and points required");
+  pointsToAdd = Number(pointsToAdd);
+  if (pointsToAdd <= 0) return alert("Points must be positive");
+
+  const docRef = db.collection("loyalty").doc(cardId);
+  await docRef.update({
+    points: firebase.firestore.FieldValue.increment(pointsToAdd),
+    pointsHistory: firebase.firestore.FieldValue.arrayUnion({
+      type: 'manual-add',
+      amount: pointsToAdd,
+      reason: 'Direct add',
+      timestamp: firebase.firestore.Timestamp.now()
+    })
+  });
+
+  // Refresh table
+  await loadLoyaltyMembers();
+  alert(`✅ Added ${pointsToAdd} points`);
+}
+
+// Deduct points
+async function deductPoints(cardId, pointsToDeduct) {
+  if (!cardId || !pointsToDeduct) return alert("Card ID and points required");
+  pointsToDeduct = Number(pointsToDeduct);
+  if (pointsToDeduct <= 0) return alert("Points must be positive");
+
+  const docRef = db.collection("loyalty").doc(cardId);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return alert("Member not found");
+
+  const currentPoints = docSnap.data().points || 0;
+  if (currentPoints < pointsToDeduct) return alert("Not enough points to deduct");
+
+  await docRef.update({
+    points: firebase.firestore.FieldValue.increment(-pointsToDeduct),
+    pointsHistory: firebase.firestore.FieldValue.arrayUnion({
+      type: 'manual-deduct',
+      amount: pointsToDeduct,
+      reason: 'Direct deduct',
+      timestamp: firebase.firestore.Timestamp.now()
+    })
+  });
+
+  // Refresh table
+  await loadLoyaltyMembers();
+  alert(`✅ Deducted ${pointsToDeduct} points`);
+}
+
 
 /* Export loyalty to Excel */
 async function exportLoyaltyExcel(){
