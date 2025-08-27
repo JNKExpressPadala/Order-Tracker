@@ -1,24 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>JNK Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <!-- Chart / Export libs used previously -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <!-- QR Scanner -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<title>JNK Admin Panel</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<!-- Chart / Export libs used previously -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
     :root{
       --brand:#D7282F;
       --bg:#fff3f3;
@@ -121,324 +118,294 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h2>JNK Admin Panel</h2>
-
-    <!-- LOGIN -->
-    <div id="loginSection" class="card">
-      <div class="grid two">
-        <div>
-          <label class="small muted">Username</label>
-          <input type="text" id="username" placeholder="Username" autocomplete="username" />
-        </div>
-        <div>
-          <label class="small muted">Password</label>
-          <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-        </div>
-      </div>
-      <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
-        <button onclick="login()">Login</button>
-        <div class="muted small">Use correct credentials to access admin features.</div>
-      </div>
-      <p id="loginMessage" style="color:#b61e24; margin:8px 2px 0;"></p>
-    </div>
-
-    <!-- APP -->
-    <div id="appSection" style="display:none; margin-top:16px;">
-
-      <div class="tabs">
-        <button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
-        <button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
-        <button class="tab-btn" id="tabLoyaltyBtn" onclick="showTab('loyalty')">Loyalty</button>
-        <button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
-        <div style="flex:1"></div>
-        <button class="tab-btn" onclick="logout()">Logout</button>
-      </div>
-
-      <!-- MANAGE SECTION -->
-      <div id="manageSection" class="section show">
-        <div class="card">
-          <h3>Add / Update Tracking Entry</h3>
-          <div class="grid two">
-            <input type="text" id="trackNumber" placeholder="Tracking Number" />
-            <input type="text" id="parcelName" placeholder="Parcel Name (customer or item name)" />
-            <input type="text" id="barangay" placeholder="Barangay" />
-            <input type="number" id="price" placeholder="Price (PHP)" />
-            <select id="trackStatus">
-              <option value="">Select Status</option>
-              <option>Package Received</option>
-              <option>In Transit</option>
-              <option>Arrived</option>
-              <option>For Pick-up</option>
-            </select>
-            <input type="text" id="trackLocation" placeholder="Location (e.g., Manila Hub)" />
-            <input type="date" id="estimatedDate" />
-          </div>
-          <div class="top-bar" style="margin-top:12px;">
-            <button onclick="saveTracking()">Add / Update</button>
-            <button onclick="printAndSave()">🖨️ Print Receipt</button>
-            <button onclick="startScanner()">📷 Scan</button>
-            <div style="flex:1"></div>
-            <div class="muted small">Tip: scan QR to autofill tracking number and print</div>
-          </div>
-
-          <div id="scannerContainer" style="display:none; margin-top:10px;">
-            <div id="scanner" style="width:100%"></div>
-            <div style="margin-top:8px;"><button class="delete-btn" onclick="stopScanner()">❌ Cancel</button></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <div class="top-bar">
-            <input type="text" id="searchInput" placeholder="Search tracking number..." />
-            <button onclick="currentPage=1; renderEntries()">🔍 Search</button>
-            <div style="flex:1"></div>
-            <button onclick="loadAllEntries()">Refresh List</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <div class="top-bar">
-            <input type="date" id="excelFrom" />
-            <input type="date" id="excelTo" />
-            <button onclick="exportExcelByDateRange()">📊 Export Excel (4 cols + totals)</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <h3>Bulk Update by Time Range</h3>
-          <div class="grid two">
-            <div>
-              <label class="small muted">From</label>
-              <input type="date" id="bulkFromDate" />
-              <input type="time" id="bulkFromTime" />
-            </div>
-            <div>
-              <label class="small muted">To</label>
-              <input type="date" id="bulkToDate" />
-              <input type="time" id="bulkToTime" />
-            </div>
-            <select id="bulkStatus">
-              <option value="">Update Status to...</option>
-              <option>Package Received</option>
-              <option>In Transit</option>
-              <option>Arrived</option>
-              <option>For Pick-up</option>
-            </select>
-            <input type="text" id="bulkLocation" placeholder="Optional New Location" />
-          </div>
-          <div style="margin-top:10px;">
-            <button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
-          </div>
-        </div>
-
-        <div style="margin-top:14px;">
-          <h3>All Tracking Entries</h3>
-          <div id="entries"></div>
-          <div class="pagination">
-            <button onclick="prevPage()">Previous</button>
-            <button onclick="nextPage()">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- PRODUCTS SECTION -->
-      <div id="productsSection" class="section">
-        <div class="card">
-          <h3>Products (Beauty / Clothes)</h3>
-          <div class="grid two">
-            <input type="text" id="prodBarcode" placeholder="Barcode / SKU (scan or type)" />
-            <input type="text" id="prodName" placeholder="Product Name" />
-            <select id="prodCategory">
-              <option value="">Select Category</option>
-              <option>Beauty</option>
-              <option>Clothes</option>
-            </select>
-            <input type="number" id="prodPrice" placeholder="Price (PHP)" />
-            <input type="number" id="prodStock" placeholder="Stock Quantity" />
-            <input type="text" id="prodNotes" placeholder="Notes (optional)" />
-          </div>
-          <div class="top-bar" style="margin-top:10px;">
-            <button onclick="saveProduct()">Save Product</button>
-            <button onclick="startProductScanner()">Scan Product</button>
-            <div style="flex:1"></div>
-            <button onclick="loadProducts()">Refresh Products</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <h4>Product List</h4>
-          <div id="productList"></div>
-          <div style="margin-top:10px;">
-            <button onclick="exportProductsExcel()">Export Products</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <h4>Record Sale</h4>
-          <div class="grid two">
-            <input id="saleBarcode" placeholder="Barcode (scan or type)" />
-            <input id="saleQty" type="number" placeholder="Quantity" value="1" />
-            <input id="saleBuyer" placeholder="Buyer name (optional)" />
-            <input id="saleNote" placeholder="Note (optional)" />
-          </div>
-          <div style="margin-top:10px;" class="top-bar">
-            <button onclick="recordSale()">Record Sale</button>
-            <button onclick="startSaleScanner()">Scan to Sell</button>
-            <div style="flex:1"></div>
-            <button onclick="loadSales()">Load Sales</button>
-          </div>
-
-          <div style="margin-top:14px;">
-            <h4>Recent Sales</h4>
-            <div id="salesList"></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <h3>Sales Analytics (Products)</h3>
-          <div class="top-bar">
-            <input type="date" id="prodAnaFrom" />
-            <input type="date" id="prodAnaTo" />
-            <button onclick="loadProductAnalytics()">Refresh</button>
-            <button onclick="quickProductRange('month')">This Month</button>
-            <button onclick="quickProductRange('lastmonth')">Last Month</button>
-          </div>
-
-          <div class="kpis" style="margin-top:12px;">
-            <div class="kpi"><div class="label">Total Products Sold</div><div class="value" id="pKpiSold">0</div></div>
-            <div class="kpi"><div class="label">Total Sales (₱)</div><div class="value" id="pKpiRevenue">0</div></div>
-            <div class="kpi"><div class="label">Avg Sale Value (₱)</div><div class="value" id="pKpiAvg">0</div></div>
-            <div class="kpi"><div class="label">Top Category</div><div class="value" id="pKpiTopCat">-</div></div>
-          </div>
-
-          <div class="grid two" style="margin-top:12px;">
-            <div class="chart-card">
-              <h4 style="margin:0 0 8px;">Top Products</h4>
-              <canvas id="chartTopProducts" height="180"></canvas>
-            </div>
-            <div class="chart-card">
-              <h4 style="margin:0 0 8px;">Category Distribution</h4>
-              <canvas id="chartCategory" height="180"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOYALTY SECTION -->
-      <div id="loyaltySection" class="section">
-        <div class="card">
-          <h3>Register Loyalty Card</h3>
-          <div class="loyalty-grid two">
-            <div>
-              <label class="small muted">Card ID / Barcode</label>
-              <input type="text" id="loyCardId" placeholder="Scan or type card ID" />
-            </div>
-            <div>
-              <label class="small muted">Scan Card</label>
-              <div style="display:flex; gap:8px;">
-                <button onclick="startLoyaltyScanner()">Scan Card</button>
-                <button onclick="stopLoyaltyScanner()">Stop</button>
-              </div>
-            </div>
-
-            <div>
-              <label class="small muted">Full Name</label>
-              <input type="text" id="loyName" placeholder="Customer's full name" />
-            </div>
-            <div>
-              <label class="small muted">Phone Number</label>
-              <input type="text" id="loyPhone" placeholder="09XXXXXXXXX" />
-            </div>
-
-            <div style="grid-column: 1 / -1;">
-              <label class="small muted">Complete Address</label>
-              <input type="text" id="loyAddress" placeholder="House/Street, Brgy, City, Province" />
-            </div>
-          </div>
-
-          <div class="top-bar" style="margin-top:10px;">
-            <button onclick="registerLoyalty()">Register Card</button>
-            <button onclick="loadLoyaltyMembers()">Refresh Members</button>
-            <div style="flex:1"></div>
-            <div class="muted small">Registered customers only: points awarded for registered names on tracking entries.</div>
-          </div>
-
-          <div id="loyaltyScannerContainer" style="display:none; margin-top:10px;">
-            <div id="loyaltyScanner" style="width:100%"></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;">
-          <h3>Loyalty Members</h3>
-          <div class="top-bar">
-            <input type="text" id="loySearch" placeholder="Search by name, phone or card ID..." />
-            <button onclick="renderLoyaltyList()">🔍 Search</button>
-            <div style="flex:1"></div>
-            <button onclick="exportLoyaltyExcel()">Export Loyalty (Excel)</button>
-          </div>
-
-          <div id="loyaltyList" style="margin-top:12px;"></div>
-        </div>
-      </div>
-
-      <!-- ANALYTICS SECTION -->
-      <div id="analyticsSection" class="section">
-        <div class="card">
-          <h3>Analytics</h3>
-          <div class="top-bar">
-            <input type="date" id="anaFrom" />
-            <input type="date" id="anaTo" />
-            <button onclick="loadAnalytics()">Refresh</button>
-            <button onclick="quickRange('today')">Today</button>
-            <button onclick="quickRange('week')">This Week</button>
-            <button onclick="quickRange('month')">This Month</button>
-          </div>
-        </div>
-
-        <div class="kpis" style="margin-top:14px;">
-          <div class="kpi"><div class="label">Total Parcels</div><div class="value" id="kpiParcels">0</div></div>
-          <div class="kpi"><div class="label">Total Revenue (₱)</div><div class="value" id="kpiRevenue">0</div></div>
-          <div class="kpi"><div class="label">Average Price (₱)</div><div class="value" id="kpiAvg">0</div></div>
-          <div class="kpi"><div class="label">Repeat Customers</div><div class="value" id="kpiRepeat">0</div></div>
-        </div>
-
-        <div class="grid two" style="margin-top:14px;">
-          <div class="chart-card">
-            <h4 style="margin:0 0 8px;">Daily Parcel Count</h4>
-            <canvas id="chartParcels" height="120"></canvas>
-          </div>
-          <div class="chart-card">
-            <h4 style="margin:0 0 8px;">Daily Revenue (₱)</h4>
-            <canvas id="chartRevenue" height="120"></canvas>
-          </div>
-        </div>
-
-        <div class="grid two" style="margin-top:14px;">
-          <div class="chart-card">
-            <h4 style="margin:0 0 8px;">Barangay Distribution</h4>
-            <canvas id="chartBarangay" height="140"></canvas>
-          </div>
-          <div class="card">
-            <h4 style="margin:0 0 8px;">Top Barangays</h4>
-            <table class="table" id="topBarangaysTable">
-              <thead><tr><th>Barangay</th><th>Parcels</th></tr></thead>
-              <tbody></tbody>
-            </table>
-            <div class="top-bar" style="margin-top:10px;">
-              <button onclick="exportAnalyticsExcel()">Export Analytics (Excel)</button>
-              <button onclick="exportAnalyticsPDF()">Export Analytics (PDF)</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Hidden print receipt area -->
-    <div id="receiptArea"><div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div></div>
-  </div>
-
+<div class="wrap">
+<h2>JNK Admin Panel</h2>
+<!-- LOGIN -->
+<div class="card" id="loginSection">
+<div class="grid two">
+<div>
+<label class="small muted">Username</label>
+<input autocomplete="username" id="username" placeholder="Username" type="text"/>
+</div>
+<div>
+<label class="small muted">Password</label>
+<input autocomplete="current-password" id="password" placeholder="Password" type="password"/>
+</div>
+</div>
+<div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+<button onclick="login()">Login</button>
+<div class="muted small">Use correct credentials to access admin features.</div>
+</div>
+<p id="loginMessage" style="color:#b61e24; margin:8px 2px 0;"></p>
+</div>
+<!-- APP -->
+<div id="appSection" style="display:none; margin-top:16px;">
+<div class="tabs">
+<button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
+<button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
+<button class="tab-btn" id="tabLoyaltyBtn" onclick="showTab('loyalty')">Loyalty</button>
+<button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
+<div style="flex:1"></div>
+<button class="tab-btn" onclick="logout()">Logout</button>
+</div>
+<!-- MANAGE SECTION -->
+<div class="section show" id="manageSection">
+<div class="card">
+<h3>Add / Update Tracking Entry</h3>
+<div class="grid two">
+<input id="trackNumber" placeholder="Tracking Number" type="text"/>
+<input id="parcelName" placeholder="Parcel Name (customer or item name)" type="text"/>
+<input id="barangay" placeholder="Barangay" type="text"/>
+<input id="price" placeholder="Price (PHP)" type="number"/>
+<select id="trackStatus">
+<option value="">Select Status</option>
+<option>Package Received</option>
+<option>In Transit</option>
+<option>Arrived</option>
+<option>For Pick-up</option>
+</select>
+<input id="trackLocation" placeholder="Location (e.g., Manila Hub)" type="text"/>
+<input id="estimatedDate" type="date"/>
+</div>
+<div class="top-bar" style="margin-top:12px;">
+<button onclick="saveTracking()">Add / Update</button>
+<button id="printReceiptBtn">🖨️ Print Receipt</button>
+<button onclick="startScanner()">📷 Scan</button>
+<div style="flex:1"></div>
+<div class="muted small">Tip: scan QR to autofill tracking number and print</div>
+</div>
+<div id="scannerContainer" style="display:none; margin-top:10px;">
+<div id="scanner" style="width:100%"></div>
+<div style="margin-top:8px;"><button class="delete-btn" onclick="stopScanner()">❌ Cancel</button></div>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div class="top-bar">
+<input id="searchInput" placeholder="Search tracking number..." type="text"/>
+<button onclick="currentPage=1; renderEntries()">🔍 Search</button>
+<div style="flex:1"></div>
+<button onclick="loadAllEntries()">Refresh List</button>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<div class="top-bar">
+<input id="excelFrom" type="date"/>
+<input id="excelTo" type="date"/>
+<button onclick="exportExcelByDateRange()">📊 Export Excel (4 cols + totals)</button>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<h3>Bulk Update by Time Range</h3>
+<div class="grid two">
+<div>
+<label class="small muted">From</label>
+<input id="bulkFromDate" type="date"/>
+<input id="bulkFromTime" type="time"/>
+</div>
+<div>
+<label class="small muted">To</label>
+<input id="bulkToDate" type="date"/>
+<input id="bulkToTime" type="time"/>
+</div>
+<select id="bulkStatus">
+<option value="">Update Status to...</option>
+<option>Package Received</option>
+<option>In Transit</option>
+<option>Arrived</option>
+<option>For Pick-up</option>
+</select>
+<input id="bulkLocation" placeholder="Optional New Location" type="text"/>
+</div>
+<div style="margin-top:10px;">
+<button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
+</div>
+</div>
+<div style="margin-top:14px;">
+<h3>All Tracking Entries</h3>
+<div id="entries"></div>
+<div class="pagination">
+<button onclick="prevPage()">Previous</button>
+<button onclick="nextPage()">Next</button>
+</div>
+</div>
+</div>
+<!-- PRODUCTS SECTION -->
+<div class="section" id="productsSection">
+<div class="card">
+<h3>Products (Beauty / Clothes)</h3>
+<div class="grid two">
+<input id="prodBarcode" placeholder="Barcode / SKU (scan or type)" type="text"/>
+<input id="prodName" placeholder="Product Name" type="text"/>
+<select id="prodCategory">
+<option value="">Select Category</option>
+<option>Beauty</option>
+<option>Clothes</option>
+</select>
+<input id="prodPrice" placeholder="Price (PHP)" type="number"/>
+<input id="prodStock" placeholder="Stock Quantity" type="number"/>
+<input id="prodNotes" placeholder="Notes (optional)" type="text"/>
+</div>
+<div class="top-bar" style="margin-top:10px;">
+<button onclick="saveProduct()">Save Product</button>
+<button onclick="startProductScanner()">Scan Product</button>
+<div style="flex:1"></div>
+<button onclick="loadProducts()">Refresh Products</button>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<h4>Product List</h4>
+<div id="productList"></div>
+<div style="margin-top:10px;">
+<button onclick="exportProductsExcel()">Export Products</button>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<h4>Record Sale</h4>
+<div class="grid two">
+<input id="saleBarcode" placeholder="Barcode (scan or type)"/>
+<input id="saleQty" placeholder="Quantity" type="number" value="1"/>
+<input id="saleBuyer" placeholder="Buyer name (optional)"/>
+<input id="saleNote" placeholder="Note (optional)"/>
+</div>
+<div class="top-bar" style="margin-top:10px;">
+<button onclick="recordSale()">Record Sale</button>
+<button onclick="startSaleScanner()">Scan to Sell</button>
+<div style="flex:1"></div>
+<button onclick="loadSales()">Load Sales</button>
+</div>
+<div style="margin-top:14px;">
+<h4>Recent Sales</h4>
+<div id="salesList"></div>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<h3>Sales Analytics (Products)</h3>
+<div class="top-bar">
+<input id="prodAnaFrom" type="date"/>
+<input id="prodAnaTo" type="date"/>
+<button onclick="loadProductAnalytics()">Refresh</button>
+<button onclick="quickProductRange('month')">This Month</button>
+<button onclick="quickProductRange('lastmonth')">Last Month</button>
+</div>
+<div class="kpis" style="margin-top:12px;">
+<div class="kpi"><div class="label">Total Products Sold</div><div class="value" id="pKpiSold">0</div></div>
+<div class="kpi"><div class="label">Total Sales (₱)</div><div class="value" id="pKpiRevenue">0</div></div>
+<div class="kpi"><div class="label">Avg Sale Value (₱)</div><div class="value" id="pKpiAvg">0</div></div>
+<div class="kpi"><div class="label">Top Category</div><div class="value" id="pKpiTopCat">-</div></div>
+</div>
+<div class="grid two" style="margin-top:12px;">
+<div class="chart-card">
+<h4 style="margin:0 0 8px;">Top Products</h4>
+<canvas height="180" id="chartTopProducts"></canvas>
+</div>
+<div class="chart-card">
+<h4 style="margin:0 0 8px;">Category Distribution</h4>
+<canvas height="180" id="chartCategory"></canvas>
+</div>
+</div>
+</div>
+</div>
+<!-- LOYALTY SECTION -->
+<div class="section" id="loyaltySection">
+<div class="card">
+<h3>Register Loyalty Card</h3>
+<div class="loyalty-grid two">
+<div>
+<label class="small muted">Card ID / Barcode</label>
+<input id="loyCardId" placeholder="Scan or type card ID" type="text"/>
+</div>
+<div>
+<label class="small muted">Scan Card</label>
+<div style="display:flex; gap:8px;">
+<button onclick="startLoyaltyScanner()">Scan Card</button>
+<button onclick="stopLoyaltyScanner()">Stop</button>
+</div>
+</div>
+<div>
+<label class="small muted">Full Name</label>
+<input id="loyName" placeholder="Customer's full name" type="text"/>
+</div>
+<div>
+<label class="small muted">Phone Number</label>
+<input id="loyPhone" placeholder="09XXXXXXXXX" type="text"/>
+</div>
+<div style="grid-column: 1 / -1;">
+<label class="small muted">Complete Address</label>
+<input id="loyAddress" placeholder="House/Street, Brgy, City, Province" type="text"/>
+</div>
+</div>
+<div class="top-bar" style="margin-top:10px;">
+<button onclick="registerLoyalty()">Register Card</button>
+<button onclick="loadLoyaltyMembers()">Refresh Members</button>
+<div style="flex:1"></div>
+<div class="muted small">Registered customers only: points awarded for registered names on tracking entries.</div>
+</div>
+<div id="loyaltyScannerContainer" style="display:none; margin-top:10px;">
+<div id="loyaltyScanner" style="width:100%"></div>
+</div>
+</div>
+<div class="card" style="margin-top:14px;">
+<h3>Loyalty Members</h3>
+<div class="top-bar">
+<input id="loySearch" placeholder="Search by name, phone or card ID..." type="text"/>
+<button onclick="renderLoyaltyList()">🔍 Search</button>
+<div style="flex:1"></div>
+<button onclick="exportLoyaltyExcel()">Export Loyalty (Excel)</button>
+</div>
+<div id="loyaltyList" style="margin-top:12px;"></div>
+</div>
+</div>
+<!-- ANALYTICS SECTION -->
+<div class="section" id="analyticsSection">
+<div class="card">
+<h3>Analytics</h3>
+<div class="top-bar">
+<input id="anaFrom" type="date"/>
+<input id="anaTo" type="date"/>
+<button onclick="loadAnalytics()">Refresh</button>
+<button onclick="quickRange('today')">Today</button>
+<button onclick="quickRange('week')">This Week</button>
+<button onclick="quickRange('month')">This Month</button>
+</div>
+</div>
+<div class="kpis" style="margin-top:14px;">
+<div class="kpi"><div class="label">Total Parcels</div><div class="value" id="kpiParcels">0</div></div>
+<div class="kpi"><div class="label">Total Revenue (₱)</div><div class="value" id="kpiRevenue">0</div></div>
+<div class="kpi"><div class="label">Average Price (₱)</div><div class="value" id="kpiAvg">0</div></div>
+<div class="kpi"><div class="label">Repeat Customers</div><div class="value" id="kpiRepeat">0</div></div>
+</div>
+<div class="grid two" style="margin-top:14px;">
+<div class="chart-card">
+<h4 style="margin:0 0 8px;">Daily Parcel Count</h4>
+<canvas height="120" id="chartParcels"></canvas>
+</div>
+<div class="chart-card">
+<h4 style="margin:0 0 8px;">Daily Revenue (₱)</h4>
+<canvas height="120" id="chartRevenue"></canvas>
+</div>
+</div>
+<div class="grid two" style="margin-top:14px;">
+<div class="chart-card">
+<h4 style="margin:0 0 8px;">Barangay Distribution</h4>
+<canvas height="140" id="chartBarangay"></canvas>
+</div>
+<div class="card">
+<h4 style="margin:0 0 8px;">Top Barangays</h4>
+<table class="table" id="topBarangaysTable">
+<thead><tr><th>Barangay</th><th>Parcels</th></tr></thead>
+<tbody></tbody>
+</table>
+<div class="top-bar" style="margin-top:10px;">
+<button onclick="exportAnalyticsExcel()">Export Analytics (Excel)</button>
+<button onclick="exportAnalyticsPDF()">Export Analytics (PDF)</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Hidden print receipt area -->
+<div id="receiptArea"><div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div></div>
+</div>
 <script>
 /* ========================== Firebase ========================== */
 const firebaseConfig = {
@@ -1224,8 +1191,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Print button
-  const printBtn = document.querySelector('button[onclick="printAndSave()"]');
-  if(printBtn) printBtn.addEventListener('click', printAndSave);
+  const printBtn = document.getElementById("printReceiptBtn");
+  if(printBtn) printBtn.addEventListener("click", printAndSave);
 
   // Load initial data when appSection becomes visible
 });
