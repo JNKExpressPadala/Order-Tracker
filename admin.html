@@ -14,14 +14,14 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
     }
     header {
       background: #2c3e50;
       color: #fff;
-      padding: 20px;
+      padding: 10px;
       text-align: center;
     }
     h1 {
@@ -31,624 +31,1134 @@
     .container {
       padding: 20px;
     }
-    .form-section {
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .form-section h2 {
-      margin-top: 0;
-    }
-    label {
-      display: block;
-      margin: 8px 0 4px;
-    }
-    input, select, button, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #2c3e50;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #34495e;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: #fff;
       margin-bottom: 20px;
     }
-    table th, table td {
-      padding: 10px;
+    table, th, td {
       border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
       text-align: left;
     }
-    table th {
-      background: #f8f8f8;
+    th {
+      background-color: #2c3e50;
+      color: white;
     }
-    .actions button {
-      width: auto;
-      margin-right: 5px;
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
     }
-    .receipt {
+    .btn {
+      padding: 6px 12px;
+      margin: 2px;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+    }
+    .btn-danger {
+      background-color: #e74c3c;
+      color: white;
+    }
+    .btn-success {
+      background-color: #2ecc71;
+      color: white;
+    }
+    .btn-warning {
+      background-color: #f39c12;
+      color: white;
+    }
+    .hidden {
       display: none;
-      width: 50mm;
-      height: 40mm;
-      font-size: 12px;
-      padding: 5px;
     }
-    .receipt img {
-      width: 30px;
-      height: auto;
+    .form-group {
+      margin-bottom: 10px;
     }
-    .pagination {
-      margin: 10px 0;
-      text-align: center;
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
-    .pagination button {
-      margin: 0 2px;
+    input, select {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    .section-title {
+      margin-top: 40px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .points {
+      font-weight: bold;
+      color: green;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>JNK Express Padala - Admin Panel</h1>
+    <h1>JNK Admin Panel</h1>
   </header>
   <div class="container">
-    <div class="form-section">
-      <h2>Add Tracking Entry</h2>
-      <form id="trackingForm">
+
+    <!-- Loyalty Registration -->
+    <h2 class="section-title">Loyalty Members</h2>
+    <form id="loyaltyForm">
+      <div class="form-group">
+        <label for="loyaltyName">Full Name</label>
+        <input type="text" id="loyaltyName" required />
+      </div>
+      <button type="submit" class="btn btn-primary">Register Member</button>
+    </form>
+
+    <table id="loyaltyTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Tracking Entries -->
+    <h2 class="section-title">Tracking Entries</h2>
+    <form id="trackingForm">
+      <div class="form-group">
+        <label for="trackingName">Customer Name</label>
+        <input type="text" id="trackingName" required />
+      </div>
+      <div class="form-group">
         <label for="trackingNumber">Tracking Number</label>
         <input type="text" id="trackingNumber" required />
-
-        <label for="customerName">Customer Name</label>
-        <input type="text" id="customerName" required />
-
-        <label for="barangay">Barangay</label>
-        <input type="text" id="barangay" required />
-
-        <label for="price">Price</label>
-        <input type="number" id="price" required />
-
-        <label for="status">Status</label>
-        <select id="status">
+      </div>
+      <div class="form-group">
+        <label for="trackingStatus">Status</label>
+        <select id="trackingStatus">
           <option value="Package Received">Package Received</option>
           <option value="In Transit">In Transit</option>
           <option value="Out for Delivery">Out for Delivery</option>
           <option value="Delivered">Delivered</option>
         </select>
-
-        <button type="submit">Save Entry</button>
-        <button type="button" id="printReceipt">Print Receipt</button>
-      </form>
-    </div>
-
-    <div class="form-section">
-      <h2>Loyalty Registration</h2>
-      <form id="loyaltyForm">
-        <label for="loyaltyName">Customer Full Name</label>
-        <input type="text" id="loyaltyName" required />
-        <button type="submit">Register Loyalty Member</button>
-      </form>
-      <table id="loyaltyTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Points</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="form-section">
-      <h2>Tracking Entries</h2>
-      <input type="text" id="searchInput" placeholder="Search tracking..." />
-      <table id="trackingTable">
-        <thead>
-          <tr>
-            <th>Tracking Number</th>
-            <th>Customer Name</th>
-            <th>Barangay</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th>History</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="pagination">
-        <button id="prevPage">Previous</button>
-        <span id="pageInfo"></span>
-        <button id="nextPage">Next</button>
       </div>
-    </div>
-  </div>
+      <button type="submit" class="btn btn-success">Add Tracking</button>
+    </form>
 
-  <!-- Hidden Receipt Template -->
-  <div id="receipt" class="receipt">
-    <img src="https://raw.githubusercontent.com/yourgithub/logo.png" alt="Logo" />
-    <h3>JNK Express Padala</h3>
-    <p id="r_trackingNumber"></p>
-    <p id="r_customerName"></p>
-    <p id="r_barangay"></p>
-    <p id="r_price"></p>
-    <p>Thank you for your support!</p>
-  </div>
+    <table id="trackingTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Tracking Number</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <style>
+        .status-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .status-timeline .status-entry {
+            padding: 4px 6px;
+            border-left: 3px solid #4CAF50;
+            margin-left: 8px;
+        }
+        .receipt {
+            width: 50mm;
+            height: 40mm;
+            font-size: 12px;
+        }
+        .loyalty-section {
+            margin-top: 20px;
+        }
+        .highlight-low-stock {
+            background-color: #ffcccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JNK Express Padala - Admin Panel</h1>
+        <p>Manage tracking entries, customers, products, and loyalty points</p>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tracking-tab" data-bs-toggle="tab" data-bs-target="#tracking" type="button" role="tab">Tracking</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers" type="button" role="tab">Customers</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="loyalty-tab" data-bs-toggle="tab" data-bs-target="#loyalty" type="button" role="tab">Loyalty</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab">Products</button>
+            </li>
+        </ul>
 
-    let loyaltyMembers = [];
+        <!-- Tab Content -->
+        <div class="tab-content" id="adminTabsContent">
+            <!-- Tracking Tab -->
+            <div class="tab-pane fade show active" id="tracking" role="tabpanel">
+                <h3>Tracking Entries</h3>
+                <form id="trackingForm">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="trackingName" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="trackingName" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="trackingBarangay" class="form-label">Barangay</label>
+                            <input type="text" class="form-control" id="trackingBarangay" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="trackingPrice" class="form-label">Price</label>
+                            <input type="number" class="form-control" id="trackingPrice" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="trackingNumber" class="form-label">Tracking Number</label>
+                            <input type="text" class="form-control" id="trackingNumber" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="trackingStatus" class="form-label">Status</label>
+                            <select id="trackingStatus" class="form-select">
+                                <option value="Package Received">Package Received</option>
+                                <option value="In Transit">In Transit</option>
+                                <option value="Out for Delivery">Out for Delivery</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Returned">Returned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Add Tracking Entry</button>
+                    <button type="button" id="printReceiptBtn" class="btn btn-success mt-3">Print Receipt</button>
+                </form>
 
-    function normalizeName(name) {
-      return name.replace(/\(.*?\)/g, "").trim().toLowerCase();
-    }
-
-    async function loadLoyaltyMembers() {
-      const snapshot = await db.collection("loyalty").get();
-      loyaltyMembers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        name: doc.data().name,
-        points: doc.data().points || 0
-      }));
-      renderLoyaltyTable();
-    }
-
-    function renderLoyaltyTable() {
-      const tbody = document.querySelector("#loyaltyTable tbody");
-      tbody.innerHTML = "";
-      loyaltyMembers.forEach(member => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${member.name}</td>
-          <td>${member.points}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    document.getElementById("loyaltyForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("loyaltyName").value.trim();
-      if (!name) return;
-      await db.collection("loyalty").add({ name, points: 0 });
-      document.getElementById("loyaltyForm").reset();
-      loadLoyaltyMembers();
-    });
-<!-- ============================= -->
-<!-- Part 2 of 4 - Admin Panel -->
-<!-- ============================= -->
-
-            <!-- Search and Filter -->
-            <div class="search-filter">
-                <input type="text" id="searchInput" placeholder="Search by Tracking No, Name, Barangay, or Status" />
-                <select id="statusFilter">
-                    <option value="">All Statuses</option>
-                    <option value="Package Received">Package Received</option>
-                    <option value="In Transit">In Transit</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                    <option value="Delivered">Delivered</option>
-                </select>
-                <button onclick="filterTable()">Apply Filter</button>
-            </div>
-
-            <!-- Table -->
-            <div class="table-container">
-                <table id="trackingTable">
-                    <thead>
-                        <tr>
-                            <th>Tracking Number</th>
-                            <th>Parcel Name</th>
-                            <th>Customer Name</th>
-                            <th>Barangay</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Status History</th>
-                            <th>Estimated Delivery</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="trackingTableBody">
-                        <!-- Dynamic rows -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div id="paginationControls" class="pagination"></div>
-
-            <!-- Modals -->
-            <div id="updateModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" onclick="closeModal('updateModal')">&times;</span>
-                    <h3>Update Tracking Entry</h3>
-                    <input type="hidden" id="updateId" />
-                    <label>Status</label>
-                    <select id="updateStatus">
-                        <option value="Package Received">Package Received</option>
-                        <option value="In Transit">In Transit</option>
-                        <option value="Out for Delivery">Out for Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                    </select>
-                    <button onclick="confirmUpdate()">Update</button>
-                </div>
-            </div>
-
-            <div id="deleteModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" onclick="closeModal('deleteModal')">&times;</span>
-                    <h3>Confirm Delete</h3>
-                    <input type="password" id="deletePassword" placeholder="Enter password" />
-                    <button onclick="confirmDelete()">Delete</button>
-                </div>
-            </div>
-
-            <!-- Loyalty Points Section -->
-            <div class="loyalty-section">
-                <h2>Loyalty Members</h2>
-                <div class="form-container">
-                    <input type="text" id="loyaltyName" placeholder="Complete Name" />
-                    <button onclick="registerLoyalty()">Register Loyalty Member</button>
-                </div>
-                <div class="table-container">
-                    <table id="loyaltyTable">
+                <div class="mt-4">
+                    <h4>Entries</h4>
+                    <input type="text" id="searchTracking" placeholder="Search by Name or Number" class="form-control mb-2">
+                    <table class="table table-bordered" id="trackingTable">
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Points</th>
+                                <th>Barangay</th>
+                                <th>Price</th>
+                                <th>Tracking Number</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="loyaltyTableBody">
-                            <!-- Dynamic loyalty rows -->
+                        <tbody id="trackingTableBody">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                    <div id="trackingPagination"></div>
+                </div>
+            </div>
+
+            <!-- Customers Tab -->
+            <div class="tab-pane fade" id="customers" role="tabpanel">
+                <h3>Customer Records</h3>
+                <form id="customerForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="customerName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="customerName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="customerBarangay" class="form-label">Barangay</label>
+                            <input type="text" class="form-control" id="customerBarangay" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary mt-4">Save Customer</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <h4>Saved Customers</h4>
+                    <table class="table table-bordered" id="customersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Barangay</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <!-- Dynamic rows -->
                         </tbody>
                     </table>
                 </div>
             </div>
+            <!-- ================= Tracking - continued (Part 3) ================= -->
+            <div class="tab-pane fade" id="loyalty" role="tabpanel">
+                <h3>Loyalty Management</h3>
+                <p>Register customers, view points, and adjust points manually.</p>
 
-        </main>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Register Loyalty Member</h5>
+                        <form id="registerLoyaltyForm">
+                            <div class="form-group">
+                                <label for="regFullName">Full Name</label>
+                                <input type="text" id="regFullName" class="form-control" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="regPhone">Phone (optional)</label>
+                                <input type="text" id="regPhone" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label for="regAddress">Address (optional)</label>
+                                <input type="text" id="regAddress" class="form-control" />
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </form>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5>Members List</h5>
+                        <input type="text" id="loyaltySearch" class="form-control mb-2" placeholder="Search member by name or card ID" />
+                        <table class="table table-sm" id="membersListTable">
+                            <thead>
+                                <tr><th>Card ID / Doc</th><th>Name</th><th>Points</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="membersListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <hr/>
+
+                <h5>Manual Adjust Points</h5>
+                <form id="adjustPointsForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="adjCardId">Card ID</label>
+                            <input type="text" id="adjCardId" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="adjDelta">Points (+ or -)</label>
+                            <input type="number" id="adjDelta" class="form-control" />
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-warning" type="submit">Apply</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ================= Customers tab continued ================= -->
+            <div class="tab-pane fade" id="customers" role="tabpanel">
+                <h3>Customers</h3>
+                <p>Auto-fill barangay when a registered customer name is entered (saves new pair if not exist).</p>
+
+                <form id="customerSaveForm">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label for="custName">Name</label>
+                            <input type="text" id="custName" class="form-control"/>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="custBarangay">Barangay</label>
+                            <input type="text" id="custBarangay" class="form-control"/>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary" type="submit">Save Customer</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="mt-3">
+                    <h5>Saved Customer Pairs</h5>
+                    <table class="table table-sm">
+                        <thead><tr><th>Name</th><th>Barangay</th></tr></thead>
+                        <tbody id="customersPairsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= Scripts for Part 3 actions ================= -->
+            <script>
+                // Helper: normalize names by removing parentheses content and trimming/uppercasing
+                function normalizeForLoyalty(raw) {
+                    if (!raw) return "";
+                    return raw.replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+                }
+
+                // Register loyalty member form submit
+                document.getElementById('registerLoyaltyForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const fullName = document.getElementById('regFullName').value.trim();
+                    const phone = document.getElementById('regPhone').value.trim();
+                    const address = document.getElementById('regAddress').value.trim();
+                    if (!fullName) return alert('Enter a name');
+
+                    const normalized = normalizeForLoyalty(fullName);
+                    // Use auto-generated doc ID or normalized as id depending on your design
+                    const docRef = db.collection('loyaltyMembers').doc();
+                    await docRef.set({
+                        fullName,
+                        normalizedName: normalized,
+                        phone: phone || '',
+                        address: address || '',
+                        points: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    e.target.reset();
+                    loadLoyaltyMembersList();
+                });
+
+                // Load loyalty members into the members table
+                async function loadLoyaltyMembersList() {
+                    const tbody = document.getElementById('membersListBody');
+                    tbody.innerHTML = 'Loading...';
+                    const snap = await db.collection('loyaltyMembers').orderBy('createdAt','desc').get();
+                    tbody.innerHTML = '';
+                    snap.docs.forEach(doc => {
+                        const d = doc.data();
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${doc.id}</td>
+                                        <td>${d.fullName || d.name || ''}</td>
+                                        <td>${d.points || 0}</td>
+                                        <td>
+                                          <button class="btn btn-sm btn-success" onclick="addPointById('${doc.id}')">+1</button>
+                                          <button class="btn btn-sm btn-danger" onclick="resetPoints('${doc.id}')">Reset</button>
+                                        </td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Add 1 point to member by doc id
+                async function addPointById(docId) {
+                    const ref = db.collection('loyaltyMembers').doc(docId);
+                    await db.runTransaction(async (tx) => {
+                        const snap = await tx.get(ref);
+                        if (!snap.exists) throw "Member not found";
+                        const cur = snap.data().points || 0;
+                        tx.update(ref, { points: cur + 1, pointsHistory: firebase.firestore.FieldValue.arrayUnion({
+                            type: 'manual-add', amount: 1, reason: 'Admin add', timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        })});
+                    });
+                    loadLoyaltyMembersList();
+                }
+
+                // Reset points
+                async function resetPoints(docId) {
+                    if (!confirm('Reset points for this member?')) return;
+                    await db.collection('loyaltyMembers').doc(docId).update({ points: 0 });
+                    loadLoyaltyMembersList();
+                }
+
+                // Manual adjust form
+                document.getElementById('adjustPointsForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const cardId = document.getElementById('adjCardId').value.trim();
+                    const delta = Number(document.getElementById('adjDelta').value);
+                    if (!cardId || !delta) return alert('Card ID and non-zero points required');
+                    const ref = db.collection('loyaltyMembers').doc(cardId);
+                    await db.runTransaction(async (tx) => {
+                        const snap = await tx.get(ref);
+                        if (!snap.exists) throw 'Member not found';
+                        const cur = snap.data().points || 0;
+                        const next = Math.max(0, cur + delta);
+                        tx.update(ref, { points: next, pointsHistory: firebase.firestore.FieldValue.arrayUnion({
+                            type: delta>0 ? 'manual-add' : 'manual-deduct',
+                            amount: delta,
+                            reason: 'Admin adjust',
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        })});
+                    });
+                    document.getElementById('adjCardId').value = '';
+                    document.getElementById('adjDelta').value = '';
+                    loadLoyaltyMembersList();
+                });
+
+                // Auto-fill barangay when typing customer name
+                document.getElementById('trackingName')?.addEventListener('input', async (e) => {
+                    const name = e.target.value.trim();
+                    if (!name) return;
+                    const normalized = normalizeForLoyalty(name);
+                    // Query customers collection keyed by normalized name
+                    const snap = await db.collection('customers').where('normalizedName','==', normalized).limit(1).get();
+                    if (!snap.empty) {
+                        const doc = snap.docs[0].data();
+                        document.getElementById('trackingBarangay').value = doc.barangay || '';
+                    }
+                });
+
+                // Save customer pairs form
+                document.getElementById('customerSaveForm')?.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('custName').value.trim();
+                    const barangay = document.getElementById('custBarangay').value.trim();
+                    if (!name || !barangay) return alert('Both name and barangay required');
+                    const normalized = normalizeForLoyalty(name);
+                    await db.collection('customers').doc().set({
+                        name, normalizedName: normalized, barangay,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    document.getElementById('custName').value = '';
+                    document.getElementById('custBarangay').value = '';
+                    loadCustomerPairs();
+                });
+
+                // Load customer pairs
+                async function loadCustomerPairs() {
+                    const tbody = document.getElementById('customersPairsBody');
+                    tbody.innerHTML = 'Loading...';
+                    const snap = await db.collection('customers').orderBy('createdAt','desc').get();
+                    tbody.innerHTML = '';
+                    snap.docs.forEach(doc => {
+                        const d = doc.data();
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${d.name}</td><td>${d.barangay || ''}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Initialize lists on load
+                loadLoyaltyMembersList();
+                loadCustomerPairs();
+            </script>
+    <!-- Part 4 -->
+    <div id="bulkUpdateModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Bulk Update Status</h2>
+        <form id="bulkUpdateForm">
+          <label for="bulkStartDate">Start Date & Time:</label>
+          <input type="datetime-local" id="bulkStartDate" required>
+          <label for="bulkEndDate">End Date & Time:</label>
+          <input type="datetime-local" id="bulkEndDate" required>
+          <label for="bulkStatus">Status:</label>
+          <select id="bulkStatus" required>
+            <option value="Package Received">Package Received</option>
+            <option value="In Transit">In Transit</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Returned">Returned</option>
+          </select>
+          <button type="submit">Update</button>
+        </form>
+      </div>
     </div>
 
     <script>
-        // =========================
-        // Firebase Initialization
-        // =========================
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+      // Loyalty Points Name Normalization
+      function normalizeName(name) {
+        return name
+          .replace(/\(.*?\)/g, "")   // remove anything inside ( )
+          .trim()                    // remove spaces at start/end
+          .toUpperCase();            // make consistent
+      }
 
-        // =========================
-        // Loyalty Functions
-        // =========================
-        async function registerLoyalty() {
-            const name = document.getElementById('loyaltyName').value.trim();
-            if (!name) return alert("Enter a name");
+      // Apply bulk update with proper history
+      document.getElementById('bulkUpdateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const startDate = new Date(document.getElementById('bulkStartDate').value);
+        const endDate = new Date(document.getElementById('bulkEndDate').value);
+        const status = document.getElementById('bulkStatus').value;
 
-            const ref = db.collection("loyalty").doc(name.toUpperCase());
-            const docSnap = await ref.get();
-            if (!docSnap.exists) {
-                await ref.set({ points: 0 });
-            }
-            document.getElementById('loyaltyName').value = "";
-            loadLoyaltyMembers();
+        if (!startDate || !endDate || startDate > endDate) {
+          alert('Invalid date range');
+          return;
         }
 
-        async function loadLoyaltyMembers() {
-            const tbody = document.getElementById("loyaltyTableBody");
-            tbody.innerHTML = "";
-            const querySnap = await db.collection("loyalty").get();
-            querySnap.forEach(doc => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td>${doc.id}</td><td>${doc.data().points}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
+        try {
+          const snapshot = await db.collection("tracking").get();
+          const batch = db.batch();
 
-        async function addLoyaltyPoint(customerName) {
-            // Normalize name (ignore anything in parentheses)
-            let baseName = customerName.split("(")[0].trim().toUpperCase();
-
-            const ref = db.collection("loyalty").doc(baseName);
-            const docSnap = await ref.get();
-            if (docSnap.exists) {
-                let points = docSnap.data().points || 0;
-                await ref.update({ points: points + 1 });
-                loadLoyaltyMembers();
-            }
-        }
-
-        // =========================
-        // Tracking Entry Functions
-        // =========================
-        async function saveTrackingEntry() {
-            const trackingNumber = document.getElementById("trackingNumber").value.trim();
-            const parcelName = document.getElementById("parcelName").value.trim();
-            const customerName = document.getElementById("customerName").value.trim();
-            const barangay = document.getElementById("barangay").value.trim();
-            const price = document.getElementById("price").value.trim();
-            const status = document.getElementById("status").value;
-
-            if (!trackingNumber || !parcelName || !customerName || !barangay) {
-                return alert("Please fill all required fields.");
-            }
-
-            const entry = {
-                trackingNumber,
-                parcelName,
-                customerName,
-                barangay,
-                price,
-                status,
-                statusHistory: [{ status, date: new Date().toISOString() }]
-            };
-
-            await db.collection("tracking").doc(trackingNumber).set(entry);
-
-            // Add loyalty point if applicable
-            await addLoyaltyPoint(customerName);
-
-            alert("Tracking entry saved!");
-            loadTrackingEntries();
-        }
-
-        async function loadTrackingEntries() {
-            const tbody = document.getElementById("trackingTableBody");
-            tbody.innerHTML = "";
-            const querySnap = await db.collection("tracking").get();
-            querySnap.forEach(doc => {
-                const data = doc.data();
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${data.trackingNumber}</td>
-                    <td>${data.parcelName}</td>
-                    <td>${data.customerName}</td>
-                    <td>${data.barangay}</td>
-                    <td>${data.price}</td>
-                    <td>${data.status}</td>
-                    <td>${data.statusHistory.map(h => h.status + " (" + new Date(h.date).toLocaleString() + ")").join("<br/>")}</td>
-                    <td>${data.estimatedDelivery || ""}</td>
-                    <td>
-                        <button onclick="openUpdateModal('${doc.id}')">Update</button>
-                        <button onclick="openDeleteModal('${doc.id}')">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-            // Update loyalty points if applicable
-            if (parcelName) {
-              const cleanedParcelName = cleanName(parcelName);
-              const loyaltyDocRef = doc(db, "loyaltyMembers", cleanedParcelName);
-              const loyaltyDocSnap = await getDoc(loyaltyDocRef);
-              if (loyaltyDocSnap.exists()) {
-                const currentPoints = loyaltyDocSnap.data().points || 0;
-                await updateDoc(loyaltyDocRef, {
-                  points: currentPoints + 1
-                });
-                console.log(`Loyalty point added for ${cleanedParcelName}`);
-              }
-            }
-          } catch (error) {
-            console.error("Error saving tracking entry:", error);
-          }
-        }
-
-        // Print Receipt
-        function printReceipt(trackingNumber, parcelName, barangay, price) {
-          const receiptWindow = window.open('', '_blank', 'width=400,height=600');
-          receiptWindow.document.write(`
-            <html>
-              <head>
-                <style>
-                  body { font-family: Arial, sans-serif; font-size: 12px; text-align: center; }
-                  .logo { max-width: 80px; margin-bottom: 5px; }
-                  .title { font-size: 14px; font-weight: bold; }
-                  .info { margin: 5px 0; }
-                  .quote { margin-top: 8px; font-style: italic; font-size: 11px; }
-                </style>
-              </head>
-              <body>
-                <img src="https://raw.githubusercontent.com/johnaboumatta/jnk-assets/main/logo.png" class="logo" />
-                <div class="title">JNK Express Padala</div>
-                <div class="info">Tracking #: ${trackingNumber}</div>
-                <div class="info">Parcel: ${parcelName}</div>
-                <div class="info">Barangay: ${barangay}</div>
-                <div class="info">Price: ₱${price}</div>
-                <div class="quote">"Thank you for your support"</div>
-              </body>
-            </html>
-          `);
-          receiptWindow.document.close();
-          receiptWindow.print();
-        }
-
-        // Handle Print and Save
-        document.getElementById("printBtn").addEventListener("click", async () => {
-          const parcelName = document.getElementById("parcelName").value;
-          const barangay = document.getElementById("barangay").value;
-          const price = document.getElementById("price").value;
-          const trackingNumber = document.getElementById("trackingNumber").value;
-          const status = document.getElementById("status").value;
-
-          await saveTrackingEntry(trackingNumber, parcelName, barangay, price, status);
-          printReceipt(trackingNumber, parcelName, barangay, price);
-        });
-
-        // Barcode Scanner Auto-Save and Print
-        document.getElementById("trackingNumber").addEventListener("change", async (e) => {
-          const trackingNumber = e.target.value.trim();
-          const parcelName = document.getElementById("parcelName").value;
-          const barangay = document.getElementById("barangay").value;
-          const price = document.getElementById("price").value;
-          const status = document.getElementById("status").value;
-
-          if (trackingNumber) {
-            await saveTrackingEntry(trackingNumber, parcelName, barangay, price, status);
-            printReceipt(trackingNumber, parcelName, barangay, price);
-          }
-        });
-
-        // Customer Name Auto-fill Barangay
-        async function autoFillBarangay(name) {
-          const cleanedName = cleanName(name);
-          const customerRef = doc(db, "customers", cleanedName);
-          const customerSnap = await getDoc(customerRef);
-          if (customerSnap.exists()) {
-            document.getElementById("barangay").value = customerSnap.data().barangay;
-          }
-        }
-
-        document.getElementById("parcelName").addEventListener("change", async (e) => {
-          const name = e.target.value.trim();
-          if (name) {
-            await autoFillBarangay(name);
-          }
-        });
-
-        // Export to CSV by Date Range
-        document.getElementById("exportBtn").addEventListener("click", async () => {
-          const startDate = document.getElementById("startDate").value;
-          const endDate = document.getElementById("endDate").value;
-
-          if (!startDate || !endDate) {
-            alert("Please select a date range.");
-            return;
-          }
-
-          const q = query(
-            collection(db, "trackingEntries"),
-            where("timestamp", ">=", new Date(startDate)),
-            where("timestamp", "<=", new Date(endDate))
-          );
-
-          const querySnapshot = await getDocs(q);
-          let csvContent = "data:text/csv;charset=utf-8,Tracking Number,Parcel Name,Barangay,Price,Status,Timestamp\n";
-
-          let itemCount = 0;
-          querySnapshot.forEach((doc) => {
+          snapshot.forEach((doc) => {
             const data = doc.data();
-            const row = `${data.trackingNumber},${data.parcelName},${data.barangay},${data.price},${data.status},${data.timestamp.toDate()}\n`;
-            csvContent += row;
-            itemCount++;
+            const createdAt = data.createdAt ? new Date(data.createdAt.seconds * 1000) : null;
+
+            if (createdAt && createdAt >= startDate && createdAt <= endDate) {
+              const statusHistory = data.statusHistory || [];
+              statusHistory.push({
+                status,
+                date: new Date().toISOString()
+              });
+
+              batch.update(doc.ref, {
+                status: status,
+                statusHistory: statusHistory
+              });
+            }
           });
 
-          csvContent += `\nTotal Items:,${itemCount}`;
+          await batch.commit();
+          alert("Bulk update successful!");
+        } catch (error) {
+          console.error("Bulk update failed:", error);
+          alert("Error during bulk update.");
+        }
+      });
+    </script>
+    <!-- Part 5 -->
+    <div id="exportModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Export by Date Range</h2>
+        <form id="exportForm">
+          <label for="exportStart">Start Date:</label>
+          <input type="date" id="exportStart" required>
+          <label for="exportEnd">End Date:</label>
+          <input type="date" id="exportEnd" required>
+          <button type="submit">Export CSV</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Export CSV within date range
+      document.getElementById('exportForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const startDate = new Date(document.getElementById('exportStart').value);
+        const endDate = new Date(document.getElementById('exportEnd').value);
+        if (!startDate || !endDate || startDate > endDate) {
+          alert("Invalid date range");
+          return;
+        }
+
+        try {
+          const snapshot = await db.collection("tracking").get();
+          let rows = [["Tracking Number", "Name", "Barangay", "Price", "Status", "Created At"]];
+          let count = 0;
+
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const createdAt = data.createdAt ? new Date(data.createdAt.seconds * 1000) : null;
+
+            if (createdAt && createdAt >= startDate && createdAt <= endDate) {
+              rows.push([
+                data.trackingNumber || "",
+                data.name || "",
+                data.barangay || "",
+                data.price || "",
+                data.status || "",
+                createdAt.toLocaleString()
+              ]);
+              count++;
+            }
+          });
+
+          let csvContent = "data:text/csv;charset=utf-8," 
+            + rows.map(e => e.join(",")).join("\n");
 
           const encodedUri = encodeURI(csvContent);
           const link = document.createElement("a");
           link.setAttribute("href", encodedUri);
-          link.setAttribute("download", "tracking_entries.csv");
+          link.setAttribute("download", `tracking_export_${Date.now()}.csv`);
           document.body.appendChild(link);
           link.click();
+          document.body.removeChild(link);
+
+          alert(`Export complete! ${count} entries included.`);
+        } catch (error) {
+          console.error("Export failed:", error);
+          alert("Error during export.");
+        }
+      });
+    </script>
+
+    <script>
+      // Loyalty Points Update with Normalized Name
+      async function updateLoyaltyPoints(customerName) {
+        if (!customerName) return;
+        const normalized = normalizeName(customerName);
+
+        try {
+          const ref = db.collection("loyalty").doc(normalized);
+          const docSnap = await ref.get();
+
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            await ref.update({
+              points: (data.points || 0) + 1
+            });
+          } else {
+            await ref.set({
+              name: normalized,
+              points: 1
+            });
+          }
+        } catch (error) {
+          console.error("Error updating loyalty points:", error);
+        }
+      }
+    </script>
+    <!-- Part 6 -->
+    <script>
+      // Bulk Update Status
+      document.getElementById('bulkUpdateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const startDate = new Date(document.getElementById('bulkStart').value);
+        const endDate = new Date(document.getElementById('bulkEnd').value);
+        const newStatus = document.getElementById('bulkStatus').value;
+
+        if (!startDate || !endDate || startDate > endDate || !newStatus) {
+          alert("Invalid inputs for bulk update.");
+          return;
+        }
+
+        try {
+          const snapshot = await db.collection("tracking").get();
+          let updated = 0;
+
+          const batch = db.batch();
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const createdAt = data.createdAt ? new Date(data.createdAt.seconds * 1000) : null;
+
+            if (createdAt && createdAt >= startDate && createdAt <= endDate) {
+              const ref = db.collection("tracking").doc(doc.id);
+
+              // Append to status history
+              const history = data.statusHistory || [];
+              history.push({
+                status: newStatus,
+                timestamp: new Date()
+              });
+
+              batch.update(ref, {
+                status: newStatus,
+                statusHistory: history
+              });
+              updated++;
+            }
+          });
+
+          await batch.commit();
+          alert(`Bulk update complete! ${updated} entries updated.`);
+        } catch (error) {
+          console.error("Bulk update failed:", error);
+          alert("Error during bulk update.");
+        }
+      });
+    </script>
+
+    <script>
+      // Delete Confirmation with Password
+      async function deleteEntry(id) {
+        const password = prompt("Enter admin password to delete:");
+        if (password !== "yourpassword") {
+          alert("Incorrect password.");
+          return;
+        }
+        try {
+          await db.collection("tracking").doc(id).delete();
+          alert("Entry deleted successfully!");
+          location.reload();
+        } catch (error) {
+          console.error("Delete failed:", error);
+          alert("Error deleting entry.");
+        }
+      }
+
+      // Update Confirmation with Password
+      async function updateEntry(id, newStatus) {
+        const password = prompt("Enter admin password to update:");
+        if (password !== "yourpassword") {
+          alert("Incorrect password.");
+          return;
+        }
+        try {
+          const ref = db.collection("tracking").doc(id);
+          const docSnap = await ref.get();
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            const history = data.statusHistory || [];
+            history.push({
+              status: newStatus,
+              timestamp: new Date()
+            });
+
+            await ref.update({
+              status: newStatus,
+              statusHistory: history
+            });
+
+            alert("Status updated!");
+            location.reload();
+          }
+        } catch (error) {
+          console.error("Update failed:", error);
+          alert("Error updating entry.");
+        }
+      }
+    </script>
+
+    <script>
+      // Normalize Name Function (used for loyalty points)
+      function normalizeName(name) {
+        return name.trim().toLowerCase().replace(/\s+/g, ' ');
+      }
+    </script>
+    <!-- Part 7 -->
+    <script>
+      // Export to CSV by Date Range with Item Count
+      document.getElementById('exportForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const startDate = new Date(document.getElementById('exportStart').value);
+        const endDate = new Date(document.getElementById('exportEnd').value);
+
+        if (!startDate || !endDate || startDate > endDate) {
+          alert("Invalid date range.");
+          return;
+        }
+
+        try {
+          const snapshot = await db.collection("tracking").get();
+          const rows = [];
+          let count = 0;
+
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const createdAt = data.createdAt ? new Date(data.createdAt.seconds * 1000) : null;
+
+            if (createdAt && createdAt >= startDate && createdAt <= endDate) {
+              count++;
+              rows.push({
+                TrackingNumber: data.trackingNumber,
+                CustomerName: data.customerName,
+                Barangay: data.barangay,
+                Price: data.price,
+                Status: data.status,
+                CreatedAt: createdAt.toLocaleString()
+              });
+            }
+          });
+
+          if (rows.length === 0) {
+            alert("No records found for the selected range.");
+            return;
+          }
+
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "TrackingNumber,CustomerName,Barangay,Price,Status,CreatedAt\n";
+          rows.forEach(row => {
+            csvContent += `${row.TrackingNumber},${row.CustomerName},${row.Barangay},${row.Price},${row.Status},${row.CreatedAt}\n`;
+          });
+
+          // Add summary line for item count
+          csvContent += `\nTotal Items: ${count}`;
+
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", `tracking_export_${Date.now()}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          alert(`Export complete! ${count} records exported.`);
+        } catch (error) {
+          console.error("Export failed:", error);
+          alert("Error exporting data.");
+        }
+      });
+    </script>
+
+    <script>
+      // Pagination (10 entries per page)
+      let currentPage = 1;
+      const entriesPerPage = 10;
+
+      function displayPage(entries, page) {
+        const start = (page - 1) * entriesPerPage;
+        const end = start + entriesPerPage;
+        const paginatedItems = entries.slice(start, end);
+
+        const tbody = document.getElementById("trackingTableBody");
+        tbody.innerHTML = "";
+
+        paginatedItems.forEach(entry => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${entry.trackingNumber}</td>
+            <td>${entry.customerName}</td>
+            <td>${entry.barangay}</td>
+            <td>${entry.price}</td>
+            <td>${entry.status}</td>
+            <td>${new Date(entry.createdAt.seconds * 1000).toLocaleString()}</td>
+            <td>
+              <button onclick="updateEntry('${entry.id}', 'In Transit')">Mark In Transit</button>
+              <button onclick="updateEntry('${entry.id}', 'Delivered')">Mark Delivered</button>
+              <button onclick="deleteEntry('${entry.id}')">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        renderPaginationControls(entries.length, page);
+      }
+
+      function renderPaginationControls(totalEntries, page) {
+        const totalPages = Math.ceil(totalEntries / entriesPerPage);
+        const paginationDiv = document.getElementById("paginationControls");
+        paginationDiv.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("button");
+          btn.innerText = i;
+          btn.className = (i === page) ? "active" : "";
+          btn.addEventListener("click", () => {
+            currentPage = i;
+            fetchAndDisplayEntries();
+          });
+          paginationDiv.appendChild(btn);
+        }
+      }
+    </script>
+        <button id="exportDateRangeBtn">Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Loyalty registration reference
+    const loyaltyRef = db.collection("loyaltyMembers");
+
+    // Normalize function to strip (COD), (89+10), etc.
+    function normalizeName(name) {
+      return name.replace(/\(.*?\)/g, "").trim().toLowerCase();
+    }
+
+    async function addTrackingEntry(entry) {
+      try {
+        // Save tracking entry to Firestore
+        await db.collection("trackingEntries").add(entry);
+
+        // Loyalty points check
+        if (entry.customerName) {
+          const snapshot = await loyaltyRef.get();
+          snapshot.forEach(async (doc) => {
+            const loyaltyName = normalizeName(doc.data().name);
+            const entryName = normalizeName(entry.customerName);
+
+            if (loyaltyName === entryName) {
+              const currentPoints = doc.data().points || 0;
+              await loyaltyRef.doc(doc.id).update({
+                points: currentPoints + 1,
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error adding tracking entry:", error);
+      }
+    }
+
+    // Example: Hook into your existing form submit or print-and-save button
+    document
+      .getElementById("addTrackingForm")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const entry = {
+          trackingNumber: document.getElementById("trackingNumber").value,
+          customerName: document.getElementById("customerName").value,
+          status: document.getElementById("status").value,
+          barangay: document.getElementById("barangay").value,
+          price: document.getElementById("price").value,
+          createdAt: new Date(),
+        };
+
+        await addTrackingEntry(entry);
+
+        // Reset form
+        e.target.reset();
+      });
+  </script>
+</body>
+</html>
+        // =========================
+        // BULK UPDATE STATUS LOGIC
+        // =========================
+        document.getElementById('bulkUpdateBtn').addEventListener('click', async () => {
+          const password = prompt("Enter admin password to continue:");
+          if(password !== "yourpassword"){ 
+            alert("Incorrect password."); 
+            return; 
+          }
+
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+          const newStatus = document.getElementById("bulkStatus").value;
+
+          if(!fromDate || !toDate || !newStatus){
+            alert("Please select date range and status.");
+            return;
+          }
+
+          const q = query(collection(db,"tracking_entries"),
+            where("date","<=",toDate),
+            where("date",">=",fromDate)
+          );
+
+          const snapshot = await getDocs(q);
+          snapshot.forEach(async (docSnap) => {
+            const data = docSnap.data();
+            let history = data.history || [];
+            history.push({
+              status: newStatus,
+              date: new Date().toISOString()
+            });
+            await updateDoc(doc(db,"tracking_entries",docSnap.id),{
+              status: newStatus,
+              history: history
+            });
+          });
+
+          alert("Bulk update completed!");
+        });
+
+        // =========================
+        // EXPORT TO CSV BY DATE
+        // =========================
+        document.getElementById('exportCsvBtn').addEventListener('click', async () => {
+          const fromDate = document.getElementById("exportFrom").value;
+          const toDate = document.getElementById("exportTo").value;
+          if(!fromDate || !toDate){
+            alert("Please select date range.");
+            return;
+          }
+
+          const q = query(collection(db,"tracking_entries"),
+            where("date","<=",toDate),
+            where("date",">=",fromDate)
+          );
+
+          const snapshot = await getDocs(q);
+          let csv = "Tracking No,Name,Barangay,Price,Status,Date\n";
+          snapshot.forEach(docSnap=>{
+            const d = docSnap.data();
+            csv += `${d.trackingNumber},${d.name},${d.barangay},${d.price},${d.status},${d.date}\n`;
+          });
+
+          let blob = new Blob([csv],{type:"text/csv"});
+          let url = window.URL.createObjectURL(blob);
+          let a = document.createElement("a");
+          a.href=url;
+          a.download="tracking_export.csv";
+          a.click();
+        });
+
+        // =========================
+        // PAGINATION LOGIC
+        // =========================
+        const rowsPerPage = 10;
+        let currentPage = 1;
+
+        function displayPage(page){
+          let table = document.getElementById("entriesTable");
+          let rows = table.getElementsByTagName("tr");
+          let totalRows = rows.length-1; // minus header
+          let totalPages = Math.ceil(totalRows/rowsPerPage);
+
+          if(page<1) page=1;
+          if(page>totalPages) page=totalPages;
+
+          for(let i=1;i<rows.length;i++){
+            if(i>(page-1)*rowsPerPage && i<=page*rowsPerPage){
+              rows[i].style.display="";
+            } else {
+              rows[i].style.display="none";
+            }
+          }
+
+          document.getElementById("pageIndicator").innerText=`Page ${page} of ${totalPages}`;
+          currentPage=page;
+        }
+
+        document.getElementById("prevPage").addEventListener("click",()=>{ displayPage(currentPage-1); });
+        document.getElementById("nextPage").addEventListener("click",()=>{ displayPage(currentPage+1); });
+
+        window.onload=()=>{ displayPage(1); };
+      </script>
+    </body>
+</html>
+      <!-- =========================
+           PAGINATION CONTROLS
+      ========================== -->
+      <div style="margin-top:20px; text-align:center;">
+        <button id="prevPage">Previous</button>
+        <span id="pageIndicator">Page 1 of 1</span>
+        <button id="nextPage">Next</button>
+      </div>
+
+      <!-- =========================
+           CONFIRM DELETE MODAL
+      ========================== -->
+      <div id="confirmDeleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);">
+        <div style="background:#fff; width:300px; margin:150px auto; padding:20px; border-radius:8px; text-align:center;">
+          <h3>Confirm Delete</h3>
+          <p>Enter admin password to delete this entry:</p>
+          <input type="password" id="deletePassword" style="width:100%; padding:5px; margin:10px 0;">
+          <div style="margin-top:15px;">
+            <button id="confirmDeleteBtn">Delete</button>
+            <button id="cancelDeleteBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // =========================
+        // DELETE CONFIRMATION LOGIC
+        // =========================
+        let deleteId = null;
+        function askDelete(id){
+          deleteId = id;
+          document.getElementById("confirmDeleteModal").style.display="block";
+        }
+
+        document.getElementById("cancelDeleteBtn").addEventListener("click", ()=>{
+          document.getElementById("confirmDeleteModal").style.display="none";
+          deleteId=null;
+        });
+
+        document.getElementById("confirmDeleteBtn").addEventListener("click", async ()=>{
+          const password = document.getElementById("deletePassword").value;
+          if(password !== "yourpassword"){
+            alert("Incorrect password.");
+            return;
+          }
+          if(deleteId){
+            await deleteDoc(doc(db,"tracking_entries",deleteId));
+            alert("Entry deleted!");
+            location.reload();
+          }
+        });
+
+        // =========================
+        // SEARCH / FILTER LOGIC
+        // =========================
+        document.getElementById("searchInput").addEventListener("keyup", ()=>{
+          let filter = document.getElementById("searchInput").value.toUpperCase();
+          let table = document.getElementById("entriesTable");
+          let tr = table.getElementsByTagName("tr");
+
+          for(let i=1; i<tr.length; i++){
+            let tds = tr[i].getElementsByTagName("td");
+            let txtValue="";
+            for(let j=0;j<tds.length;j++){ txtValue+=tds[j].textContent+" "; }
+            if(txtValue.toUpperCase().indexOf(filter)>-1){
+              tr[i].style.display="";
+            } else {
+              tr[i].style.display="none";
+            }
+          }
         });
       </script>
     </body>
-  </html>
-    <!-- Bulk Update Modal -->
-    <div id="bulkUpdateModal" class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeBulkUpdateModal()">&times;</span>
-        <h2>Bulk Update Status</h2>
-        <label for="bulkStatus">Select New Status:</label>
-        <select id="bulkStatus">
-          <option value="Package Received">Package Received</option>
-          <option value="In Transit">In Transit</option>
-          <option value="Out for Delivery">Out for Delivery</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Returned">Returned</option>
-        </select>
-        <label for="bulkStartDate">Start Date:</label>
-        <input type="date" id="bulkStartDate" />
-        <label for="bulkEndDate">End Date:</label>
-        <input type="date" id="bulkEndDate" />
-        <button onclick="applyBulkUpdate()">Apply Update</button>
-      </div>
-    </div>
-
-    <!-- Loyalty Members Modal -->
-    <div id="loyaltyMembersModal" class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeLoyaltyMembersModal()">&times;</span>
-        <h2>Loyalty Members</h2>
-        <table id="loyaltyTable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody id="loyaltyTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <script>
-      // ================= LOYALTY POINTS FIX =================
-      // Function to normalize names (removes extra tags like "(COD)")
-      function normalizeName(name) {
-        return name.replace(/\(.*?\)/g, "").trim().toLowerCase();
-      }
-
-      // When saving a tracking entry
-      async function saveTrackingEntry(entry) {
-        const docRef = await db.collection("tracking").add(entry);
-
-        // Loyalty system check
-        const loyaltySnap = await db.collection("loyaltyMembers").get();
-        loyaltySnap.forEach(async (doc) => {
-          const memberName = normalizeName(doc.data().name);
-          const entryName = normalizeName(entry.customerName);
-
-          if (memberName === entryName) {
-            await db
-              .collection("loyaltyMembers")
-              .doc(doc.id)
-              .update({
-                points: (doc.data().points || 0) + 1,
-              });
-          }
-        });
-      }
-
-      // Example save button
-      document.getElementById("saveBtn").addEventListener("click", async () => {
-        const entry = {
-          customerName: document.getElementById("customerName").value,
-          barangay: document.getElementById("barangay").value,
-          price: parseFloat(document.getElementById("price").value) || 0,
-          trackingNumber: document.getElementById("trackingNumber").value,
-          status: document.getElementById("status").value,
-          timestamp: new Date(),
-        };
-        await saveTrackingEntry(entry);
-        alert("Tracking entry saved!");
-      });
-    </script>
-  </body>
 </html>
