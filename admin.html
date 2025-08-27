@@ -1206,36 +1206,27 @@ async function adjustPoints(cardId, delta, reason){
   await loadLoyaltyMembers();
 }
 
-// ✅ Unified Print + Save + Reward handler
-async function handlePrintAndSave(parcelData) {
-  try {
-    // Save parcel entry to Firestore
-    await saveParcelToFirestore(parcelData);
+/* ========================== Add/Save Helpers for other flows ========================== */
+/* Example: when saving a new parcel via other UI flows, call tryAwardLoyaltyPoint(...) accordingly */
 
-    // Reward loyalty points (if enabled)
-    if (parcelData.customerName) {
-      await rewardPoints(parcelData.customerName, parcelData.price);
-    }
+/* Initialize listeners used in UI - wiring */
+document.addEventListener('DOMContentLoaded', () => {
+  // Hook forms (if present)
+  const loginBtn = document.querySelector('#loginSection button');
+  // nothing required here because login() is called inline
 
-    // Print the receipt (single trigger only)
-    printReceipt(parcelData);
-
-  } catch (error) {
-    console.error("Error in handlePrintAndSave:", error);
+  // Hook save tracking form if exists in your original HTML
+  const addBtns = document.querySelectorAll('[onclick="saveTracking()"], button.save-entry');
+  if(addBtns.length === 0){
+    // fallback: attach to general Add button if present
+    const fbtn = document.querySelector('#addTrackingBtn');
+    if(fbtn) fbtn.addEventListener('click', saveTracking);
   }
-}
 
-// ✅ Attach only once to the Print Receipt button
-document.getElementById("printReceiptBtn").onclick = async () => {
-  const parcelData = collectParcelFormData(); // you already have this function
-  await handlePrintAndSave(parcelData);
-};
+  // Print button
+  const printBtn = document.querySelector('button[onclick="printAndSave()"]');
+  if(printBtn) printBtn.addEventListener('click', printAndSave);
 
-// ✅ Attach only once to Barcode Scan auto-print
-function handleBarcodeScan(scannedData) {
-  const parcelData = parseScannedData(scannedData); // your parsing logic
-  handlePrintAndSave(parcelData);
-}
   // Load initial data when appSection becomes visible
 });
 
