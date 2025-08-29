@@ -6,15 +6,904 @@
 <title>JNK Admin Panel</title>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
 <!-- Chart / Export libs used previously -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
 <!-- QR Scanner -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js">
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
+
+</script>
 <style>
     :root{
       --brand:#D7282F;
@@ -1200,6 +2089,133 @@ document.addEventListener('DOMContentLoaded', () => {
 /* Keep onSnapshot for reactive updates */
 db.collection && db.collection('products').onSnapshot && db.collection('products').onSnapshot(()=>loadProducts());
 db.collection && db.collection('sales').onSnapshot && db.collection('sales').onSnapshot(()=>{/*loadSales() if implemented*/});
+
+
+/* ========================== Analytics Export ========================== */
+function exportAnalyticsExcel(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
+  window.__analyticsRows.forEach(r=>{
+    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
+  });
+
+  // Daily Summary
+  aoa.push([]);
+  aoa.push(["Daily Summary"]);
+  (window.__analyticsDaily||[]).forEach(d=>{
+    aoa.push([d.date, d.parcels, "", "", d.revenue]);
+  });
+
+  // Barangay Distribution
+  aoa.push([]);
+  aoa.push(["Barangay Distribution"]);
+  (window.__analyticsBarangay||[]).forEach(b=>{
+    aoa.push([b.barangay, b.count]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
+  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
+}
+
+async function exportAnalyticsPDF(){
+  if(!window.__analyticsRows){ 
+    alert("No analytics data loaded. Please refresh analytics first."); 
+    return; 
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(0,0,0);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
+
+  // === KPIs ===
+  doc.setFontSize(11);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Key Metrics", 14, 48);
+
+  doc.setTextColor(0,0,0);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  kpiY += 8;
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+
+  // === Charts ===
+  const chart1 = document.getElementById("chartParcels");
+  const chart2 = document.getElementById("chartRevenue");
+  const chart3 = document.getElementById("chartBarangay");
+
+  let yCharts = 72;
+  if(chart1){
+    const img1 = chart1.toDataURL("image/png", 1.0);
+    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
+    doc.text("Daily Parcels", 14, yCharts-2);
+  }
+  if(chart2){
+    const img2 = chart2.toDataURL("image/png", 1.0);
+    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
+    doc.text("Daily Revenue", 110, yCharts-2);
+  }
+  if(chart3){
+    const img3 = chart3.toDataURL("image/png", 1.0);
+    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
+    doc.text("Barangay Distribution", 14, yCharts+68);
+  }
+
+  // === Top Barangays ===
+  doc.setFontSize(12);
+  doc.setTextColor(215, 40, 47);
+  doc.text("Top Barangays", 110, yCharts+68);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0,0,0);
+  let yTable = yCharts + 76;
+  const rows = (window.__analyticsBarangay || []).slice(0,8);
+  rows.forEach((r, i)=>{
+    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
+    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
+  });
+
+  // === Footer ===
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
+
+  // === Filename with date range ===
+  const fromEl = document.getElementById("anaFrom").value;
+  const toEl   = document.getElementById("anaTo").value;
+  let filename = "analytics_dashboard.pdf";
+  if(fromEl && toEl){
+    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
+  }
+
+  doc.save(filename);
+}
 
 </script>
 </body>
