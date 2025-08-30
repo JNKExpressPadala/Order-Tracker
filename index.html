@@ -35,10 +35,6 @@
     .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
 
     .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
-    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
-    .progress-step { flex: 1; text-align: center; position: relative; }
-    .progress-step::before { content: ""; display: block; height: 8px; background: #ccc; margin: 0 auto 6px; border-radius: 4px; width: 80%; }
-    .progress-step.active::before { background: #D7282F; }
     .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
     #loading { display: none; margin-top: 10px; color: #D7282F; }
     .footer-link { display: block; margin-top: 20px; color: #D7282F; text-decoration: none; }
@@ -49,8 +45,7 @@
     }
 
     @media (max-width: 480px) {
-      .progress-bar { flex-direction: column; gap: 10px; }
-      .progress-step::before { width: 100%; }
+      .progress-wrapper { flex-direction: column; }
     }
 
     .support-btn {
@@ -79,6 +74,55 @@
     .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
 
     footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
+
+    /* 🚀 Animated Progress Bar */
+    .progress-wrapper {
+      display: flex;
+      justify-content: space-between;
+      max-width: 600px;
+      margin: 20px auto;
+      position: relative;
+    }
+    .progress-wrapper::before {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      height: 4px;
+      background: #ccc;
+      z-index: 1;
+    }
+    .progress-step {
+      text-align: center;
+      flex: 1;
+      position: relative;
+      z-index: 2;
+    }
+    .progress-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #ccc;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      transition: background 0.5s ease, transform 0.5s ease;
+    }
+    .progress-step.active .progress-circle {
+      background: #007bff;
+      transform: scale(1.2);
+    }
+    .progress-step.completed .progress-circle {
+      background: #28a745;
+    }
+    .progress-label {
+      margin-top: 5px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -102,6 +146,10 @@
       <button class="track-btn" onclick="trackPackage()">Track</button>
     </div>
     <div id="loading">⏳ Loading...</div>
+
+    <!-- 🚀 NEW Animated Progress Bar -->
+    <div id="progressContainer" style="display:none;"></div>
+
     <div id="statusResult" class="status-box"></div>
     <div id="mapContainer" class="map-box"></div>
   </div>
@@ -163,6 +211,36 @@
     const db = firebase.firestore();
     const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 
+    function playProgressAnimation(status) {
+      const container = document.getElementById("progressContainer");
+      container.style.display = "block";
+
+      container.innerHTML = `
+        <div class="progress-wrapper">
+          ${STAGES.map((s, i) => `
+            <div class="progress-step" id="step${i}">
+              <div class="progress-circle">${i+1}</div>
+              <div class="progress-label">${s}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      let lastIndex = STAGES.indexOf(status);
+      if (lastIndex === -1) lastIndex = 0;
+
+      STAGES.forEach((s, i) => {
+        setTimeout(() => {
+          const stepEl = document.getElementById(\`step\${i}\`);
+          if (i < lastIndex) {
+            stepEl.classList.add("completed");
+          } else if (i === lastIndex) {
+            stepEl.classList.add("active");
+          }
+        }, i * 600);
+      });
+    }
+
     async function trackPackage() {
       const input = document.getElementById('trackingInput').value.trim().toUpperCase();
       const resultDiv = document.getElementById('statusResult');
@@ -186,10 +264,6 @@
           const estimated = data.estimatedDate || "";
           const history = data.statusHistory || [];
 
-          let progress = STAGES.map(stage =>
-            `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
-          ).join("");
-
           let timeline = history.map(h => {
             const time = h.timestamp?.toDate().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) || "";
             return `• [${time}] ${h.status}`;
@@ -198,8 +272,6 @@
           resultDiv.innerHTML = `
             <strong>Location:</strong> ${location}<br>
             ${estimated ? `<div class="estimated-box">Estimated Delivery: ${estimated}</div>` : ""}
-            <strong>Status Progress:</strong>
-            <div class='progress-bar'>${progress}</div><br>
             <strong>Status Timeline:</strong><br>${timeline}
           `;
 
@@ -212,7 +284,11 @@
               </iframe>`;
           }
 
-          // auto-fill support form tracking number
+          if (history.length > 0) {
+            const latestStatus = history[history.length - 1].status;
+            playProgressAnimation(latestStatus);
+          }
+
           document.getElementById('supportTracking').value = input;
 
         } else {
@@ -227,13 +303,11 @@
       resultDiv.style.display = 'block';
     }
 
-    // Support Form Toggle
     function toggleSupportForm() {
       const form = document.getElementById('supportForm');
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     }
 
-    // Allow Enter key to trigger search
     document.getElementById('trackingInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
