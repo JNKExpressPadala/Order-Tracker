@@ -1,339 +1,421 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>JNK Express Padala - Track Your Package</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Background with animated blobs */
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #ff5f6d, #d7282f, #ff9966);
-      background-size: 400% 400%;
-      animation: gradientShift 12s ease infinite;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #ff4d4d, #ff9966);
       color: #333;
+      min-height: 100vh;
+      position: relative;
       overflow-x: hidden;
     }
-    @keyframes gradientShift {
-      0% {background-position: 0% 50%;}
-      50% {background-position: 100% 50%;}
-      100% {background-position: 0% 50%;}
+
+    /* Floating animated shapes */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 12s infinite ease-in-out;
+      z-index: 0;
+    }
+    .blob:nth-child(1) { width: 300px; height: 300px; top: 10%; left: -100px; }
+    .blob:nth-child(2) { width: 200px; height: 200px; bottom: 10%; right: -80px; animation-delay: 3s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-40px) scale(1.05); }
     }
 
     header {
-      background: rgba(215,40,47,0.95);
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
       color: #fff;
-      padding: 15px;
+      padding: 15px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      z-index: 1;
+      position: relative;
     }
-    header img { height: 50px; border-radius: 8px; }
-    header h1 { margin: 0; font-size: 1.4em; }
-    .admin-link { color: white; text-decoration: none; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; }
-    .admin-link:hover { background: #fff; color: #d7282f; }
+    header img { height: 50px; border-radius: 10px; }
+    header h1 { font-size: 1.6em; }
 
-    nav { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; background: #fff; padding: 10px; }
-    nav button { padding: 10px 16px; border: 1px solid #d7282f; background: #fff; color: #d7282f; border-radius: 6px; cursor: pointer; }
-    nav button:hover { background: #d7282f; color: #fff; }
-
-    /* Main container */
-    .container {
-      max-width: 650px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 2em;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    nav {
       text-align: center;
+      margin: 15px auto;
+      z-index: 1;
+      position: relative;
     }
-    .tracking-bar { display: flex; gap: 10px; margin-top: 15px; }
+    nav button {
+      margin: 5px;
+      padding: 10px 16px;
+      border: 1px solid #fff;
+      background: transparent;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    nav button:hover {
+      background: #fff;
+      color: #ff4d4d;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+      padding: 2em;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .tracking-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
     .tracking-bar input {
-      flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px;
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
     }
     .track-btn {
-      background: #d7282f; color: #fff; border: none;
-      padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;
+      padding: 12px 18px;
+      border: none;
+      background: #ff4d4d;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    .track-btn:hover { background: #a01c23; }
+    .track-btn:hover { background: #e63939; }
 
-    #loading { display: none; margin-top: 12px; color: #d7282f; font-weight: bold; }
+    #loading { margin-top: 10px; color: #ff4d4d; display: none; }
 
     .status-box {
-      display: none; text-align: left; margin-top: 20px;
-      padding: 20px; background: #fdf1f1; border-radius: 12px;
+      margin-top: 20px;
+      padding: 20px;
+      background: #fdf1f1;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
     }
 
-    /* Timeline UI */
-    .timeline { display: flex; justify-content: space-between; margin-top: 20px; }
+    /* Timeline */
+    .timeline {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      position: relative;
+    }
     .timeline-step {
-      flex: 1; text-align: center; position: relative;
-      opacity: 0.4; transition: opacity 0.3s;
+      flex: 1;
+      text-align: center;
+      position: relative;
     }
-    .timeline-step.active { opacity: 1; }
     .timeline-step::before {
-      content: ""; position: absolute; top: 25px; left: 50%;
-      width: 100%; height: 4px; background: #ccc; transform: translateX(-50%);
+      content: "";
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      width: 100%;
+      height: 4px;
+      background: #ddd;
       z-index: -1;
+      transform: translateX(-50%);
     }
-    .timeline-step:last-child::before { display: none; }
+    .timeline-step:first-child::before { display: none; }
     .timeline-icon {
-      width: 40px; height: 40px; margin: auto;
-      border-radius: 50%; background: #ccc; display: flex; align-items: center; justify-content: center;
-      font-size: 18px; margin-bottom: 6px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #ccc;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
     }
-    .timeline-step.active .timeline-icon { background: #d7282f; color: #fff; }
+    .timeline-step.active .timeline-icon {
+      background: #ff4d4d;
+      box-shadow: 0 0 12px rgba(255,77,77,0.8);
+    }
 
-    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; display: none; }
+    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
 
     /* Sections */
-    .services-section, .news-section, .info-section {
-      max-width: 700px; margin: 40px auto; background: #fff; padding: 20px;
-      border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    .section {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      z-index: 1;
+      position: relative;
     }
-    .services-section h3, .news-section h4, .info-section h4 { color: #d7282f; }
+    .section h3 { color: #ff4d4d; margin-bottom: 10px; }
 
-    footer {
-      background: #d7282f; color: #fff; text-align: center;
-      padding: 15px; margin-top: 50px;
-    }
-    footer a { color: #fff; text-decoration: underline; }
-
-    /* Collapsible */
+    /* Collapsibles */
     .collapsible {
-      width: 100%; background: #d7282f; color: white;
-      padding: 12px; border: none; border-radius: 6px;
-      margin-top: 10px; cursor: pointer;
+      width: 100%;
+      background: #ff4d4d;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      margin-top: 10px;
+      text-align: left;
+      font-size: 1em;
+      cursor: pointer;
     }
-    .collapsible:hover { background: #a01c23; }
-    .content { display: none; padding: 10px 15px; border-left: 2px solid #d7282f; }
+    .collapsible:after { content: '\002B'; float: right; }
+    .collapsible.active:after { content: '\2212'; }
+    .content { padding: 10px; display: none; }
 
-    /* Floating support */
+    /* Floating Support Button */
     .support-btn {
-      position: fixed; bottom: 90px; right: 20px;
-      background: #d7282f; color: #fff;
-      padding: 12px 18px; border-radius: 25px; font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      background-color: #ff4d4d;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
     }
     .support-form {
-      position: fixed; bottom: 150px; right: 20px;
-      width: 300px; background: #fff; border-radius: 10px;
+      position: fixed;
+      bottom: 150px;
+      right: 20px;
+      width: 300px;
+      background: #fff;
+      border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      padding: 1em; display: none;
+      padding: 1em;
+      display: none;
+      z-index: 1001;
     }
     .support-form input, .support-form textarea {
       width: 100%; padding: 10px; margin-top: 8px;
-      border: 1px solid #ccc; border-radius: 6px;
+      border-radius: 6px; border: 1px solid #ccc;
     }
     .support-form button {
-      background: #d7282f; color: #fff; border: none;
-      margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer;
+      background: #ff4d4d; color: white; border: none;
+      margin-top: 10px; padding: 10px; border-radius: 6px;
+      cursor: pointer;
     }
 
-    /* Back to top */
-    #backToTop {
-      position: fixed; bottom: 20px; right: 20px;
-      background: #d7282f; color: #fff; border: none;
-      padding: 12px 18px; border-radius: 25px;
-      cursor: pointer; display: none; font-weight: bold;
+    footer {
+      background: #ff4d4d;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      margin-top: 40px;
     }
   </style>
 </head>
 <body>
+  <!-- Floating animated shapes -->
+  <div class="blob"></div>
+  <div class="blob"></div>
 
-<header>
-  <img src="logo.jpg" alt="Logo">
-  <h1>JNK Express Padala</h1>
-  <a href="admin.html" class="admin-link">Login</a>
-</header>
+  <header>
+    <img src="logo.jpg" alt="Logo" />
+    <h1>JNK Express Padala</h1>
+    <a href="admin.html" style="color:white;text-decoration:none;">Login</a>
+  </header>
 
-<nav>
-  <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
-  <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
-  <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
-  <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
-</nav>
+  <nav>
+    <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
+    <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
+    <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
+    <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
+  </nav>
 
-<div class="container">
-  <h2>Track Your Package</h2>
-  <div class="tracking-bar">
-    <input type="text" id="trackingInput" placeholder="Enter your tracking number">
-    <button class="track-btn" onclick="trackPackage()">Track</button>
-  </div>
-  <div id="loading">⏳ Loading...</div>
-  <div id="statusResult" class="status-box"></div>
-  <div id="mapContainer" class="map-box"></div>
-</div>
-
-<div class="services-section">
-  <h3>Our Services</h3>
-  <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
-  <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
-  <p><strong>Bulk/Truck Services:</strong> Large shipments - Balikbayan boxes, appliances, handled with care.</p>
-</div>
-
-<div class="news-section">
-  <h4>📍 Pick-up Locations</h4>
-  <ul>
-    <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
-    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
-    <li><strong>Vigo/Dangay:</strong> (Near Dangay Church)</li>
-    <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
-    <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
-    <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
-  </ul>
-</div>
-
-<div class="info-section">
-  <button class="collapsible">About Us</button>
-  <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
+  <div class="container">
+    <h2>Track Your Package</h2>
+    <div class="tracking-bar">
+      <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
+      <button class="track-btn" onclick="trackPackage()">Track</button>
+    </div>
+    <div id="loading">⏳ Loading...</div>
+    <div id="statusResult" class="status-box"></div>
+    <div id="mapContainer" class="map-box"></div>
   </div>
 
-  <button class="collapsible">Privacy Policy</button>
-  <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services.</p>
+  <div class="section">
+    <h3>Our Services</h3>
+    <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and vice versa!</p>
+    <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
+    <p><strong>Bulk/Truck Services:</strong> Large shipments like Balikbayan boxes, appliances, handled with care.</p>
   </div>
 
-  <button class="collapsible">Cookie Policy</button>
-  <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity.</p>
+  <div class="section">
+    <h3>📍 Pick-up Locations</h3>
+    <ul>
+      <li><strong>Main Branch:</strong> Urban Finds by JNK, Andres Bonifacio HW, Brgy. Araw at Bituin</li>
+      <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA’s Warehouse)</li>
+      <li><strong>Vigo/Dangay:</strong> Near Dangay Church</li>
+      <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
+      <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
+      <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
+    </ul>
   </div>
 
-  <button class="collapsible">Terms & Conditions</button>
-  <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events.</p>
+  <div class="section">
+    <button class="collapsible">About Us</button>
+    <div class="content">
+      <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond.</p>
+    </div>
+    <button class="collapsible">Privacy Policy</button>
+    <div class="content">
+      <p>We respect your privacy and ensure your personal information is protected.</p>
+    </div>
+    <button class="collapsible">Cookie Policy</button>
+    <div class="content">
+      <p>We may use cookies to enhance your experience.</p>
+    </div>
+    <button class="collapsible">Terms & Conditions</button>
+    <div class="content">
+      <p>By using our services, you agree to provide accurate information.</p>
+    </div>
+    <button class="collapsible">Refund & Shipping Policy</button>
+    <div class="content">
+      <p>Shipping fees are non-refundable once dispatched.</p>
+    </div>
   </div>
 
-  <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis.</p>
+  <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
+  <div class="support-form" id="supportForm">
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="Name" placeholder="Your Name" required />
+      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
+      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
   </div>
-</div>
 
-<!-- Floating Support Button -->
-<div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
-<div class="support-form" id="supportForm">
-  <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="text" name="Name" placeholder="Your Name" required>
-    <input type="text" name="Tracking Number" placeholder="Tracking Number" required>
-    <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
-    <button type="submit">Send Message</button>
-  </form>
-</div>
+  <footer>
+    &copy; 2025 JNK Express Padala. All Rights Reserved. | 
+    <a href="https://www.facebook.com/profile.php?id=61572021585621" style="color:white;text-decoration:underline;">Facebook</a>
+  </footer>
 
-<!-- Back to Top -->
-<button id="backToTop" onclick="scrollToTop()">↑ Top</button>
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-<footer>
-  &copy; 2025 JNK Express Padala. All Rights Reserved.<br>
-  <a href="https://www.facebook.com/profile.php?id=61572021585621">Facebook</a>
-</footer>
+    const STAGES = [
+      { name: "Package Received", icon: "📦" },
+      { name: "In Transit", icon: "🚚" },
+      { name: "Arrived", icon: "📍" },
+      { name: "For Pick-up", icon: "✅" }
+    ];
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+    async function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+      const loadingDiv = document.getElementById('loading');
+      const mapDiv = document.getElementById('mapContainer');
 
-const STAGES = [
-  { name: "Package Received", icon: "📥" },
-  { name: "In Transit", icon: "🚚" },
-  { name: "Arrived", icon: "📍" },
-  { name: "For Pick-up", icon: "✅" }
-];
+      resultDiv.style.display = 'none'; 
+      mapDiv.style.display = 'none'; 
+      loadingDiv.style.display = 'block';
 
-async function trackPackage() {
-  const input = document.getElementById('trackingInput').value.trim().toUpperCase();
-  const resultDiv = document.getElementById('statusResult');
-  const mapDiv = document.getElementById('mapContainer');
-  const loadingDiv = document.getElementById('loading');
-
-  resultDiv.style.display = 'none'; 
-  mapDiv.style.display = 'none'; 
-  loadingDiv.style.display = 'block';
-
-  if (!input) { alert("Enter tracking number"); loadingDiv.style.display = 'none'; return; }
-
-  try {
-    let data = null;
-
-    // Try doc ID first
-    const docRef = await db.collection("parcels").doc(input).get();
-    if (docRef.exists) {
-      data = docRef.data();
-    } else {
-      // Try field search
-      const q = await db.collection("parcels").where("trackingNumber", "==", input).limit(1).get();
-      if (!q.empty) data = q.docs[0].data();
-    }
-
-    if (!data) {
-      resultDiv.innerHTML = `<p style="color:red;">❌ Tracking number not found.</p>`;
-    } else {
-      resultDiv.innerHTML = `
-        <h3>📦 Tracking Number: ${input}</h3>
-        <p><strong>Status:</strong> ${data.status || "Unknown"}</p>
-        <p><strong>Destination:</strong> ${data.destination || "N/A"}</p>
-        <p><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
-        <div class="timeline">
-          ${STAGES.map(stage => `
-            <div class="timeline-step ${stage.name === data.status ? 'active' : ''}">
-              <div class="timeline-icon">${stage.icon}</div>
-              <div class="timeline-label">${stage.name}</div>
-            </div>`).join('')}
-        </div>
-      `;
-      resultDiv.style.display = 'block';
-
-      if (data.location) {
-        const [lat, lng] = data.location.split(",");
-        mapDiv.innerHTML = `<iframe src="https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed" width="100%" height="300" style="border:0;"></iframe>`;
-        mapDiv.style.display = 'block';
+      if (!input) { 
+        alert("Enter tracking number"); 
+        loadingDiv.style.display = 'none'; 
+        return; 
       }
+
+      try {
+        let data = null;
+
+        // Try doc ID in "tracking"
+        const docRef = await db.collection("tracking").doc(input).get();
+        if (docRef.exists) {
+          data = docRef.data();
+        } else {
+          // Try field "trackingNumber"
+          const q = await db.collection("tracking").where("trackingNumber", "==", input).limit(1).get();
+          if (!q.empty) data = q.docs[0].data();
+        }
+
+        if (!data) {
+          resultDiv.innerHTML = `<p style="color:red;">❌ Tracking number not found.</p>`;
+        } else {
+          resultDiv.innerHTML = `
+            <h3>📦 Tracking Number: ${input}</h3>
+            <p><strong>Status:</strong> ${data.status || "Unknown"}</p>
+            <p><strong>Destination:</strong> ${data.destination || "N/A"}</p>
+            <p><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
+            <div class="timeline">
+              ${STAGES.map(stage => `
+                <div class="timeline-step ${stage.name === data.status ? 'active' : ''}">
+                  <div class="timeline-icon">${stage.icon}</div>
+                  <div class="timeline-label">${stage.name}</div>
+                </div>`).join('')}
+            </div>
+          `;
+          if (data.location) {
+            const [lat, lng] = data.location.split(",");
+            mapDiv.innerHTML = `<iframe src="https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed" width="100%" height="300" style="border:0;"></iframe>`;
+            mapDiv.style.display = 'block';
+          }
+        }
+        resultDiv.style.display = 'block';
+      } catch (e) {
+        console.error("❌ Error:", e);
+        resultDiv.innerHTML = `<p style="color:red;">⚠️ Error fetching data. Check console.</p>`;
+      }
+      loadingDiv.style.display = 'none';
     }
-  } catch (e) {
-    console.error("❌ Error:", e);
-    resultDiv.innerHTML = `<p style="color:red;">⚠️ Error retrieving data.</p>`;
-    resultDiv.style.display = 'block';
-  }
-  loadingDiv.style.display = 'none';
-}
 
-function toggleSupportForm() {
-  const form = document.getElementById('supportForm');
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
-}
-function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-window.onscroll = function() {
-  document.getElementById("backToTop").style.display =
-    document.documentElement.scrollTop > 200 ? "block" : "none";
-};
+    // Support Form Toggle
+    function toggleSupportForm() {
+      const form = document.getElementById('supportForm');
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    }
 
-document.querySelectorAll(".collapsible").forEach(btn => {
-  btn.addEventListener("click", function() {
-    this.classList.toggle("active");
-    const content = this.nextElementSibling;
-    content.style.display = content.style.display === "block" ? "none" : "block";
-  });
-});
-</script>
+    // Collapsible sections
+    const coll = document.getElementsByClassName("collapsible");
+    for (let i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        const content = this.nextElementSibling;
+        content.style.display = content.style.display === "block" ? "none" : "block";
+      });
+    }
+  </script>
 </body>
 </html>
