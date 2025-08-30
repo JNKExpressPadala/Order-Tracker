@@ -4,45 +4,25 @@
   <meta charset="UTF-8" />
   <title>JNK Express Padala - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline." />
+  <meta name="keywords" content="jnk express padala, package tracking, delivery, lubang courier, sea freight, courier service" />
+  
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
     header {
-  background: #D7282F;
-  color: #fff;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-header img {
-  height: 50px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.6em;
-  flex: 1;
-}
-
-.admin-link {
-  color: white;
-  text-decoration: none;
-  background: rgba(255,255,255,0.1);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.95em;
-}
-
-.admin-link:hover {
-  background: white;
-  color: #D7282F;
-}
+      background: #D7282F; color: #fff; padding: 15px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    header img { height: 50px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    header h1 { margin: 0; font-size: 1.6em; flex: 1; }
+    .admin-link {
+      color: white; text-decoration: none; background: rgba(255,255,255,0.1);
+      padding: 6px 12px; border-radius: 6px; font-size: 0.95em;
+    }
+    .admin-link:hover { background: white; color: #D7282F; }
 
     nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
     nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
@@ -63,80 +43,56 @@ header h1 {
     #loading { display: none; margin-top: 10px; color: #D7282F; }
     .footer-link { display: block; margin-top: 20px; color: #D7282F; text-decoration: none; }
 
+    .estimated-box {
+      background: #e9f9e9; border: 1px solid #3aa757; padding: 10px; border-radius: 6px;
+      margin: 10px 0; font-weight: bold; color: #2b7a2b;
+    }
+
+    @media (max-width: 480px) {
+      .progress-bar { flex-direction: column; gap: 10px; }
+      .progress-step::before { width: 100%; }
+    }
+
     .support-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      background-color: #D7282F;
-      color: white;
-      padding: 12px 18px;
-      border-radius: 25px;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      z-index: 1000;
+      position: fixed; bottom: 90px; right: 20px;
+      background-color: #D7282F; color: white; padding: 12px 18px;
+      border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000; cursor: pointer;
     }
     .support-form {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      width: 300px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      padding: 1em;
-      display: none;
-      z-index: 1001;
+      position: fixed; bottom: 150px; right: 20px; width: 300px;
+      background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 1em; display: none; z-index: 1001;
     }
     .support-form input, .support-form textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      font-size: 1em;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      width: 100%; padding: 10px; margin-top: 8px;
+      font-size: 1em; border-radius: 6px; border: 1px solid #ccc;
     }
     .support-form button {
-      background: #D7282F;
-      color: white;
-      border: none;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
+      background: #D7282F; color: white; border: none; margin-top: 10px;
+      padding: 10px; border-radius: 6px; cursor: pointer;
     }
 
     .info-section, .services-section, .news-section {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 10px 20px;
+      max-width: 600px; margin: 20px auto; padding: 10px 20px;
     }
     .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
 
-    footer {
-      background: #D7282F;
-      color: white;
-      text-align: center;
-      padding: 15px;
-      font-size: 0.9em;
-      margin-top: 50px;
-    }
+    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
   </style>
 </head>
 <body>
   <header>
-  <img src="logo.jpg" alt="Logo" />
-  <h1>JNK Express Padala</h1>
-  <a href="admin.html" class="admin-link">Login</a>
-</header>
+    <img src="logo.jpg" alt="Logo" />
+    <h1>JNK Express Padala</h1>
+    <a href="admin.html" class="admin-link">Login</a>
+  </header>
 
   <nav>
     <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
     <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
     <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
     <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
-    
-</button>
-
   </nav>
 
   <div class="container">
@@ -184,14 +140,14 @@ header h1 {
     <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
       <input type="hidden" name="_captcha" value="false">
       <input type="text" name="Name" placeholder="Your Name" required />
-      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
+      <input type="text" id="supportTracking" name="Tracking Number" placeholder="Tracking Number" required />
       <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
       <button type="submit">Send Message</button>
     </form>
   </div>
 
   <footer>
-    &copy; 2021 JNK Express Padala. All Rights Reserved.
+    &copy; 2025 JNK Express Padala. All Rights Reserved.
   </footer>
 
   <script>
@@ -213,6 +169,11 @@ header h1 {
       const mapDiv = document.getElementById('mapContainer');
       const loadingDiv = document.getElementById('loading');
 
+      if (!input) {
+        alert("⚠️ Please enter a tracking number.");
+        return;
+      }
+
       loadingDiv.style.display = 'block';
       resultDiv.style.display = 'none';
       mapDiv.innerHTML = '';
@@ -222,7 +183,7 @@ header h1 {
         if (doc.exists) {
           const data = doc.data();
           const location = data.location || "Unknown";
-          const estimated = data.estimatedDate || "Not available";
+          const estimated = data.estimatedDate || "";
           const history = data.statusHistory || [];
 
           let progress = STAGES.map(stage =>
@@ -230,16 +191,17 @@ header h1 {
           ).join("");
 
           let timeline = history.map(h => {
-            const time = h.timestamp?.toDate().toLocaleString() || "";
+            const time = h.timestamp?.toDate().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) || "";
             return `• [${time}] ${h.status}`;
           }).join("<br>");
 
           resultDiv.innerHTML = `
             <strong>Location:</strong> ${location}<br>
-            <strong>Estimated Delivery:</strong> ${estimated}<br><br>
+            ${estimated ? `<div class="estimated-box">Estimated Delivery: ${estimated}</div>` : ""}
             <strong>Status Progress:</strong>
             <div class='progress-bar'>${progress}</div><br>
-            <strong>Status Timeline:</strong><br>${timeline}`;
+            <strong>Status Timeline:</strong><br>${timeline}
+          `;
 
           if (location && location !== "Unknown") {
             const encodedLocation = encodeURIComponent(location);
@@ -249,11 +211,15 @@ header h1 {
                 src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
               </iframe>`;
           }
+
+          // auto-fill support form tracking number
+          document.getElementById('supportTracking').value = input;
+
         } else {
-          resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet received by JNK Expess Padala.<br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+          resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet received by JNK Express Padala.<br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
         }
       } catch (error) {
-        resultDiv.innerHTML = "Please enter your tracking number.";
+        resultDiv.innerHTML = "⚠️ System unavailable. Please try again later.";
         console.error(error);
       }
 
@@ -261,10 +227,19 @@ header h1 {
       resultDiv.style.display = 'block';
     }
 
+    // Support Form Toggle
     function toggleSupportForm() {
       const form = document.getElementById('supportForm');
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     }
+
+    // Allow Enter key to trigger search
+    document.getElementById('trackingInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        trackPackage();
+      }
+    });
   </script>
 </body>
 </html>
