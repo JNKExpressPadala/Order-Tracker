@@ -1,257 +1,376 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>JNK Express Padala - Track Your Package</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline." />
-  <meta name="keywords" content="JNK Express Padala, Track Package, Courier, Shipping, Lubang" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline.">
+  <meta name="keywords" content="JNK Express Padala, Track Package, Courier, Shipping, Lubang">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    /* Background with Gradient + Floating Particles */
+    /* Background & Layout */
     body {
-      font-family: "Poppins", Arial, sans-serif;
-      background: linear-gradient(270deg, #fdfbfb, #ebedee, #fdfbfb);
-      background-size: 600% 600%;
-      animation: gradientShift 15s ease infinite;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
       color: #222;
-      line-height: 1.6;
+      background: linear-gradient(-45deg, #ff7675, #d63031, #ff6b81, #c0392b);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
       overflow-x: hidden;
-      position: relative;
     }
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50% }
+      50% { background-position: 100% 50% }
+      100% { background-position: 0% 50% }
     }
-    body::before, body::after {
-      content: "";
-      position: absolute;
+    .blob {
+      position: fixed;
       border-radius: 50%;
-      background: rgba(215, 40, 47, 0.12);
+      background: rgba(255,255,255,0.1);
+      filter: blur(60px);
+      animation: float 20s infinite ease-in-out alternate;
       z-index: 0;
-      animation: floatShapes 20s infinite linear;
     }
-    body::before { width: 350px; height: 350px; top: -150px; left: -150px; }
-    body::after { width: 400px; height: 400px; bottom: -180px; right: -180px; animation-duration: 25s; }
-    @keyframes floatShapes {
-      0%   { transform: translateY(0) rotate(0deg); }
-      50%  { transform: translateY(-30px) rotate(180deg); }
-      100% { transform: translateY(0) rotate(360deg); }
+    .blob:nth-child(1) { width: 300px; height: 300px; top: 10%; left: -150px; }
+    .blob:nth-child(2) { width: 400px; height: 400px; bottom: -200px; right: -100px; animation-duration: 25s; }
+    @keyframes float {
+      from { transform: translateY(0px) translateX(0px); }
+      to { transform: translateY(-60px) translateX(40px); }
     }
 
     /* Header */
     header {
-      background: linear-gradient(135deg, #D7282F, #a81c22);
+      background: rgba(215,40,47,0.9);
+      backdrop-filter: blur(8px);
       color: #fff;
       padding: 15px 25px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
       position: relative;
       z-index: 1;
     }
-    header img { height: 55px; border-radius: 12px; }
-    header h1 { font-size: 1.6em; font-weight: 700; flex: 1; }
-    .admin-link {
-      color: white; text-decoration: none; background: rgba(255,255,255,0.2);
-      padding: 8px 14px; border-radius: 8px; font-size: 0.95em; transition: all 0.3s ease;
-    }
-    .admin-link:hover { background: white; color: #D7282F; }
+    header img { height: 50px; border-radius: 10px; }
+    header h1 { margin: 0; font-size: 1.5em; }
+    .admin-link { color: #fff; text-decoration: none; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; }
+    .admin-link:hover { background: #fff; color: #d7282f; }
 
-    /* Nav */
+    /* Navigation */
     nav {
-      display: flex; justify-content: center; flex-wrap: wrap;
-      background: #fff; padding: 12px;
-      border-bottom: 1px solid #eee; box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-      position: relative; z-index: 1;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #eee;
+      z-index: 1;
+      position: relative;
     }
     nav button {
-      margin: 6px 12px; padding: 10px 18px;
-      border: 2px solid #D7282F; background: white; color: #D7282F;
-      font-weight: 600; border-radius: 8px; cursor: pointer;
+      margin: 5px 10px;
+      padding: 10px 18px;
+      border: 1px solid #d7282f;
+      border-radius: 25px;
+      background: #fff;
+      color: #d7282f;
+      font-weight: bold;
+      cursor: pointer;
       transition: all 0.3s ease;
     }
-    nav button:hover {
-      background: #D7282F; color: white;
-      transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-    }
+    nav button:hover { background: #d7282f; color: #fff; }
 
-    /* Container */
+    /* Main Container */
     .container {
-      max-width: 700px; margin: 40px auto;
-      background: rgba(255,255,255,0.8);
-      border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-      padding: 2em; text-align: center;
-      backdrop-filter: blur(15px);
-      position: relative; z-index: 1;
-      animation: fadeIn 0.6s ease-in-out;
+      max-width: 650px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: 20px;
+      padding: 2em;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 1;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    h2 { font-size: 1.6em; margin-bottom: 10px; }
-
-    .tracking-bar {
-      display: flex; gap: 10px; margin-top: 20px;
-    }
-    input, button.track-btn {
-      padding: 12px; font-size: 1em;
-      border-radius: 8px; border: 1px solid #ccc;
-    }
-    input { flex: 1; }
-    input:focus {
-      border-color: #D7282F; box-shadow: 0 0 8px rgba(215,40,47,0.3); outline: none;
+    .tracking-bar { display: flex; gap: 10px; margin: 20px 0; }
+    .tracking-bar input {
+      flex: 1; padding: 12px; font-size: 1em;
+      border: 1px solid #ccc; border-radius: 10px;
     }
     .track-btn {
-      background-color: #D7282F; color: white; border: none; font-weight: bold;
-      cursor: pointer; transition: all 0.3s ease;
+      background: #d7282f; color: #fff; border: none;
+      padding: 12px 18px; border-radius: 10px;
+      font-weight: bold; cursor: pointer;
+      transition: 0.3s;
     }
-    .track-btn:hover { background-color: #a01c23; transform: scale(1.05); }
+    .track-btn:hover { background: #a01c23; }
+    #loading { color: #d7282f; margin: 15px 0; display: none; }
 
-    /* Status Box */
+    /* Tracking Result */
     .status-box {
-      margin-top: 25px;
+      margin-top: 20px;
       padding: 20px;
-      background: linear-gradient(135deg, #fff, #ffecec);
-      border-radius: 12px;
-      text-align: center;
+      background: #fff5f5;
+      border-radius: 15px;
       display: none;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-      animation: fadeIn 0.5s ease-in-out;
+      text-align: center;
     }
-    .status-box h3 { margin-bottom: 15px; color: #D7282F; }
-    .status-detail { margin: 6px 0; font-size: 1em; }
-
-    /* Progress Bar */
+    .status-box h3 { margin-top: 0; }
+    .status-detail { margin: 8px 0; }
     .progress-bar {
-      display: flex; justify-content: space-between;
-      margin-top: 20px; font-size: 0.85em;
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
     }
     .progress-step {
-      flex: 1; text-align: center; position: relative;
-      color: #555;
+      flex: 1;
+      font-size: 0.9em;
+      text-align: center;
+      position: relative;
     }
     .progress-step::before {
-      content: ""; display: block; height: 8px; background: #ccc;
-      margin: 0 auto 6px; border-radius: 4px; width: 80%;
-      transition: background 0.4s ease;
+      content: "";
+      display: block;
+      height: 8px;
+      border-radius: 4px;
+      background: #ccc;
+      margin: 0 auto 8px;
+      width: 80%;
     }
-    .progress-step.active { font-weight: bold; color: #D7282F; }
-    .progress-step.active::before { background: #D7282F; }
+    .progress-step.active::before { background: #d7282f; }
 
-    /* Map */
-    .map-container {
-      margin-top: 20px;
-      border-radius: 12px;
-      overflow: hidden;
+    .map-container { margin-top: 20px; display: none; border-radius: 12px; overflow: hidden; }
+
+    /* Info Sections */
+    .services-section, .news-section, .info-section {
+      max-width: 650px;
+      margin: 20px auto;
+      background: rgba(255,255,255,0.95);
+      border-radius: 15px;
+      padding: 20px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      animation: fadeIn 0.5s ease-in-out;
+      z-index: 1;
+      position: relative;
+    }
+    .services-section h3, .news-section h4, .info-section h4 { color: #d7282f; }
+
+    /* Collapsible */
+    .collapsible {
+      width: 100%; background: #d7282f; color: white;
+      padding: 12px; border: none; border-radius: 6px;
+      margin-top: 10px; text-align: left; font-size: 1em;
+      cursor: pointer; transition: 0.3s;
+    }
+    .collapsible:hover { background: #a01c23; }
+    .collapsible:after { content: '\002B'; float: right; }
+    .collapsible.active:after { content: '\2212'; }
+    .content { padding: 10px 15px; display: none; }
+
+    /* Support Button */
+    .support-btn {
+      position: fixed; bottom: 90px; right: 20px;
+      background: #d7282f; color: #fff;
+      padding: 12px 18px; border-radius: 25px;
+      font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .support-form {
+      position: fixed; bottom: 150px; right: 20px;
+      width: 300px; background: #fff;
+      border-radius: 10px; padding: 1em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: none; z-index: 1001;
+    }
+    .support-form input, .support-form textarea {
+      width: 100%; padding: 10px; margin-top: 8px;
+      border-radius: 6px; border: 1px solid #ccc;
+    }
+    .support-form button {
+      margin-top: 10px; width: 100%;
+      background: #d7282f; color: #fff;
+      border: none; padding: 10px;
+      border-radius: 6px; cursor: pointer;
     }
 
-    #loading { display: none; margin-top: 15px; font-weight: bold; color: #D7282F; }
+    /* Back to Top */
+    #backToTop {
+      position: fixed; bottom: 20px; right: 20px;
+      display: none; background: #d7282f; color: #fff;
+      border: none; padding: 12px 18px;
+      border-radius: 25px; cursor: pointer;
+      font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 1002;
+    }
+
+    /* Footer */
+    footer {
+      background: #d7282f; color: white;
+      text-align: center; padding: 20px;
+      margin-top: 40px; position: relative; z-index: 1;
+    }
+    footer a { color: white; text-decoration: underline; }
   </style>
 </head>
 <body>
+  <!-- Floating Blobs -->
+  <div class="blob"></div>
+  <div class="blob"></div>
 
-<header>
-  <img src="logo.jpg" alt="Logo" />
-  <h1>JNK Express Padala</h1>
-  <a href="admin.html" class="admin-link">Login</a>
-</header>
+  <header>
+    <img src="logo.jpg" alt="Logo">
+    <h1>JNK Express Padala</h1>
+    <a href="admin.html" class="admin-link">Login</a>
+  </header>
 
-<nav>
-  <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
-  <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
-  <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
-  <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
-</nav>
+  <nav>
+    <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
+    <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
+    <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
+    <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
+  </nav>
 
-<div class="container">
-  <h2>Track Your Package</h2>
-  <div class="tracking-bar">
-    <input type="text" id="trackingInput" placeholder="Enter your tracking number" />
-    <button class="track-btn" onclick="trackPackage()">Track</button>
+  <div class="container">
+    <h2>Track Your Package</h2>
+    <div class="tracking-bar">
+      <input type="text" id="trackingInput" placeholder="Enter your tracking number">
+      <button class="track-btn" onclick="trackPackage()">Track</button>
+    </div>
+    <div id="loading">⏳ Loading...</div>
+    <div id="statusResult" class="status-box"></div>
+    <div id="mapContainer" class="map-container"></div>
   </div>
-  <div id="loading">⏳ Loading...</div>
-  <div id="statusResult" class="status-box"></div>
-  <div id="mapContainer" class="map-container" style="display:none;"></div>
-</div>
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
+  <div class="services-section">
+    <h3>Our Services</h3>
+    <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
+    <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
+    <p><strong>Bulk/Truck Services:</strong> Large shipments handled with care.</p>
+  </div>
 
-async function trackPackage() {
-  const input = document.getElementById('trackingInput').value.trim().toUpperCase();
-  const resultDiv = document.getElementById('statusResult');
-  const loadingDiv = document.getElementById('loading');
-  const mapDiv = document.getElementById('mapContainer');
+  <div class="news-section">
+    <h4>📍 Pick-up Locations</h4>
+    <ul>
+      <li><strong>Main Branch:</strong> Urban Finds by JNK, Andres Bonifacio HW</li>
+      <li><strong>Tilik:</strong> Near NFA's Warehouse</li>
+      <li><strong>Vigo/Dangay:</strong> Near Dangay Church</li>
+      <li><strong>Tagbac:</strong> 104 Guijo St.</li>
+      <li><strong>Binacas:</strong> 213 Kasoy St.</li>
+      <li><strong>Cabra:</strong> 037 Bayabas St.</li>
+    </ul>
+  </div>
 
-  resultDiv.style.display = 'none';
-  mapDiv.style.display = 'none';
-  loadingDiv.style.display = 'block';
+  <div class="info-section" id="policies">
+    <button class="collapsible">About Us</button>
+    <div class="content"><p>JNK Express Padala is dedicated to safe, quick, and reliable delivery.</p></div>
+    <button class="collapsible">Privacy Policy</button>
+    <div class="content"><p>We respect your privacy and ensure your personal information is protected.</p></div>
+    <button class="collapsible">Cookie Policy</button>
+    <div class="content"><p>Our website may use cookies to enhance your experience.</p></div>
+    <button class="collapsible">Terms & Conditions</button>
+    <div class="content"><p>By using JNK services, you agree to accurate information for shipment and tracking.</p></div>
+    <button class="collapsible">Refund & Shipping Policy</button>
+    <div class="content"><p>Shipping fees are non-refundable once the parcel is dispatched.</p></div>
+  </div>
 
-  if (!input) {
-    alert("Please enter a tracking number.");
-    loadingDiv.style.display = 'none';
-    return;
-  }
+  <!-- Support -->
+  <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
+  <div class="support-form" id="supportForm">
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="Name" placeholder="Your Name" required>
+      <input type="text" name="Tracking Number" placeholder="Tracking Number" required>
+      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
 
-  try {
-    const doc = await db.collection("parcels").doc(input).get();
-    if (!doc.exists) {
-      resultDiv.innerHTML = `<p style="color:red;">❌ Tracking number not found.</p>`;
-    } else {
-      const data = doc.data();
-      resultDiv.innerHTML = `
-        <h3>📦 Tracking Number: ${input}</h3>
-        <p class="status-detail"><strong>Status:</strong> ${data.status || "Unknown"}</p>
-        <p class="status-detail"><strong>Destination:</strong> ${data.destination || "N/A"}</p>
-        <p class="status-detail"><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
-        <div class="progress-bar">
-          ${STAGES.map(stage => `<div class="progress-step ${stage === data.status ? 'active' : ''}">${stage}</div>`).join('')}
-        </div>
-      `;
+  <button id="backToTop" onclick="scrollToTop()">↑ Top</button>
 
-      // Show Map if location exists
-      if (data.location) {
-        const [lat, lng] = data.location.split(",");
-        mapDiv.innerHTML = `
-          <iframe src="https://maps.google.com/maps?q=${lat},${lng}&hl=en&z=14&output=embed" 
-            width="100%" height="300" style="border:0;"></iframe>
-        `;
-        mapDiv.style.display = 'block';
-      }
+  <footer>
+    &copy; 2025 JNK Express Padala. All Rights Reserved.<br>
+    <a href="https://www.facebook.com/profile.php?id=61572021585621">Facebook</a>
+  </footer>
+
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+    authDomain: "jnk-ordertracker.firebaseapp.com",
+    projectId: "jnk-ordertracker",
+    storageBucket: "jnk-ordertracker.appspot.com",
+    messagingSenderId: "421193030070",
+    appId: "1:421193030070:web:078e39980237bc41f64917"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
+
+  async function trackPackage() {
+    const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+    const resultDiv = document.getElementById('statusResult');
+    const loadingDiv = document.getElementById('loading');
+    const mapDiv = document.getElementById('mapContainer');
+
+    resultDiv.style.display = 'none';
+    mapDiv.style.display = 'none';
+    loadingDiv.style.display = 'block';
+
+    if (!input) {
+      alert("Please enter a tracking number.");
+      loadingDiv.style.display = 'none';
+      return;
     }
-    resultDiv.style.display = 'block';
-  } catch (e) {
-    console.error("Error:", e);
-    resultDiv.innerHTML = `<p style="color:red;">⚠️ Error retrieving data. Try again later.</p>`;
-    resultDiv.style.display = 'block';
-  }
-  loadingDiv.style.display = 'none';
-}
-</script>
 
+    try {
+      const querySnap = await db.collection("parcels").where("trackingNumber", "==", input).limit(1).get();
+
+      if (querySnap.empty) {
+        resultDiv.innerHTML = `<p style="color:red;">❌ Tracking number not found.</p>`;
+      } else {
+        const data = querySnap.docs[0].data();
+        resultDiv.innerHTML = `
+          <h3>📦 Tracking Number: ${input}</h3>
+          <p class="status-detail"><strong>Status:</strong> ${data.status || "Unknown"}</p>
+          <p class="status-detail"><strong>Destination:</strong> ${data.destination || "N/A"}</p>
+          <p class="status-detail"><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
+          <div class="progress-bar">
+            ${STAGES.map(stage => `<div class="progress-step ${stage === data.status ? 'active' : ''}">${stage}</div>`).join('')}
+          </div>
+        `;
+        if (data.location) {
+          const [lat, lng] = data.location.split(",");
+          mapDiv.innerHTML = `<iframe src="https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed" width="100%" height="300" style="border:0;"></iframe>`;
+          mapDiv.style.display = 'block';
+        }
+      }
+      resultDiv.style.display = 'block';
+    } catch (e) {
+      console.error("Error:", e);
+      resultDiv.innerHTML = `<p style="color:red;">⚠️ Error retrieving data. Try again later.</p>`;
+      resultDiv.style.display = 'block';
+    }
+    loadingDiv.style.display = 'none';
+  }
+
+  function toggleSupportForm() {
+    const form = document.getElementById('supportForm');
+    form.style.display = form.style.display === 'block' ? 'none' : 'block';
+  }
+  function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  window.onscroll = () => {
+    document.getElementById("backToTop").style.display =
+      document.documentElement.scrollTop > 200 ? "block" : "none";
+  };
+  document.querySelectorAll(".collapsible").forEach(btn => {
+    btn.addEventListener("click", function() {
+      this.classList.toggle("active");
+      const content = this.nextElementSibling;
+      content.style.display = content.style.display === "block" ? "none" : "block";
+    });
+  });
+  </script>
 </body>
 </html>
