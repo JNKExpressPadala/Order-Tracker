@@ -1,2222 +1,476 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>JNK Admin Panel</title>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<!-- Chart / Export libs used previously -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<!-- QR Scanner -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js">
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
-<style>
-    :root{
-      --brand:#D7282F;
-      --bg:#fff3f3;
-      --card:#fff;
-      --text:#222;
-      --muted:#666;
-      --radius:12px;
-      --shadow:0 8px 24px rgba(0,0,0,.08);
+  <meta charset="utf-8" />
+  <title>JNK Express Padala — Track Your Package</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Track your JNK Express Padala packages. Enter tracking number, see current status, estimated delivery and map preview." />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* Reset + base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html,body { height:100%; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(120deg,#f7f9fb 0%, #f1f4f6 50%, #fff 100%);
+      color: #222;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height: 100%;
+      padding-bottom: 80px;
     }
-    *{box-sizing:border-box}
-    body{
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin:0; padding:24px;
+
+    /* subtle animated gradient band at top */
+    .top-gradient {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: 180px;
+      background: linear-gradient(90deg, rgba(215,40,47,0.10), rgba(215,40,47,0.04));
+      pointer-events: none;
+      z-index: 0;
+      animation: slowShift 12s linear infinite;
     }
-    h1,h2,h3{color:var(--brand); margin:0 0 12px}
-    .wrap{max-width:1100px; margin:auto}
-
-    /* Card */
-    .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:20px;
+    @keyframes slowShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
-    input, select, button, textarea{
-      width:100%; padding:10px; margin-top:8px;
-      font-size:1rem; border-radius:10px; border:1px solid #ddd;
+
+    /* header */
+    header {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(90deg,#D7282F,#b51e25);
+      color: #fff;
+      padding: 14px 20px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content: space-between;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
-    button{
-      background:var(--brand); color:#fff; border:none; cursor:pointer;
-      transition:.12s transform ease;
-      padding:10px 12px;
+    header img { height:48px; border-radius:8px; display:block; }
+    header h1 { font-size:1.25rem; font-weight:700; margin-left:8px; flex:1; }
+    .admin-link { background: rgba(255,255,255,0.12); padding:8px 12px; border-radius:8px; color:#fff; text-decoration:none; font-weight:600; }
+
+    /* nav */
+    nav { margin-top: 10px; padding: 10px 18px; display:flex; justify-content:center; gap:10px; z-index:2; position: relative; }
+    nav button {
+      background:#fff; color:#D7282F; border:1px solid #D7282F; padding:9px 14px; border-radius:8px; cursor:pointer; font-weight:700;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
     }
-    button:hover{ transform: translateY(-1px); }
+    nav button:hover { transform: translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.08); background:#D7282F; color:white; }
 
-    /* Tabs */
-    .tabs{
-      display:flex; gap:8px; margin:16px 0 20px;
-      flex-wrap:wrap;
+    /* center card */
+    .container {
+      max-width:760px;
+      margin: 34px auto;
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
     }
-    .tab-btn{
-      padding:10px 14px; border-radius:999px; border:1px solid var(--brand);
-      background:#fff; color:var(--brand); font-weight:600; cursor:pointer;
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.06);
+      padding: 26px;
+      text-align:center;
+      transition: transform .22s ease, box-shadow .22s ease;
     }
-    .tab-btn.active{ background:var(--brand); color:#fff; }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(15,23,42,0.08); }
 
-    .section{ display:none; }
-    .section.show{ display:block; }
+    h2 { margin: 0 0 8px 0; font-size:1.4rem; color:#111; }
+    p.lead { color: #555; margin-bottom: 16px; }
 
-    /* Layout */
-    .grid{ display:grid; gap:12px; }
-    @media (min-width:720px){ .grid.two{ grid-template-columns: 1fr 1fr; } }
-    @media (min-width:900px){ .grid.three{ grid-template-columns: 1fr 1fr 1fr; } }
-
-    .top-bar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-    /* Items */
-    .item{
-      background:#fff; padding:12px; margin:10px 0;
-      border-left:5px solid var(--brand); border-radius:8px;
-      display:flex; gap:10px; justify-content:space-between; align-items:flex-start;
-      box-shadow:0 4px 16px rgba(0,0,0,.06);
+    .tracking-bar { display:flex; gap:10px; margin-top: 12px; align-items:center; }
+    .tracking-bar input {
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #e6e6e6;
+      transition: box-shadow .18s ease, border-color .18s ease;
     }
-    .meta{color:var(--muted); font-size:.95rem}
-    .timeline{ margin-top:8px; padding-left:6px; font-size:.92rem; color:#333; }
-    .delete-btn{ background:#999; color:white; padding:8px 10px; border-radius:8px; cursor:pointer; }
+    .tracking-bar input:focus { outline:none; box-shadow: 0 6px 20px rgba(215,40,47,0.08); border-color: #D7282F; }
 
-    .pagination{ display:flex; justify-content:center; gap:10px; margin:14px 0; }
+    .btn-primary {
+      background: linear-gradient(180deg,#D7282F,#b51e25);
+      color:#fff;
+      border:none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight:700;
+      cursor:pointer;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow:0 10px 24px rgba(183,30,37,0.18); }
 
-    /* KPIs & charts */
-    .kpis{ display:grid; gap:12px; grid-template-columns: repeat(2,1fr); }
-    @media (min-width:760px){ .kpis{ grid-template-columns: repeat(4,1fr); } }
-    .kpi{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); }
-    .kpi .label{ color:var(--muted); font-size:.9rem }
-    .kpi .value{ font-size:1.6rem; font-weight:800 }
+    #loading { display:none; margin-top:12px; color:#D7282F; font-weight:700; }
 
-    .chart-card{ background:#fff; border-radius:14px; padding:12px; box-shadow:var(--shadow); }
-    .table{ width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; box-shadow:var(--shadow) }
-    .table th, .table td{ padding:10px 12px; border-bottom:1px solid #eee; text-align:left; }
-    .table th{ background:#fff6f6; color:#b61e24 }
+    /* result card */
+    .result {
+      margin-top:18px;
+      background: linear-gradient(180deg,#fff,#fffaf9);
+      border-radius: 12px;
+      padding: 18px;
+      text-align:left;
+      display:none;
+      box-shadow: 0 8px 26px rgba(15,23,42,0.04);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .result.show { display:block; opacity:1; transform: translateY(0); }
 
-    /* product list */
-    .product-grid{ display:grid; gap:10px; }
-    @media(min-width:720px){ .product-grid{ grid-template-columns: repeat(2,1fr); } }
+    .result .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .result .col { flex:1; min-width:160px; }
+    .result .label { font-weight:700; color:#555; font-size:0.92rem; }
+    .result .value { color:#111; font-weight:700; margin-top:6px; }
 
-    /* small helpers */
-    .muted{ color:var(--muted); font-size:.9rem; }
-    .small{ font-size:0.9rem; }
+    /* timeline (horizontal) */
+    .timeline {
+      margin-top:16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .timeline-step {
+      flex:1;
+      text-align:center;
+      position:relative;
+      padding:6px 4px;
+      transition: transform .22s ease, opacity .22s ease;
+      opacity:0.45;
+    }
+    .timeline-step::after {
+      content:"";
+      position:absolute;
+      top:22px;
+      right:-50%;
+      width:100%;
+      height:4px;
+      background:#eee;
+      z-index:-1;
+    }
+    .timeline-step:last-child::after { display:none; }
+    .timeline-step .icon {
+      width:48px;height:48px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+      background:#f0f0f0;color:#666;font-size:20px; margin:0 auto;
+      transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+    }
+    .timeline-step.active { opacity:1; transform: translateY(-6px); }
+    .timeline-step.active .icon {
+      background: linear-gradient(180deg,#D7282F,#b51e25);
+      color:white;
+      box-shadow: 0 10px 26px rgba(215,40,47,0.18);
+      animation: glowPulse 1.6s infinite;
+    }
+    .timeline-step .label { margin-top:8px; font-size:0.85rem; color:#444; font-weight:600; }
 
-    /* loyalty specific */
-    .loyalty-grid{ display:grid; gap:12px; }
-    @media(min-width:720px){ .loyalty-grid.two{ grid-template-columns: 1fr 1fr; } }
+    @keyframes glowPulse {
+      0% { box-shadow:0 8px 18px rgba(215,40,47,0.18); transform: scale(1); }
+      50% { box-shadow:0 14px 32px rgba(215,40,47,0.28); transform: scale(1.03); }
+      100% { box-shadow:0 8px 18px rgba(215,40,47,0.18); transform: scale(1); }
+    }
 
-    .points-badge{ background:#f7f7f7; color:var(--brand); font-weight:700; padding:6px 10px; border-radius:999px; display:inline-block; }
+    /* map */
+    .map { margin-top:14px; border-radius:10px; overflow:hidden; }
 
-    /* hidden print doc */
-    #receiptArea{ display:none; }
+    /* info blocks below */
+    .card-block { margin: 20px auto; max-width:760px; padding:18px; background:#fff;border-radius:12px; box-shadow:0 8px 24px rgba(15,23,42,0.04); }
+    .card-block h3 { color:#D7282F; margin-bottom:8px; }
+    .card-block ul { margin-left:18px; margin-top:8px; color:#333; }
+
+    /* support */
+    .support-btn { position: fixed; right: 20px; bottom: 88px; z-index: 40; background:#D7282F; color:white; padding:12px 16px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,0.12); cursor:pointer; border:none; font-weight:700; }
+    .support-panel { position: fixed; right: 20px; bottom: 150px; width:320px; background:#fff; box-shadow:0 14px 34px rgba(15,23,42,0.1); padding:12px; border-radius:12px; display:none; z-index:41; }
+    .support-panel input, .support-panel textarea { width:100%; padding:10px;border-radius:8px;border:1px solid #e6e6e6;margin-top:8px; }
+
+    /* collapsible */
+    .collapsible { width:100%; padding:12px; border-radius:8px; border:none; background:#D7282F;color:#fff; font-weight:700; cursor:pointer; }
+    .content { display:none; padding:10px 6px; background:#fff; border-left:3px solid #D7282F; margin-top:8px; border-radius:6px; }
+
+    /* footer */
+    footer { background:#D7282F; color:#fff; padding:18px 10px; margin-top:22px; text-align:center; }
+
+    /* small screens */
+    @media (max-width:720px) {
+      .timeline-step::after { display:none; }
+      .timeline { gap:6px; }
+      .timeline-step { transform: none; }
+    }
   </style>
 </head>
 <body>
-<div class="wrap">
-<h2>JNK Admin Panel</h2>
-<!-- LOGIN -->
-<div class="card" id="loginSection">
-<div class="grid two">
-<div>
-<label class="small muted">Username</label>
-<input autocomplete="username" id="username" placeholder="Username" type="text"/>
-</div>
-<div>
-<label class="small muted">Password</label>
-<input autocomplete="current-password" id="password" placeholder="Password" type="password"/>
-</div>
-</div>
-<div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
-<button onclick="login()">Login</button>
-<div class="muted small">Use correct credentials to access admin features.</div>
-</div>
-<p id="loginMessage" style="color:#b61e24; margin:8px 2px 0;"></p>
-</div>
-<!-- APP -->
-<div id="appSection" style="display:none; margin-top:16px;">
-<div class="tabs">
-<button class="tab-btn active" id="tabManageBtn" onclick="showTab('manage')">Manage</button>
-<button class="tab-btn" id="tabProductsBtn" onclick="showTab('products')">Products</button>
-<button class="tab-btn" id="tabLoyaltyBtn" onclick="showTab('loyalty')">Loyalty</button>
-<button class="tab-btn" id="tabAnalyticsBtn" onclick="showTab('analytics')">Analytics</button>
-<div style="flex:1"></div>
-<button class="tab-btn" onclick="logout()">Logout</button>
-</div>
-<!-- MANAGE SECTION -->
-<div class="section show" id="manageSection">
-<div class="card">
-<h3>Add / Update Tracking Entry</h3>
-<div class="grid two">
-<input id="trackNumber" placeholder="Tracking Number" type="text"/>
-<input id="parcelName" placeholder="Parcel Name (customer or item name)" type="text"/>
-<input id="barangay" placeholder="Barangay" type="text"/>
-<input id="price" placeholder="Price (PHP)" type="number"/>
-<select id="trackStatus">
-<option value="">Select Status</option>
-<option>Package Received</option>
-<option>In Transit</option>
-<option>Arrived</option>
-<option>For Pick-up</option>
-</select>
-<input id="trackLocation" placeholder="Location (e.g., Manila Hub)" type="text"/>
-<input id="estimatedDate" type="date"/>
-</div>
-<div class="top-bar" style="margin-top:12px;">
-<button onclick="saveTracking()">Add / Update</button>
-<button id="printReceiptBtn">🖨️ Print Receipt</button>
-<button onclick="startScanner()">📷 Scan</button>
-<div style="flex:1"></div>
-<div class="muted small">Tip: scan QR to autofill tracking number and print</div>
-</div>
-<div id="scannerContainer" style="display:none; margin-top:10px;">
-<div id="scanner" style="width:100%"></div>
-<div style="margin-top:8px;"><button class="delete-btn" onclick="stopScanner()">❌ Cancel</button></div>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<div class="top-bar">
-<input id="searchInput" placeholder="Search tracking number..." type="text"/>
-<button onclick="currentPage=1; renderEntries()">🔍 Search</button>
-<div style="flex:1"></div>
-<button onclick="loadAllEntries()">Refresh List</button>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<div class="top-bar">
-<input id="excelFrom" type="date"/>
-<input id="excelTo" type="date"/>
-<button onclick="exportExcelByDateRange()">📊 Export Excel (4 cols + totals)</button>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<h3>Bulk Update by Time Range</h3>
-<div class="grid two">
-<div>
-<label class="small muted">From</label>
-<input id="bulkFromDate" type="date"/>
-<input id="bulkFromTime" type="time"/>
-</div>
-<div>
-<label class="small muted">To</label>
-<input id="bulkToDate" type="date"/>
-<input id="bulkToTime" type="time"/>
-</div>
-<select id="bulkStatus">
-<option value="">Update Status to...</option>
-<option>Package Received</option>
-<option>In Transit</option>
-<option>Arrived</option>
-<option>For Pick-up</option>
-</select>
-<input id="bulkLocation" placeholder="Optional New Location" type="text"/>
-</div>
-<div style="margin-top:10px;">
-<button onclick="bulkUpdateByTimeRange()">Apply Bulk Update</button>
-</div>
-</div>
-<div style="margin-top:14px;">
-<h3>All Tracking Entries</h3>
-<div id="entries"></div>
-<div class="pagination">
-<button onclick="prevPage()">Previous</button>
-<button onclick="nextPage()">Next</button>
-</div>
-</div>
-</div>
-<!-- PRODUCTS SECTION -->
-<div class="section" id="productsSection">
-<div class="card">
-<h3>Products (Beauty / Clothes)</h3>
-<div class="grid two">
-<input id="prodBarcode" placeholder="Barcode / SKU (scan or type)" type="text"/>
-<input id="prodName" placeholder="Product Name" type="text"/>
-<select id="prodCategory">
-<option value="">Select Category</option>
-<option>Beauty</option>
-<option>Clothes</option>
-</select>
-<input id="prodPrice" placeholder="Price (PHP)" type="number"/>
-<input id="prodStock" placeholder="Stock Quantity" type="number"/>
-<input id="prodNotes" placeholder="Notes (optional)" type="text"/>
-</div>
-<div class="top-bar" style="margin-top:10px;">
-<button onclick="saveProduct()">Save Product</button>
-<button onclick="startProductScanner()">Scan Product</button>
-<div style="flex:1"></div>
-<button onclick="loadProducts()">Refresh Products</button>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<h4>Product List</h4>
-<div id="productList"></div>
-<div style="margin-top:10px;">
-<button onclick="exportProductsExcel()">Export Products</button>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<h4>Record Sale</h4>
-<div class="grid two">
-<input id="saleBarcode" placeholder="Barcode (scan or type)"/>
-<input id="saleQty" placeholder="Quantity" type="number" value="1"/>
-<input id="saleBuyer" placeholder="Buyer name (optional)"/>
-<input id="saleNote" placeholder="Note (optional)"/>
-</div>
-<div class="top-bar" style="margin-top:10px;">
-<button onclick="recordSale()">Record Sale</button>
-<button onclick="startSaleScanner()">Scan to Sell</button>
-<div style="flex:1"></div>
-<button onclick="loadSales()">Load Sales</button>
-</div>
-<div style="margin-top:14px;">
-<h4>Recent Sales</h4>
-<div id="salesList"></div>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<h3>Sales Analytics (Products)</h3>
-<div class="top-bar">
-<input id="prodAnaFrom" type="date"/>
-<input id="prodAnaTo" type="date"/>
-<button onclick="loadProductAnalytics()">Refresh</button>
-<button onclick="quickProductRange('month')">This Month</button>
-<button onclick="quickProductRange('lastmonth')">Last Month</button>
-</div>
-<div class="kpis" style="margin-top:12px;">
-<div class="kpi"><div class="label">Total Products Sold</div><div class="value" id="pKpiSold">0</div></div>
-<div class="kpi"><div class="label">Total Sales (₱)</div><div class="value" id="pKpiRevenue">0</div></div>
-<div class="kpi"><div class="label">Avg Sale Value (₱)</div><div class="value" id="pKpiAvg">0</div></div>
-<div class="kpi"><div class="label">Top Category</div><div class="value" id="pKpiTopCat">-</div></div>
-</div>
-<div class="grid two" style="margin-top:12px;">
-<div class="chart-card">
-<h4 style="margin:0 0 8px;">Top Products</h4>
-<canvas height="180" id="chartTopProducts"></canvas>
-</div>
-<div class="chart-card">
-<h4 style="margin:0 0 8px;">Category Distribution</h4>
-<canvas height="180" id="chartCategory"></canvas>
-</div>
-</div>
-</div>
-</div>
-<!-- LOYALTY SECTION -->
-<div class="section" id="loyaltySection">
-<div class="card">
-<h3>Register Loyalty Card</h3>
-<div class="loyalty-grid two">
-<div>
-<label class="small muted">Card ID / Barcode</label>
-<input id="loyCardId" placeholder="Scan or type card ID" type="text"/>
-</div>
-<div>
-<label class="small muted">Scan Card</label>
-<div style="display:flex; gap:8px;">
-<button onclick="startLoyaltyScanner()">Scan Card</button>
-<button onclick="stopLoyaltyScanner()">Stop</button>
-</div>
-</div>
-<div>
-<label class="small muted">Full Name</label>
-<input id="loyName" placeholder="Customer's full name" type="text"/>
-</div>
-<div>
-<label class="small muted">Phone Number</label>
-<input id="loyPhone" placeholder="09XXXXXXXXX" type="text"/>
-</div>
-<div style="grid-column: 1 / -1;">
-<label class="small muted">Complete Address</label>
-<input id="loyAddress" placeholder="House/Street, Brgy, City, Province" type="text"/>
-</div>
-</div>
-<div class="top-bar" style="margin-top:10px;">
-<button onclick="registerLoyalty()">Register Card</button>
-<button onclick="loadLoyaltyMembers()">Refresh Members</button>
-<div style="flex:1"></div>
-<div class="muted small">Registered customers only: points awarded for registered names on tracking entries.</div>
-</div>
-<div id="loyaltyScannerContainer" style="display:none; margin-top:10px;">
-<div id="loyaltyScanner" style="width:100%"></div>
-</div>
-</div>
-<div class="card" style="margin-top:14px;">
-<h3>Loyalty Members</h3>
-<div class="top-bar">
-<input id="loySearch" placeholder="Search by name, phone or card ID..." type="text"/>
-<button onclick="renderLoyaltyList()">🔍 Search</button>
-<div style="flex:1"></div>
-<button onclick="exportLoyaltyExcel()">Export Loyalty (Excel)</button>
-</div>
-<div id="loyaltyList" style="margin-top:12px;"></div>
-</div>
-</div>
-<!-- ANALYTICS SECTION -->
-<div class="section" id="analyticsSection">
-<div class="card">
-<h3>Analytics</h3>
-<div class="top-bar">
-<input id="anaFrom" type="date"/>
-<input id="anaTo" type="date"/>
-<button onclick="loadAnalytics()">Refresh</button>
-<button onclick="quickRange('today')">Today</button>
-<button onclick="quickRange('week')">This Week</button>
-<button onclick="quickRange('month')">This Month</button>
-</div>
-</div>
-<div class="kpis" style="margin-top:14px;">
-<div class="kpi"><div class="label">Total Parcels</div><div class="value" id="kpiParcels">0</div></div>
-<div class="kpi"><div class="label">Total Revenue (₱)</div><div class="value" id="kpiRevenue">0</div></div>
-<div class="kpi"><div class="label">Average Price (₱)</div><div class="value" id="kpiAvg">0</div></div>
-<div class="kpi"><div class="label">Repeat Customers</div><div class="value" id="kpiRepeat">0</div></div>
-</div>
-<div class="grid two" style="margin-top:14px;">
-<div class="chart-card">
-<h4 style="margin:0 0 8px;">Daily Parcel Count</h4>
-<canvas height="120" id="chartParcels"></canvas>
-</div>
-<div class="chart-card">
-<h4 style="margin:0 0 8px;">Daily Revenue (₱)</h4>
-<canvas height="120" id="chartRevenue"></canvas>
-</div>
-</div>
-<div class="grid two" style="margin-top:14px;">
-<div class="chart-card">
-<h4 style="margin:0 0 8px;">Barangay Distribution</h4>
-<canvas height="140" id="chartBarangay"></canvas>
-</div>
-<div class="card">
-<h4 style="margin:0 0 8px;">Top Barangays</h4>
-<table class="table" id="topBarangaysTable">
-<thead><tr><th>Barangay</th><th>Parcels</th></tr></thead>
-<tbody></tbody>
-</table>
-<div class="top-bar" style="margin-top:10px;">
-<button onclick="exportAnalyticsExcel()">Export Analytics (Excel)</button>
-<button onclick="exportAnalyticsPDF()">Export Analytics (PDF)</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Hidden print receipt area -->
-<div id="receiptArea"><div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div></div>
-</div>
-<script>
-/* ========================== Firebase ========================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+  <div class="top-gradient" aria-hidden="true"></div>
 
-/* ========================== Auth ========================== */
-const USERNAME = "JNK";
-const PASSWORD = "11223344$";
-let allEntries = [];
-let currentPage = 1;
-const pageSize = 10;
+  <header>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img src="logo.jpg" alt="JNK logo" />
+      <h1>JNK Express Padala</h1>
+    </div>
+    <a class="admin-link" href="admin.html">Admin</a>
+  </header>
 
-/* simple cache */
-let loyaltyCache = [];
+  <nav>
+    <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
+    <button onclick="alert('Shipping Rates - Coming Soon')">Shipping Rates</button>
+    <button onclick="alert('Shipping Days - Coming Soon')">Shipping Days</button>
+    <button onclick="alert('Find Branches - Coming Soon')">Find Branches</button>
+  </nav>
 
-/* ========================== Helpers: name cleaning ==========================
-   Clean logic strips parentheses content (e.g. "(COD)"), collapses spaces,
-   trims and uppercases so we can match registered loyalty names reliably.
-*/
-function cleanName(inputName){
-  if(!inputName) return '';
-  // Remove parentheses contents, collapse whitespace, trim, uppercase
-  let cleaned = inputName.replace(/\(.*?\)/g, '')
-                         .replace(/\s+/g, ' ')
-                         .trim()
-                         .toUpperCase();
-  return cleaned;
-}
+  <main class="container" role="main">
+    <div class="card" aria-live="polite">
+      <h2>Track Your Package</h2>
+      <p class="lead">Enter your tracking number below to see current status, estimated delivery and location.</p>
 
-/* ========================== Login / Tabs ========================== */
-function login() {
-  const user = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value.trim();
-  const msg = document.getElementById("loginMessage");
-  msg.innerText = "";
-  if (user === USERNAME && pass === PASSWORD) {
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("appSection").style.display = "block";
-    showTab('manage');
-    loadAllEntries();
-    quickRange('month');
-    loadProducts();
-    quickProductRange('month');
-    loadLoyaltyMembers();
-  } else {
-    msg.innerText = "Invalid login.";
-  }
-}
-function logout() {
-  document.getElementById("loginSection").style.display = "block";
-  document.getElementById("appSection").style.display = "none";
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
-}
+      <div class="tracking-bar" role="search" aria-label="Track package">
+        <input id="trackingInput" type="text" placeholder="Enter your tracking number" aria-label="Tracking number" />
+        <button class="btn-primary" onclick="trackPackage()">Track</button>
+      </div>
 
-function showTab(which){
-  const m = document.getElementById('manageSection');
-  const a = document.getElementById('analyticsSection');
-  const p = document.getElementById('productsSection');
-  const l = document.getElementById('loyaltySection');
-  const bm = document.getElementById('tabManageBtn');
-  const ba = document.getElementById('tabAnalyticsBtn');
-  const bp = document.getElementById('tabProductsBtn');
-  const bl = document.getElementById('tabLoyaltyBtn');
+      <div id="loading" aria-hidden="true">⏳ Loading...</div>
 
-  [m,a,p,l].forEach(el=>el.classList.remove('show'));
-  [bm,ba,bp,bl].forEach(b=>b.classList.remove('active'));
+      <div id="resultCard" class="result" role="region" aria-labelledby="trackingLabel">
+        <!-- dynamic content inserted here -->
+        <div id="statusResultInner"></div>
+      </div>
+    </div>
+  </main>
 
-  if(which==='manage'){ m.classList.add('show'); bm.classList.add('active'); }
-  else if(which==='analytics'){ a.classList.add('show'); ba.classList.add('active'); loadAnalytics(); }
-  else if(which==='products'){ p.classList.add('show'); bp.classList.add('active'); loadProducts(); quickProductRange('month'); }
-  else if(which==='loyalty'){ l.classList.add('show'); bl.classList.add('active'); renderLoyaltyList(); }
-}
+  <!-- services & locations -->
+  <section class="card-block" aria-labelledby="servicesTitle">
+    <h3 id="servicesTitle">Our Services</h3>
+    <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and vice versa.</p>
+    <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20.</p>
+    <p><strong>Bulk/Truck Services:</strong> Large shipments handled with care.</p>
+  </section>
 
-/* ========================== Scanner (tracking) ========================== */
-let scanner;
-function startScanner() {
-  document.getElementById("scannerContainer").style.display = "block";
-  scanner = new Html5Qrcode("scanner");
-  scanner.start(
-    { facingMode: "environment" }, { fps: 10, qrbox: 250 },
-    (decodedText) => {
-      document.getElementById("trackNumber").value = decodedText.trim().toUpperCase();
-      stopScanner();
-      printAndSave();
-    },
-    () => {}
-  );
-}
-function stopScanner() {
-  document.getElementById("scannerContainer").style.display = "none";
-  if (scanner) scanner.stop().then(() => scanner.clear()).catch(()=>{});
-}
+  <section class="card-block" aria-labelledby="locationsTitle">
+    <h3 id="locationsTitle">📍 Pick-up Locations</h3>
+    <ul>
+      <li>Main Branch: Urban Finds by JNK — Andres Bonifacio HW</li>
+      <li>Tilik: E. Arnaldo St. (Near NFA warehouse)</li>
+      <li>Vigo/Dangay: Near Dangay Church</li>
+      <li>Tagbac: 104 Guijo St.</li>
+      <li>Binacas: 213 Kasoy St.</li>
+      <li>Cabra: 037 Bayabas St.</li>
+    </ul>
+  </section>
 
-/* ========================== Loyalty Scanner ========================== */
-let loyaltyScanner;
-function startLoyaltyScanner() {
-  document.getElementById("loyaltyScannerContainer").style.display = "block";
-  loyaltyScanner = new Html5Qrcode("loyaltyScanner");
-  loyaltyScanner.start(
-    { facingMode: "environment" }, { fps: 10, qrbox: 250 },
-    (decodedText) => {
-      document.getElementById("loyCardId").value = decodedText.trim();
-      stopLoyaltyScanner();
-    },
-    () => {}
-  );
-}
-function stopLoyaltyScanner(){
-  document.getElementById("loyaltyScannerContainer").style.display = "none";
-  if (loyaltyScanner) loyaltyScanner.stop().then(()=>loyaltyScanner.clear()).catch(()=>{});
-}
+  <section class="card-block" aria-labelledby="policiesTitle">
+    <h3 id="policiesTitle">About & Policies</h3>
 
-/* ========================== Add/Update Tracking (with loyalty awarding) ========================== */
-async function saveTracking() {
-  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
-  const name = document.getElementById("parcelName").value.trim();
-  const barangay = document.getElementById("barangay").value.trim();
-  const price = document.getElementById("price").value.trim();
-  const status = document.getElementById("trackStatus").value;
-  const location = document.getElementById("trackLocation").value.trim();
-  const estimatedDate = document.getElementById("estimatedDate").value;
-  const now = firebase.firestore.Timestamp.now();
+    <button class="collapsible">About Us</button>
+    <div class="content"><p>JNK Express Padala provides reliable and timely deliveries between Urban and Lubang.</p></div>
 
-  if (!number || !name || !barangay || !price || !status) {
-    return alert("Complete all fields");
-  }
+    <button class="collapsible">Privacy Policy</button>
+    <div class="content"><p>We protect your data and use it only to provide delivery services. We do not sell personal information.</p></div>
 
-  const docRef = db.collection("tracking").doc(number);
-  const docSnap = await docRef.get();
-  let statusHistory = docSnap.exists ? (docSnap.data().statusHistory || []) : [];
-  statusHistory.push({ status, timestamp: now });
+    <button class="collapsible">Terms & Conditions</button>
+    <div class="content"><p>By using our services you agree to provide accurate parcel details. JNK is not liable for delays due to unforeseen events.</p></div>
+  </section>
 
-  await docRef.set({
-    parcelName: name,
-    barangay: barangay,
-    location,
-    price,
-    estimatedDate,
-    statusHistory,
-    timestamp: now,
-    ...(docSnap.exists && docSnap.data().loyaltyAwarded ? { loyaltyAwarded: docSnap.data().loyaltyAwarded } : {})
-  }, { merge: true });
+  <!-- support -->
+  <button class="support-btn" onclick="toggleSupport()">💬 Support</button>
+  <div class="support-panel" id="supportPanel" aria-hidden="true">
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input name="Name" placeholder="Your name" required />
+      <input name="TrackingNumber" placeholder="Tracking number (optional)" />
+      <textarea name="Message" rows="4" placeholder="Message" required></textarea>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="submit" style="flex:1; background:#D7282F; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer;">Send</button>
+        <button type="button" style="flex:0 0 auto; background:#f3f3f3; border:none; padding:10px; border-radius:8px; cursor:pointer;" onclick="toggleSupport()">Close</button>
+      </div>
+    </form>
+  </div>
 
-  // After saving tracking, attempt to silently award a loyalty point if applicable.
-  try {
-    await tryAwardLoyaltyPoint(number, name, now);
-  } catch(e){
-    console.error('Loyalty award error:', e);
-  }
+  <footer>
+    &copy; <span id="year"></span> JNK Express Padala • <a href="https://www.facebook.com/profile.php?id=61572021585621" style="color:#fff; text-decoration:underline">Facebook</a>
+  </footer>
 
-  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
-    .forEach(id => document.getElementById(id).value = "");
+  <script>
+    // set year
+    document.getElementById('year').innerText = new Date().getFullYear();
 
-  loadAllEntries();
-  alert("✅ Saved.");
-}
+    /* Firebase config (same as admin) */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-async function printAndSave() {
-  // Same logic as saveTracking but opens print window
-  const number = document.getElementById("trackNumber").value.trim().toUpperCase();
-  const name = document.getElementById("parcelName").value.trim();
-  const barangay = document.getElementById("barangay").value.trim();
-  const price = document.getElementById("price").value.trim();
-  const status = document.getElementById("trackStatus").value;
-  const location = document.getElementById("trackLocation").value.trim();
-  const estimatedDate = document.getElementById("estimatedDate").value;
-  const now = firebase.firestore.Timestamp.now();
+    // Stages (horizontal order)
+    const STAGES = [
+      { name: "Package Received", icon: "📦" },
+      { name: "In Transit", icon: "🚚" },
+      { name: "Arrived", icon: "📍" },
+      { name: "For Pick-up", icon: "✅" }
+    ];
 
-  if (!number || !name || !barangay || !price || !status) return alert("Complete all fields");
+    // Helper: determine active stage index from status text (case-insensitive)
+    function findStageIndex(statusText) {
+      if (!statusText) return -1;
+      const s = statusText.toString().trim().toLowerCase();
+      for (let i = 0; i < STAGES.length; i++) {
+        if (STAGES[i].name.toLowerCase() === s) return i;
+      }
+      // try partial matches
+      for (let i = 0; i < STAGES.length; i++) {
+        if (s.includes(STAGES[i].name.toLowerCase().split(" ")[0])) return i;
+      }
+      return -1;
+    }
 
-  const docRef = db.collection("tracking").doc(number);
-  const docSnap = await docRef.get();
-  let statusHistory = docSnap.exists ? docSnap.data().statusHistory || [] : [];
-  statusHistory.push({ status, timestamp: now });
+    // Toggle support panel
+    function toggleSupport() {
+      const p = document.getElementById('supportPanel');
+      p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+      p.setAttribute('aria-hidden', p.style.display === 'none' ? 'true' : 'false');
+    }
 
-  await docRef.set({
-    parcelName: name,
-    barangay: barangay,
-    location,
-    price,
-    estimatedDate,
-    statusHistory,
-    timestamp: now,
-    ...(docSnap.exists && docSnap.data().loyaltyAwarded ? { loyaltyAwarded: docSnap.data().loyaltyAwarded } : {})
-  }, { merge: true });
-
-  // Attempt to award loyalty point silently
-  try {
-    await tryAwardLoyaltyPoint(number, name, now);
-  } catch(e){
-    console.error('Loyalty award error:', e);
-  }
-
-  const logoUrl = "logo.jpg";
-  const content = `
-    <div style="width:48mm;height:78mm;padding:1mm;font-size:10pt;font-family:monospace;text-align:center;">
-      <img src="${logoUrl}" style="width:30mm;margin-bottom:2mm;" /><br>
-      <strong style="font-size:11pt;">JNK Express Padala</strong><br><br>
-      <strong>${name}</strong><br>
-      Brgy: ${barangay}<br>
-      Price: ₱${price}<br>
-      Tracking #: ${number}<br>
-      <small>${new Date().toLocaleString()}</small><br><br>
-      <em>Salamat sa tiwala KA-JNK!!</em>
-    </div>`;
-
-  const printWin = window.open('', '_blank', 'width=200,height=200');
-  printWin.document.write(`
-    <html><head><title>Print</title>
-    <style>
-      @page { size: 50mm 80mm portrait; margin:0; }
-      body { margin:0; width:50mm; height:80mm; }
-    </style>
-    </head>
-    <body onload="window.print(); window.close();">
-      ${content}
-    </body></html>
-  `);
-  printWin.document.close();
-
-  ["trackNumber","parcelName","barangay","price","trackStatus","trackLocation","estimatedDate"]
-    .forEach(id => document.getElementById(id).value = "");
-
-  loadAllEntries();
-}
-
-/* ========================= Loyalty awarding helper =========================
-   Behavior:
-   - Uses cleanName() to normalize input when checking loyalty membership.
-   - Awards a single point per tracking number (marks tracking.loyaltyAwarded).
-*/
-async function tryAwardLoyaltyPoint(trackingNumber, parcelName, nowTs){
-  if(!parcelName || !trackingNumber) return;
-  const cleanedName = cleanName(parcelName);
-
-  // Refresh cache if empty
-  if(!loyaltyCache || !Array.isArray(loyaltyCache) || loyaltyCache.length === 0){
-    await loadLoyaltyMembers(); // refresh cache
-  }
-
-  // Try finding by normalized field in cache
-  let member = loyaltyCache.find(m => ((m.normalizedName || (m.name || '') ).toString().trim().toUpperCase()) === cleanedName);
-
-  // If not in cache, query Firestore
-  if(!member){
-    const snap = await db.collection('loyalty').where('nameLower','==', cleanedName.toLowerCase()).limit(1).get().catch(()=>null);
-    if(snap && !snap.empty) member = { cardId: snap.docs[0].id, ...snap.docs[0].data() };
-  }
-
-  // If still not found, try 'loyaltyMembers' collection too
-  if(!member){
-    const snap2 = await db.collection('loyaltyMembers').where('normalizedName','==', cleanedName).limit(1).get().catch(()=>null);
-    if(snap2 && !snap2.empty) member = { cardId: snap2.docs[0].id, ...snap2.docs[0].data() };
-  }
-
-  if(!member) return; // no registered member with that name -> nothing to do
-
-  // Now check tracking doc if already awarded
-  const trackRef = db.collection('tracking').doc(trackingNumber);
-  const trackSnap = await trackRef.get();
-  if(trackSnap.exists && trackSnap.data().loyaltyAwarded) {
-    // Already awarded
-    return;
-  }
-
-  // Award +1 point using transaction
-  const cardRef = db.collection('loyalty').doc(member.cardId || member.cardId || member.id);
-  await db.runTransaction(async (tx) => {
-    const cardDoc = await tx.get(cardRef);
-    if(!cardDoc.exists){
-      tx.set(cardRef, {
-        name: member.name || member.fullName || '',
-        points: 1,
-        createdAt: firebase.firestore.Timestamp.now(),
-        pointsHistory: [{ type:'award', amount:1, reason:`Tracking:${trackingNumber}`, timestamp: nowTs }]
-      }, { merge: true });
-    } else {
-      const cur = cardDoc.data().points || 0;
-      const history = cardDoc.data().pointsHistory || [];
-      history.push({ type:'award', amount:1, reason:`Tracking:${trackingNumber}`, timestamp: nowTs });
-      tx.update(cardRef, {
-        points: cur + 1,
-        pointsHistory: history
+    // Collapsibles
+    document.querySelectorAll('.collapsible').forEach(btn=>{
+      btn.addEventListener('click', ()=> {
+        btn.classList.toggle('active');
+        const content = btn.nextElementSibling;
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
       });
-    }
-    // mark tracking as awarded
-    tx.set(trackRef, { loyaltyAwarded: true, loyaltyCardId: member.cardId || member.id }, { merge: true });
-  });
-
-  // refresh cache & UI
-  await loadLoyaltyMembers();
-  console.log(`Awarded +1 point to ${member.name || member.fullName} (${member.cardId || member.id}) for tracking ${trackingNumber}`);
-}
-
-/* ========================== Load / List / Pagination ========================== */
-function loadAllEntries() {
-  db.collection("tracking").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-    allEntries = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        parcelName: data.parcelName || '-',
-        barangay: data.barangay || '-',
-        location: data.location || '-',
-        price: data.price || '-',
-        statusHistory: data.statusHistory || [],
-        estimatedDate: data.estimatedDate || '-',
-        timestamp: data.timestamp?.toDate() || null,
-        loyaltyAwarded: data.loyaltyAwarded || false,
-        loyaltyCardId: data.loyaltyCardId || null
-      };
     });
-    renderEntries();
-  });
-}
 
-function renderEntries() {
-  const search = (document.getElementById("searchInput")?.value || '').toUpperCase();
-  const entriesDiv = document.getElementById("entries");
-  entriesDiv.innerHTML = "";
-  const filtered = allEntries.filter(e => e.id.includes(search));
-  const start = (currentPage - 1) * pageSize;
-  const paginated = filtered.slice(start, start + pageSize);
+    // Track package function (uses your working retrieval logic; UI enhanced)
+    async function trackPackage() {
+      const inputEl = document.getElementById('trackingInput');
+      const input = inputEl.value.trim().toUpperCase();
+      const resultCard = document.getElementById('resultCard');
+      const inner = document.getElementById('statusResultInner');
+      const loading = document.getElementById('loading');
+      const mapContainer = document.getElementById('mapContainer');
 
-  if (paginated.length === 0) {
-    entriesDiv.innerHTML = `<div class="card">No entries found.</div>`;
-    return;
-  }
+      // reset UI
+      inner.innerHTML = '';
+      resultCard.classList.remove('show');
+      mapContainer.innerHTML = '';
+      mapContainer.style.display = 'none';
+      loading.style.display = 'block';
 
-  paginated.forEach(entry => {
-    const timeline = (entry.statusHistory || []).map(h => {
-      const date = h.timestamp ? (h.timestamp.toDate ? h.timestamp.toDate().toLocaleString() : h.timestamp.toLocaleString()) : 'N/A';
-      return `- [${date}] ${h.status}`;
-    }).join("<br>");
-    const el = document.createElement('div');
-    el.className = 'item';
-    el.innerHTML = `
-      <div>
-        <div style="font-weight:700">${entry.id} ${entry.loyaltyAwarded ? '<span style="color:green;font-weight:600;margin-left:8px">(Point awarded)</span>' : ''}</div>
-        <div class='meta'>
-          Name: <b>${entry.parcelName}</b><br>
-          Barangay: ${entry.barangay}<br>
-          Location: ${entry.location}<br>
-          Price: ₱${entry.price}<br>
-          Estimated Delivery: ${entry.estimatedDate}<br>
-          <b>Encoded:</b> ${entry.timestamp ? entry.timestamp.toLocaleString() : 'N/A'}<br>
-          Timeline:<div class='timeline'>${timeline}</div>
-        </div>
-      </div>
-      <div>
-        <button class='delete-btn' onclick="deleteEntry('${entry.id}')">Delete</button>
-      </div>`;
-    entriesDiv.appendChild(el);
-  });
-}
+      if (!input) { alert('Enter tracking number'); loading.style.display = 'none'; inputEl.focus(); return; }
 
-function nextPage() {
-  const filtered = allEntries.filter(e => e.id.includes((document.getElementById("searchInput")?.value || '').toUpperCase()));
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  if (currentPage < totalPages) currentPage++;
-  renderEntries();
-}
-function prevPage() {
-  if (currentPage > 1) currentPage--;
-  renderEntries();
-}
+      try {
+        let data = null;
 
-/* ========================== Excel Export (4 cols + totals) ========================== */
-function exportExcelByDateRange() {
-  const fromEl = document.getElementById("excelFrom").value;
-  const toEl = document.getElementById("excelTo").value;
-  if(!fromEl || !toEl){ alert("Please select FROM and TO dates."); return; }
+        // Try doc ID first
+        const docSnap = await db.collection('tracking').doc(input).get();
+        if (docSnap.exists) {
+          data = docSnap.data();
+        } else {
+          // fallback: search by field trackingNumber
+          const q = await db.collection('tracking').where('trackingNumber','==', input).limit(1).get();
+          if (!q.empty) data = q.docs[0].data();
+        }
 
-  const from = new Date(fromEl);
-  const to = new Date(toEl);
-  to.setHours(23, 59, 59, 999);
+        if (!data) {
+          inner.innerHTML = `<p style="color:#c0392b; font-weight:700;">❌ Tracking number not found. Please double-check and try again or contact support.</p>`;
+          resultCard.classList.add('show');
+          loading.style.display = 'none';
+          return;
+        }
 
-  const filtered = allEntries.filter(entry => entry.timestamp && entry.timestamp >= from && entry.timestamp <= to);
-  if (filtered.length === 0) return alert("No entries found in selected date range.");
+        // Extract required fields (we omit price, parcelName, barangay per your request)
+        const status = data.status || "Unknown";
+        const destination = data.destination || data.dest || "N/A";
+        const estimated = data.estimatedDate || data.estimated || "Not available";
 
-  // Build AOA with headers
-  const aoa = [["TrackingNumber","ParcelName","Barangay","Price"]];
-  filtered.forEach(e => {
-    const priceNum = Number(e.price) || 0;
-    aoa.push([e.id, e.parcelName || '-', e.barangay || '-', priceNum]);
-  });
+        // Build result HTML
+        const activeIndex = findStageIndex(status);
 
-  // Totals at bottom
-  const totalEntries = filtered.length;
-  const totalPrice = filtered.reduce((sum, e) => sum + (Number(e.price) || 0), 0);
-  aoa.push([]);
-  aoa.push(["TOTAL ENTRIES", totalEntries]);
-  aoa.push(["TOTAL PRICE", totalPrice]);
+        // top info row
+        let html = `
+          <div class="row">
+            <div class="col">
+              <div class="label">Tracking</div>
+              <div class="value">${input}</div>
+            </div>
+            <div class="col">
+              <div class="label">Current Status</div>
+              <div class="value">${status}</div>
+            </div>
+            <div class="col">
+              <div class="label">Destination</div>
+              <div class="value">${destination}</div>
+            </div>
+            <div class="col">
+              <div class="label">Estimated Delivery</div>
+              <div class="value">${estimated}</div>
+            </div>
+          </div>
+        `;
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Data");
-  XLSX.writeFile(wb, `tracking_export_${filtered.length}_items_${Date.now()}.xlsx`);
-}
+        // timeline
+        html += `<div class="timeline" aria-hidden="false">`;
+        STAGES.forEach((stage, idx) => {
+          html += `
+            <div class="timeline-step ${idx === activeIndex ? 'active' : ''}" aria-current="${idx === activeIndex ? 'true' : 'false'}">
+              <div class="icon" title="${stage.name}">${stage.icon}</div>
+              <div class="label">${stage.name}</div>
+            </div>`;
+        });
+        html += `</div>`;
 
-/* ========================== Delete ========================== */
-async function deleteEntry(id) {
-  const confirmPass = prompt("Enter admin password to delete:");
-  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-  await db.collection("tracking").doc(id).delete();
-  alert("Deleted.");
-}
+        inner.innerHTML = html;
+        resultCard.classList.add('show');
 
-/* ========================== Bulk Update ========================== */
-async function bulkUpdateByTimeRange() {
-  const fromDateStr = document.getElementById("bulkFromDate").value;
-  const fromTimeStr = document.getElementById("bulkFromTime").value || "00:00";
-  const toDateStr = document.getElementById("bulkToDate").value;
-  const toTimeStr = document.getElementById("bulkToTime").value || "23:59";
-  const status = document.getElementById("bulkStatus").value;
-  const location = document.getElementById("bulkLocation").value.trim();
+        // map handling: if data.location exists, try to parse "lat,lng" or treat as address text
+        if (data.location && typeof data.location === 'string' && data.location.trim()) {
+          const loc = data.location.trim();
+          let mapSrc = '';
+          // if looks like coordinates (lat,lng)
+          const maybeCoords = loc.split(',').map(s => s.trim());
+          if (maybeCoords.length === 2 && !isNaN(parseFloat(maybeCoords[0])) && !isNaN(parseFloat(maybeCoords[1]))) {
+            const lat = encodeURIComponent(maybeCoords[0]);
+            const lng = encodeURIComponent(maybeCoords[1]);
+            mapSrc = `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+          } else {
+            // treat as address string
+            mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(loc)}&z=14&output=embed`;
+          }
+          mapContainer.innerHTML = `<div class="map"><iframe src="${mapSrc}" width="100%" height="300" style="border:0;border-radius:8px;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>`;
+          mapContainer.style.display = 'block';
+        }
 
-  if (!fromDateStr || !toDateStr || !status) return alert("Fill all date/time and status fields.");
-  const fromDateTime = new Date(`${fromDateStr}T${fromTimeStr}`);
-  const toDateTime = new Date(`${toDateStr}T${toTimeStr}`);
-  if (toDateTime < fromDateTime) return alert("TO date/time must be after FROM date/time.");
-
-  const confirmPass = prompt("Enter admin password to apply bulk update:");
-  if (confirmPass !== PASSWORD) return alert("❌ Incorrect password.");
-
-  const fromTs = firebase.firestore.Timestamp.fromDate(fromDateTime);
-  const toTs = firebase.firestore.Timestamp.fromDate(toDateTime);
-
-  const snapshot = await db.collection("tracking")
-    .where("timestamp", ">=", fromTs)
-    .where("timestamp", "<=", toTs)
-    .get();
-
-  if (snapshot.empty) return alert("No entries found in selected range.");
-
-  const batch = db.batch();
-  snapshot.docs.forEach(doc => {
-    const data = doc.data();
-    const history = data.statusHistory || [];
-    history.push({ status, timestamp: firebase.firestore.Timestamp.now() });
-    batch.update(doc.ref, {
-      location: location || data.location || '',
-      estimatedDate: data.estimatedDate || '',
-      statusHistory: history
-    });
-  });
-
-  await batch.commit();
-  alert(`✅ Bulk update applied to ${snapshot.size} entries.`);
-}
-
-/* ========================== Analytics (tracking) ========================== */
-let chartParcels, chartRevenue, chartBarangay;
-
-function quickRange(kind){
-  const fromEl = document.getElementById('anaFrom');
-  const toEl   = document.getElementById('anaTo');
-  const now = new Date();
-  let from = new Date(), to = new Date();
-
-  if(kind==='today'){
-    from.setHours(0,0,0,0); to.setHours(23,59,59,999);
-  } else if(kind==='week'){
-    const day = now.getDay();
-    const diff = (day === 0 ? -6 : 1 - day);
-    from = new Date(now); from.setDate(now.getDate() + diff); from.setHours(0,0,0,0);
-    to = new Date(from); to.setDate(from.getDate()+6); to.setHours(23,59,59,999);
-  } else { // month
-    from = new Date(now.getFullYear(), now.getMonth(), 1);
-    to   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
-  }
-  fromEl.valueAsDate = from;
-  toEl.valueAsDate = to;
-  loadAnalytics();
-}
-
-async function loadAnalytics(){
-  const fromEl = document.getElementById('anaFrom').value;
-  const toEl = document.getElementById('anaTo').value;
-  if(!fromEl || !toEl) return;
-
-  const fromDate = new Date(fromEl); fromDate.setHours(0,0,0,0);
-  const toDate = new Date(toEl); toDate.setHours(23,59,59,999);
-
-  const fromTs = firebase.firestore.Timestamp.fromDate(fromDate);
-  const toTs = firebase.firestore.Timestamp.fromDate(toDate);
-
-  const snap = await db.collection('tracking')
-    .where('timestamp','>=', fromTs)
-    .where('timestamp','<=', toTs)
-    .get();
-
-  const rows = snap.docs.map(d => {
-    const x = d.data();
-    return {
-      id: d.id,
-      name: x.parcelName || '-',
-      barangay: x.barangay || '-',
-      price: Number(x.price) || 0,
-      ts: x.timestamp?.toDate() || null
+      } catch (err) {
+        console.error('Error fetching tracking:', err);
+        inner.innerHTML = `<p style="color:#c0392b; font-weight:700;">⚠️ Error retrieving data. Please try again later.</p>`;
+        resultCard.classList.add('show');
+      } finally {
+        loading.style.display = 'none';
+      }
     }
-  }).filter(r => !!r.ts);
 
-  // KPIs
-  const totalParcels = rows.length;
-  const totalRevenue = rows.reduce((s,r)=>s+r.price,0);
-  const avgPrice = totalParcels ? (totalRevenue/totalParcels) : 0;
+    // keyboard: Enter key triggers track
+    document.getElementById('trackingInput').addEventListener('keydown', function(e){
+      if (e.key === 'Enter') trackPackage();
+    });
 
-  const nameCount = {};
-  rows.forEach(r => { nameCount[r.name] = (nameCount[r.name]||0)+1; });
-  const repeatCustomers = Object.values(nameCount).filter(c=>c>1).length;
+    // back to top (small)
+    const backBtn = document.createElement('button');
+    backBtn.id = 'backToTop';
+    backBtn.textContent = '↑ Top';
+    backBtn.style.cssText = 'position:fixed;right:20px;bottom:20px;padding:10px 14px;border-radius:999px;border:none;background:#D7282F;color:#fff;cursor:pointer;display:none;z-index:9999;';
+    document.body.appendChild(backBtn);
+    backBtn.addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}));
+    window.addEventListener('scroll', ()=> backBtn.style.display = window.scrollY > 240 ? 'block' : 'none');
 
-  document.getElementById('kpiParcels').innerText = totalParcels.toLocaleString();
-  document.getElementById('kpiRevenue').innerText = totalRevenue.toLocaleString();
-  document.getElementById('kpiAvg').innerText = avgPrice.toFixed(2);
-  document.getElementById('kpiRepeat').innerText = repeatCustomers.toLocaleString();
-
-  // Group by date
-  const byDate = {};
-  rows.forEach(r => {
-    const d = r.ts.toISOString().slice(0,10);
-    if(!byDate[d]) byDate[d] = {count:0,revenue:0};
-    byDate[d].count += 1;
-    byDate[d].revenue += r.price;
-  });
-  const dates = Object.keys(byDate).sort();
-  const counts = dates.map(d => byDate[d].count);
-  const revenues = dates.map(d => byDate[d].revenue);
-
-  // Barangay distribution
-  const barangayCount = {};
-  rows.forEach(r => {
-    const b = r.barangay || '-';
-    if(!barangayCount[b]) barangayCount[b]=0;
-    barangayCount[b]++;
-  });
-  const barangays = Object.keys(barangayCount).sort((a,b)=>barangayCount[b]-barangayCount[a]);
-  const barangayVals = barangays.map(b => barangayCount[b]);
-
-  // Top barangays table
-  const tbody = document.querySelector('#topBarangaysTable tbody');
-  tbody.innerHTML = '';
-  barangays.slice(0, 10).forEach(b => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${b}</td><td>${barangayCount[b]}</td>`;
-    tbody.appendChild(tr);
-  });
-
-  // Draw charts
-  drawLineChart('chartParcels', dates, counts, 'Daily Parcels', (c)=>chartParcels=c, chartParcels);
-  drawBarChart('chartRevenue', dates, revenues, 'Daily Revenue', (c)=>chartRevenue=c, chartRevenue);
-  drawPieChart('chartBarangay', barangays.slice(0,8), barangayVals.slice(0,8), (c)=>chartBarangay=c, chartBarangay);
-
-  // Save analytics for export
-  window.__analyticsRows = rows;
-  window.__analyticsDaily = dates.map((d,i)=>({date:d, parcels:counts[i], revenue:revenues[i]}));
-  window.__analyticsBarangay = barangays.map((b,i)=>({barangay:b, count:barangayCount[b]}));
-}
-
-/* ========================== Chart helpers ========================== */
-function destroyIf(chart){ if(chart){ try{ chart.destroy(); }catch(e){} } }
-function drawLineChart(canvasId, labels, data, label, setRef, oldRef){
-  destroyIf(oldRef);
-  const ctx = document.getElementById(canvasId);
-  const c = new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[{ label, data, tension:.35, fill:false }]},
-    options:{ responsive:true, plugins:{ legend:{display:true} }, scales:{ x:{ticks:{maxRotation:0}} } }
-  });
-  setRef(c);
-}
-function drawBarChart(canvasId, labels, data, label, setRef, oldRef){
-  destroyIf(oldRef);
-  const ctx = document.getElementById(canvasId);
-  const c = new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ label, data }]},
-    options:{ responsive:true, plugins:{ legend:{display:true} } }
-  });
-  setRef(c);
-}
-function drawPieChart(canvasId, labels, data, setRef, oldRef){
-  destroyIf(oldRef);
-  const ctx = document.getElementById(canvasId);
-  const c = new Chart(ctx, {
-    type:'pie',
-    data:{ labels, datasets:[{ data }]},
-    options:{ responsive:true, plugins:{ legend:{position:'bottom'} } }
-  });
-  setRef(c);
-}
-
-/* ========================== PRODUCTS & SALES ========================== */
-async function saveProduct(){
-  const barcode = (document.getElementById('prodBarcode').value || '').trim();
-  const name = (document.getElementById('prodName').value || '').trim();
-  const category = (document.getElementById('prodCategory').value || '').trim();
-  const price = Number(document.getElementById('prodPrice').value) || 0;
-  const stock = Number(document.getElementById('prodStock').value) || 0;
-  const notes = (document.getElementById('prodNotes').value || '').trim();
-  if(!barcode || !name || !category) return alert('Barcode, name and category required.');
-
-  await db.collection('products').doc(barcode).set({
-    name, category, price, stock, notes,
-    createdAt: firebase.firestore.Timestamp.now()
-  }, { merge: true });
-
-  // Clear inputs
-  ['prodBarcode','prodName','prodCategory','prodPrice','prodStock','prodNotes']
-    .forEach(id => document.getElementById(id).value='');
-
-  loadProducts();
-  alert('Product saved.');
-}
-
-async function loadProducts(){
-  const list = document.getElementById('productList');
-  if(!list) return;
-  list.innerHTML = 'Loading...';
-  const snap = await db.collection('products').orderBy('createdAt','desc').get();
-  if(snap.empty){ list.innerHTML = '<div class="card">No products</div>'; return; }
-  list.innerHTML = '';
-  snap.docs.forEach(doc => {
-    const d = doc.data();
-    const el = document.createElement('div');
-    el.className = 'item';
-    el.innerHTML = `
-      <div>
-        <div style="font-weight:700">${doc.id} - ${d.name}</div>
-        <div class="muted small">Category: ${d.category} | Price: ₱${d.price} | Stock: ${d.stock}</div>
-        <div class="muted small">${d.notes || ''}</div>
-      </div>
-      <div>
-        <button onclick="editProduct('${doc.id}')">Edit</button>
-        <button onclick="deleteProduct('${doc.id}')">Delete</button>
-      </div>`;
-    list.appendChild(el);
-  });
-}
-
-/* ... rest of product/sales logic (recordSale, loadSales, scanners) preserved ... */
-
-/* ========================== Loyalty functions ========================== */
-async function registerLoyalty(){
-  const cardId = (document.getElementById('loyCardId').value || '').trim();
-  const name = (document.getElementById('loyName').value || '').trim();
-  const phone = (document.getElementById('loyPhone').value || '').trim();
-  const address = (document.getElementById('loyAddress').value || '').trim();
-
-  if(!cardId || !name || !phone || !address) return alert('Please fill Card ID, Name, Phone, and Address.');
-
-  const docRef = db.collection('loyalty').doc(cardId);
-  const now = firebase.firestore.Timestamp.now();
-
-  await docRef.set({
-    cardId,
-    name,
-    normalizedName: cleanName(name), // store normalized for future matching
-    nameLower: name.trim().toLowerCase(),
-    phone,
-    address,
-    points: 0,
-    createdAt: now,
-    pointsHistory: []
-  }, { merge: true });
-
-  // Clear inputs
-  ['loyCardId','loyName','loyPhone','loyAddress'].forEach(id=>document.getElementById(id).value='');
-
-  await loadLoyaltyMembers();
-  alert('Loyalty card registered.');
-}
-
-async function loadLoyaltyMembers(){
-  const snap = await db.collection('loyalty').orderBy('createdAt','desc').get();
-  loyaltyCache = snap.docs.map(d => ({ cardId: d.id, ...d.data() }));
-  renderLoyaltyList();
-}
-
-function renderLoyaltyList(){
-  const q = (document.getElementById('loySearch')?.value || '').trim().toLowerCase();
-  const container = document.getElementById('loyaltyList');
-  if(!container) return;
-  container.innerHTML = '';
-
-  let list = (loyaltyCache || []).slice();
-
-  if(q){
-    list = list.filter(l =>
-      (l.cardId || '').toLowerCase().includes(q) ||
-      (l.name || '').toLowerCase().includes(q) ||
-      (l.phone || '').toLowerCase().includes(q)
-    );
-  }
-
-  if(list.length === 0){
-    container.innerHTML = '<div class="card">No loyalty members found.</div>';
-    return;
-  }
-
-  list.forEach(m => {
-    const el = document.createElement('div');
-    el.className = 'item';
-    el.innerHTML = `
-      <div>
-        <div style="font-weight:700">${m.name} <span class="muted small">(${m.cardId})</span></div>
-        <div class="muted small">Phone: ${m.phone} • Address: ${m.address}</div>
-        <div style="margin-top:8px;">Points: <span class="points-badge">${m.points || 0}</span></div>
-      </div>
-      <div>
-        <button onclick="openLoyaltyDetails('${m.cardId}')">Details</button>
-        <button onclick="promptAdjustPoints('${m.cardId}')">Add/Deduct</button>
-      </div>
-    `;
-    container.appendChild(el);
-  });
-}
-
-async function openLoyaltyDetails(cardId){
-  const doc = await db.collection('loyalty').doc(cardId).get();
-  if(!doc.exists) return alert('Member not found.');
-  const d = doc.data();
-  const h = (d.pointsHistory || []).slice().reverse().map(h=> {
-    const t = h.timestamp && h.timestamp.toDate ? h.timestamp.toDate().toLocaleString() : (h.timestamp ? new Date(h.timestamp).toLocaleString() : '-');
-    return `${t} • ${h.type} ${h.amount} (${h.reason || ''})`;
-  }).join('\n') || 'No history.';
-  alert(`Name: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.address}\nPoints: ${d.points || 0}\n\nHistory:\n${h}`);
-}
-
-async function promptAdjustPoints(cardId){
-  const pass = prompt('Enter admin password to adjust points:');
-  if(pass !== PASSWORD) return alert('Incorrect password.');
-
-  const deltaStr = prompt('Enter points to add (positive) or deduct (negative), e.g. 1 or -1:');
-  if(!deltaStr) return;
-  const delta = Number(deltaStr);
-  if(isNaN(delta) || delta === 0) return alert('Invalid number.');
-
-  const reason = prompt('Reason (optional):') || 'Manual adjustment';
-  await adjustPoints(cardId, delta, reason);
-  alert('Points adjusted.');
-}
-
-async function adjustPoints(cardId, delta, reason){
-  const now = firebase.firestore.Timestamp.now();
-  const ref = db.collection('loyalty').doc(cardId);
-  await db.runTransaction(async (tx)=>{
-    const doc = await tx.get(ref);
-    if(!doc.exists) throw 'Member not found';
-    const cur = doc.data().points || 0;
-    const newPoints = Math.max(0, cur + delta);
-    const history = doc.data().pointsHistory || [];
-    history.push({ type: delta>0 ? 'manual-add' : 'manual-deduct', amount: delta, reason, timestamp: now });
-    tx.update(ref, { points: newPoints, pointsHistory: history });
-  });
-  await loadLoyaltyMembers();
-}
-
-/* ========================== Add/Save Helpers for other flows ========================== */
-/* Example: when saving a new parcel via other UI flows, call tryAwardLoyaltyPoint(...) accordingly */
-
-/* Initialize listeners used in UI - wiring */
-document.addEventListener('DOMContentLoaded', () => {
-  // Hook forms (if present)
-  const loginBtn = document.querySelector('#loginSection button');
-  // nothing required here because login() is called inline
-
-  // Hook save tracking form if exists in your original HTML
-  const addBtns = document.querySelectorAll('[onclick="saveTracking()"], button.save-entry');
-  if(addBtns.length === 0){
-    // fallback: attach to general Add button if present
-    const fbtn = document.querySelector('#addTrackingBtn');
-    if(fbtn) fbtn.addEventListener('click', saveTracking);
-  }
-
-  // Print button
-  const printBtn = document.getElementById("printReceiptBtn");
-  if(printBtn) printBtn.addEventListener("click", printAndSave);
-
-  // Load initial data when appSection becomes visible
-});
-
-/* Keep onSnapshot for reactive updates */
-db.collection && db.collection('products').onSnapshot && db.collection('products').onSnapshot(()=>loadProducts());
-db.collection && db.collection('sales').onSnapshot && db.collection('sales').onSnapshot(()=>{/*loadSales() if implemented*/});
-
-
-/* ========================== Analytics Export ========================== */
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-
-  // Daily Summary
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-
-  // Barangay Distribution
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){ 
-    alert("No analytics data loaded. Please refresh analytics first."); 
-    return; 
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  // === Header with logo + title ===
-  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
-  try {
-    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(img, "PNG", 14, 8, 25, 25);
-  } catch(e){ console.warn("Logo not loaded:", e); }
-
-  doc.setFontSize(18);
-  doc.setTextColor(215, 40, 47);
-  doc.text("JNK Express Padala", 42, 20);
-  doc.setFontSize(12);
-  doc.setTextColor(0,0,0);
-  doc.text("Analytics Dashboard Report", 42, 28);
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
-
-  // === KPIs ===
-  doc.setFontSize(11);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 48);
-
-  doc.setTextColor(0,0,0);
-  let kpiY = 56;
-  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
-  kpiY += 8;
-  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
-
-  // === Charts ===
-  const chart1 = document.getElementById("chartParcels");
-  const chart2 = document.getElementById("chartRevenue");
-  const chart3 = document.getElementById("chartBarangay");
-
-  let yCharts = 72;
-  if(chart1){
-    const img1 = chart1.toDataURL("image/png", 1.0);
-    doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
-    doc.text("Daily Parcels", 14, yCharts-2);
-  }
-  if(chart2){
-    const img2 = chart2.toDataURL("image/png", 1.0);
-    doc.addImage(img2, "PNG", 110, yCharts, 85, 60);
-    doc.text("Daily Revenue", 110, yCharts-2);
-  }
-  if(chart3){
-    const img3 = chart3.toDataURL("image/png", 1.0);
-    doc.addImage(img3, "PNG", 14, yCharts+70, 85, 60);
-    doc.text("Barangay Distribution", 14, yCharts+68);
-  }
-
-  // === Top Barangays ===
-  doc.setFontSize(12);
-  doc.setTextColor(215, 40, 47);
-  doc.text("Top Barangays", 110, yCharts+68);
-
-  doc.setFontSize(9);
-  doc.setTextColor(0,0,0);
-  let yTable = yCharts + 76;
-  const rows = (window.__analyticsBarangay || []).slice(0,8);
-  rows.forEach((r, i)=>{
-    doc.text(`${i+1}. ${r.barangay}`, 110, yTable + (i*6));
-    doc.text(`${r.count}`, 180, yTable + (i*6), {align:"right"});
-  });
-
-  // === Footer ===
-  doc.setFontSize(9);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
-
-  // === Filename with date range ===
-  const fromEl = document.getElementById("anaFrom").value;
-  const toEl   = document.getElementById("anaTo").value;
-  let filename = "analytics_dashboard.pdf";
-  if(fromEl && toEl){
-    filename = `analytics_dashboard_${fromEl}_to_${toEl}.pdf`;
-  }
-
-  doc.save(filename);
-}
-
-</script>
+  </script>
 </body>
 </html>
