@@ -7,45 +7,42 @@
   <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline." />
   <meta name="keywords" content="JNK Express Padala, Track Package, Courier, Shipping, Lubang" />
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    body {
-      font-family: 'Poppins', Arial, sans-serif;
-      background: linear-gradient(135deg, #fdfbfb, #ebedee);
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
+    body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
 
-    /* ===== Header (fixed clean top) ===== */
+    /* ===== Header Fix ===== */
     header {
       position: sticky;
       top: 0;
       z-index: 1100;
       background: linear-gradient(135deg, #D7282F, #a01c23);
       color: #fff;
-      padding: 15px 25px;
+      padding: 12px 25px;
       display: flex;
-      align-items: center;
+      align-items: flex-end; /* aligns logo and title at bottom */
       justify-content: space-between;
       gap: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
     }
+
+    header img {
+      height: 65px; /* make sure logo is always visible */
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
     header h1 {
       margin: 0;
-      font-size: 1.6em;
+      font-size: 1.8em;
+      padding-top: 8px; /* moves text a little down */
       flex: 1;
+      white-space: nowrap;
     }
-    header img {
-      height: 50px;
-      border-radius: 10px;
-    }
+
     .admin-link {
       background: rgba(255,255,255,0.15);
       padding: 8px 14px;
@@ -58,127 +55,75 @@
       color: #D7282F;
     }
 
-    /* ===== Navigation ===== */
-    nav {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      background: #fff;
-      padding: 12px;
-      border-bottom: 1px solid #ddd;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    nav button {
-      margin: 8px 12px;
-      padding: 12px 18px;
-      border: 2px solid #D7282F;
-      background: white;
-      color: #D7282F;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.35s ease;
-    }
-    nav button:hover {
-      background: #D7282F;
-      color: #fff;
-      transform: translateY(-4px) scale(1.05);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-    }
+    nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
+    nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    nav button:hover { background: #D7282F; color: #fff; }
 
-    .container {
-      max-width: 650px;
-      margin: 30px auto;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      padding: 2.5em;
-      text-align: center;
-    }
+    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
+    input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
+    .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
+    .tracking-bar input { flex: 1; }
+    .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .track-btn:hover { background: #a01c23; }
 
-    input, button.track-btn {
-      padding: 14px;
-      font-size: 1em;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .tracking-bar { display: flex; gap: 12px; margin-top: 12px; }
-    .track-btn {
-      background-color: #D7282F;
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .track-btn:hover {
-      background: #a01c23;
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .status-box {
-      margin-top: 20px;
-      padding: 20px;
-      background: #fff6f6;
-      border-radius: 12px;
-      text-align: left;
-      display: none;
-    }
-    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; }
+    .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
+    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
     .progress-step { flex: 1; text-align: center; position: relative; }
-    .progress-step::before {
-      content: "";
-      display: block;
-      height: 10px;
-      background: #ccc;
-      margin: 0 auto 8px;
-      border-radius: 6px;
-      width: 80%;
-    }
+    .progress-step::before { content: ""; display: block; height: 8px; background: #ccc; margin: 0 auto 6px; border-radius: 4px; width: 80%; }
     .progress-step.active::before { background: #D7282F; }
+    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
+    #loading { display: none; margin-top: 10px; color: #D7282F; }
 
-    .map-box { margin-top: 20px; border-radius: 12px; overflow: hidden; }
-    #loading { display: none; margin-top: 10px; color: #D7282F; font-weight: 600; }
+    .support-form { position: fixed; bottom: 150px; right: 20px; width: 300px; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1em; display: none; z-index: 1001; }
+    .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
+    .support-form button { background: #D7282F; color: white; border: none; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; }
 
-    /* ===== Floating Buttons ===== */
-    .support-btn,
-    #backToTop {
-      position: fixed;
-      right: 20px;
-      border-radius: 30px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
-      z-index: 1200;
-    }
+    .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
+    .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
+
+    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
+
+    .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
+    .collapsible:hover { background: #a01c23; }
+    .collapsible:after { content: '\002B'; float: right; }
+    .collapsible.active:after { content: '\2212'; }
+    .content { padding: 10px 15px; display: none; border-left: 2px solid #D7282F; }
+
+    /* ===== Floating Support Button ===== */
     .support-btn {
+      position: fixed;
       bottom: 90px;
+      right: 20px;
       background: linear-gradient(135deg, #D7282F, #a01c23);
       color: white;
       padding: 14px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+      z-index: 1200;
+      cursor: pointer;
+      transition: transform 0.3s ease;
     }
     .support-btn:hover { transform: scale(1.08); }
 
+    /* ===== Back to Top Button ===== */
     #backToTop {
+      position: fixed;
       bottom: 20px;
+      right: 20px;
       background: linear-gradient(135deg, #D7282F, #a01c23);
       color: white;
       border: none;
       padding: 14px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
       display: none;
+      z-index: 1200;
+      cursor: pointer;
+      transition: transform 0.3s ease;
     }
     #backToTop:hover { transform: scale(1.1); }
-
-    footer {
-      background: #D7282F;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      font-size: 0.95em;
-      margin-top: 50px;
-    }
-    footer a { color: white; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -217,13 +162,20 @@
 <div class="news-section">
   <h4>📍 Pick-up Locations</h4>
   <ul>
-    <li><strong>Main Branch:</strong> Urban Finds by JNK...</li>
+    <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
+    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
+    <li><strong>Vigo/Dangay:</strong> (Near Dangay Church)</li>
+    <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
+    <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
+    <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
   </ul>
 </div>
 
 <div class="info-section" id="policies">
   <button class="collapsible">About Us</button>
-  <div class="content"><p>JNK Express Padala is dedicated...</p></div>
+  <div class="content">
+    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond...</p>
+  </div>
 </div>
 
 <!-- Back to Top Button -->
@@ -249,7 +201,14 @@
 </footer>
 
 <script>
-const firebaseConfig = { /* your firebase config */ };
+const firebaseConfig = {
+  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+  authDomain: "jnk-ordertracker.firebaseapp.com",
+  projectId: "jnk-ordertracker",
+  storageBucket: "jnk-ordertracker.appspot.com",
+  messagingSenderId: "421193030070",
+  appId: "1:421193030070:web:078e39980237bc41f64917"
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
@@ -267,7 +226,8 @@ async function trackPackage() {
   try {
     const doc = await db.collection("tracking").doc(input).get();
     if (doc.exists) {
-      resultDiv.innerHTML = "<strong>Status found ✅</strong>";
+      const data = doc.data();
+      resultDiv.innerHTML = "<strong>Tracking Found ✅</strong><br>" + JSON.stringify(data);
     } else {
       resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong>";
     }
@@ -282,6 +242,16 @@ async function trackPackage() {
 function toggleSupportForm() {
   const form = document.getElementById('supportForm');
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
+}
+
+// Collapsible sections
+const coll = document.getElementsByClassName("collapsible");
+for (let i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    const content = this.nextElementSibling;
+    content.style.display = content.style.display === "block" ? "none" : "block";
+  });
 }
 
 // Back to top
