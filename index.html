@@ -7,54 +7,268 @@
   <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline." />
   <meta name="keywords" content="JNK Express Padala, Track Package, Courier, Shipping, Lubang" />
 
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
-    header { background: #D7282F; color: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    header img { height: 50px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-    header h1 { margin: 0; font-size: 1.6em; flex: 1; }
-    .admin-link { color: white; text-decoration: none; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; font-size: 0.95em; }
-    .admin-link:hover { background: white; color: #D7282F; }
+    /* ===== Global Reset & Font ===== */
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: linear-gradient(135deg, #fdfbfb, #ebedee);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      perspective: 1000px;
+    }
 
-    nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
-    nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
-    nav button:hover { background: #D7282F; color: #fff; }
+    /* ===== Header ===== */
+    header {
+      background: linear-gradient(135deg, #D7282F, #a01c23);
+      color: #fff;
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    header img {
+      height: 55px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+      transform: rotateY(-10deg);
+      transition: transform 0.4s ease;
+    }
+    header img:hover {
+      transform: rotateY(0deg) scale(1.05);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8em;
+      letter-spacing: 1px;
+    }
+    .admin-link {
+      color: white;
+      text-decoration: none;
+      background: rgba(255,255,255,0.15);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+    .admin-link:hover {
+      background: #fff;
+      color: #D7282F;
+      transform: translateY(-3px);
+    }
 
-    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
-    input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
-    .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
-    .tracking-bar input { flex: 1; }
-    .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
+    /* ===== Navigation ===== */
+    nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: #fff;
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    nav button {
+      margin: 8px 12px;
+      padding: 12px 18px;
+      border: 2px solid #D7282F;
+      background: white;
+      color: #D7282F;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.35s ease;
+    }
+    nav button:hover {
+      background: #D7282F;
+      color: #fff;
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
 
-    .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
-    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
-    .progress-step { flex: 1; text-align: center; position: relative; }
-    .progress-step::before { content: ""; display: block; height: 8px; background: #ccc; margin: 0 auto 6px; border-radius: 4px; width: 80%; }
-    .progress-step.active::before { background: #D7282F; }
-    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
-    #loading { display: none; margin-top: 10px; color: #D7282F; }
+    /* ===== Container ===== */
+    .container {
+      max-width: 650px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      padding: 2.5em;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 1s ease forwards;
+    }
+    .container h2 {
+      margin-bottom: 1em;
+      font-weight: 600;
+      color: #D7282F;
+    }
+    input, button.track-btn {
+      padding: 14px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .tracking-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .track-btn {
+      background-color: #D7282F;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .track-btn:hover {
+      background: #a01c23;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
 
-    .support-btn { position: fixed; bottom: 90px; right: 20px; background-color: #D7282F; color: white; padding: 12px 18px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
-    .support-form { position: fixed; bottom: 150px; right: 20px; width: 300px; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1em; display: none; z-index: 1001; }
-    .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
-    .support-form button { background: #D7282F; color: white; border: none; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; }
+    /* ===== Status Box & Progress ===== */
+    .status-box {
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff6f6;
+      border-radius: 12px;
+      text-align: left;
+      display: none;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .progress-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+    .progress-step::before {
+      content: "";
+      display: block;
+      height: 10px;
+      background: #ccc;
+      margin: 0 auto 8px;
+      border-radius: 6px;
+      width: 80%;
+      transition: background 0.4s ease;
+    }
+    .progress-step.active::before {
+      background: #D7282F;
+      box-shadow: 0 0 12px rgba(215,40,47,0.6);
+    }
 
-    .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
-    .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
+    /* ===== Sections ===== */
+    .info-section, .services-section, .news-section {
+      max-width: 650px;
+      margin: 30px auto;
+      padding: 20px 25px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+      opacity: 0;
+      transform: translateY(50px);
+      transition: all 0.8s ease;
+    }
+    .info-section.show, .services-section.show, .news-section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .info-section h4, .services-section h3, .news-section h4 {
+      color: #D7282F;
+    }
 
-    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
+    /* ===== Collapsibles ===== */
+    .collapsible {
+      width: 100%;
+      background: #D7282F;
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 12px;
+      text-align: left;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .collapsible:hover {
+      background: #a01c23;
+    }
+    .collapsible:after {
+      content: '\002B';
+      float: right;
+    }
+    .collapsible.active:after {
+      content: '\2212';
+    }
+    .content {
+      padding: 12px 18px;
+      display: none;
+      border-left: 3px solid #D7282F;
+      background: #fffdfd;
+      border-radius: 0 0 8px 8px;
+    }
 
-    .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
-    .collapsible:hover { background: #a01c23; }
-    .collapsible:after { content: '\002B'; float: right; }
-    .collapsible.active:after { content: '\2212'; }
-    .content { padding: 10px 15px; display: none; border-left: 2px solid #D7282F; }
+    /* ===== Floating Buttons ===== */
+    .support-btn, #backToTop {
+      position: fixed;
+      right: 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .support-btn {
+      bottom: 90px;
+      background: linear-gradient(135deg, #D7282F, #a01c23);
+      color: white;
+      padding: 14px 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+      z-index: 1000;
+    }
+    #backToTop {
+      bottom: 20px;
+      background: linear-gradient(135deg, #D7282F, #a01c23);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+      display: none;
+      z-index: 1002;
+    }
+    .support-btn:hover, #backToTop:hover {
+      transform: scale(1.1);
+    }
 
-    #backToTop { position: fixed; bottom: 20px; right: 20px; z-index: 1002; background-color: #D7282F; color: white; border: none; padding: 12px 18px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; }
-    #backToTop:hover { background-color: #a01c23; }
+    /* ===== Footer ===== */
+    footer {
+      background: #D7282F;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 0.95em;
+      margin-top: 50px;
+      box-shadow: 0 -6px 12px rgba(0,0,0,0.2);
+    }
+    footer a { color: white; text-decoration: underline; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -83,14 +297,14 @@
   <div id="mapContainer" class="map-box"></div>
 </div>
 
-<div class="services-section">
+<div class="services-section scroll-anim">
   <h3>Our Services</h3>
   <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
   <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
   <p><strong>Bulk/Truck Services:</strong> Large shipments- Balikbayan boxes, appliances, handled with care.</p>
 </div>
 
-<div class="news-section">
+<div class="news-section scroll-anim">
   <h4>📍 Pick-up Locations</h4>
   <ul>
     <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
@@ -101,40 +315,21 @@
     <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
   </ul>
 </div>
-<div class="info-section" id="policies">
+
+<div class="info-section scroll-anim" id="policies">
   <button class="collapsible">About Us</button>
-  <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
-  </div>
-
+  <div class="content"><p>JNK Express Padala is dedicated...</p></div>
   <button class="collapsible">Privacy Policy</button>
-  <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
-  </div>
-
+  <div class="content"><p>We respect your privacy...</p></div>
   <button class="collapsible">Cookie Policy</button>
-  <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
-  </div>
+  <div class="content"><p>Our website may use cookies...</p></div>
 </div>
 
-<!-- Back to Top Button -->
+<!-- Back to Top -->
 <button id="backToTop" onclick="scrollToTop()">↑ Top</button>
-<div class="info-section">
-  <button class="collapsible">Terms & Conditions</button>
-  <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
-  </div>
 
-  <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
-  </div>
-</div>
-<!-- Floating Support Button -->
+<!-- Support -->
 <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
-
-<!-- Support Form -->
 <div class="support-form" id="supportForm">
   <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
     <input type="hidden" name="_captcha" value="false">
@@ -147,10 +342,11 @@
 
 <footer>
   &copy; 2021 JNK Express Padala. All Rights Reserved.<br>
-  <a href="https://www.facebook.com/profile.php?id=61572021585621" style="color:white; text-decoration:underline;">Facebook</a>
+  <a href="https://www.facebook.com/profile.php?id=61572021585621">Facebook</a>
 </footer>
 
 <script>
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
   authDomain: "jnk-ordertracker.firebaseapp.com",
@@ -163,6 +359,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 
+/* Tracking */
 async function trackPackage() {
   const input = document.getElementById('trackingInput').value.trim().toUpperCase();
   const resultDiv = document.getElementById('statusResult');
@@ -199,14 +396,11 @@ async function trackPackage() {
 
       if (location && location !== "Unknown") {
         const encodedLocation = encodeURIComponent(location);
-        mapDiv.innerHTML = `
-          <iframe width="100%" height="250" frameborder="0" style="border:0"
-            referrerpolicy="no-referrer-when-downgrade" allowfullscreen
-            src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
-          </iframe>`;
+        mapDiv.innerHTML = `<iframe width="100%" height="250" frameborder="0" style="border:0"
+            src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c"></iframe>`;
       }
     } else {
-      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+      resultDiv.innerHTML = "❌ Tracking number not found.";
     }
   } catch (error) {
     resultDiv.innerHTML = "Please enter your tracking number.";
@@ -217,12 +411,13 @@ async function trackPackage() {
   resultDiv.style.display = 'block';
 }
 
+/* Support Form */
 function toggleSupportForm() {
   const form = document.getElementById('supportForm');
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
 
-// Collapsible sections
+/* Collapsibles */
 const coll = document.getElementsByClassName("collapsible");
 for (let i = 0; i < coll.length; i++) {
   coll[i].addEventListener("click", function() {
@@ -232,7 +427,7 @@ for (let i = 0; i < coll.length; i++) {
   });
 }
 
-// Back to top
+/* Back to top */
 window.onscroll = function() {
   const btn = document.getElementById("backToTop");
   btn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "block" : "none";
@@ -240,6 +435,19 @@ window.onscroll = function() {
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* Scroll Animations */
+const scrollElements = document.querySelectorAll(".scroll-anim");
+function checkScroll() {
+  scrollElements.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight - 100) {
+      el.classList.add("show");
+    }
+  });
+}
+window.addEventListener("scroll", checkScroll);
+window.addEventListener("load", checkScroll);
 </script>
 
 </body>
