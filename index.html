@@ -12,55 +12,298 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
-    header { background: #D7282F; color: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    header img { height: 50px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-    header h1 { margin: 0; font-size: 1.6em; flex: 1; }
-    .admin-link { color: white; text-decoration: none; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; font-size: 0.95em; }
-    .admin-link:hover { background: white; color: #D7282F; }
+    :root {
+      --primary: #D7282F;
+      --primary-dark: #a01c23;
+      --light-gray: #f9f9f9;
+      --text-dark: #333;
+      --radius: 12px;
+    }
 
-    nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
-    nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
-    nav button:hover { background: #D7282F; color: #fff; }
+    body {
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--light-gray);
+      color: var(--text-dark);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
 
-    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
-    input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
-    .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
+    /* HEADER */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header img {
+      height: 48px;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    header h1 {
+      margin: 0 10px;
+      font-size: 1.6em;
+      flex: 1;
+    }
+    .admin-link {
+      color: white;
+      text-decoration: none;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      font-size: 0.9em;
+      transition: all 0.2s ease-in-out;
+    }
+    .admin-link:hover {
+      background: #fff;
+      color: var(--primary);
+    }
+
+    /* NAVIGATION */
+    nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 10px;
+    }
+    nav button {
+      margin: 5px 8px;
+      padding: 10px 16px;
+      border: 1px solid var(--primary);
+      background: white;
+      color: var(--primary);
+      font-weight: bold;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    nav button:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* MAIN CONTENT */
+    .container {
+      max-width: 650px;
+      margin: 30px auto;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      padding: 2em;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+    input, button.track-btn {
+      padding: 12px;
+      font-size: 1em;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 4px rgba(215,40,47,0.3);
+    }
+    .tracking-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
     .tracking-bar input { flex: 1; }
-    .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .track-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .track-btn:hover {
+      background: var(--primary-dark);
+    }
 
-    .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
-    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
-    .progress-step { flex: 1; text-align: center; position: relative; }
-    .progress-step::before { content: ""; display: block; height: 8px; background: #ccc; margin: 0 auto 6px; border-radius: 4px; width: 80%; }
-    .progress-step.active::before { background: #D7282F; }
-    .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
-    #loading { display: none; margin-top: 10px; color: #D7282F; }
+    /* TRACKING STATUS */
+    .status-box {
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff4f4;
+      border-radius: var(--radius);
+      text-align: left;
+      display: none;
+    }
+    .progress-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 0.9em;
+    }
+    .progress-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+      font-weight: 500;
+      color: #777;
+    }
+    .progress-step::before {
+      content: "";
+      display: block;
+      height: 6px;
+      background: #ddd;
+      margin: 0 auto 6px;
+      border-radius: 3px;
+      width: 75%;
+    }
+    .progress-step.active {
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .progress-step.active::before {
+      background: var(--primary);
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: var(--primary);
+      font-weight: bold;
+    }
 
-    .support-btn { position: fixed; bottom: 90px; right: 20px; background-color: #D7282F; color: white; padding: 12px 18px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
-    .support-form { position: fixed; bottom: 150px; right: 20px; width: 300px; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1em; display: none; z-index: 1001; }
-    .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
-    .support-form button { background: #D7282F; color: white; border: none; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; }
+    /* SUPPORT BUTTON */
+    .support-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      background-color: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      z-index: 1000;
+      transition: background 0.2s;
+    }
+    .support-btn:hover { background: var(--primary-dark); }
+    .support-form {
+      position: fixed;
+      bottom: 150px;
+      right: 20px;
+      width: 300px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      padding: 1em;
+      display: none;
+      z-index: 1001;
+    }
+    .support-form input, .support-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 1em;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+    }
+    .support-form button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .support-form button:hover { background: var(--primary-dark); }
 
-    .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
-    .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
+    /* INFO SECTIONS */
+    .info-section, .services-section, .news-section {
+      max-width: 650px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+    .info-section h4, .services-section h3, .news-section h4 {
+      color: var(--primary);
+      margin-top: 0;
+    }
+    .news-section ul {
+      padding-left: 20px;
+    }
 
-    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
-
-    .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
-    .collapsible:hover { background: #a01c23; }
+    /* COLLAPSIBLES */
+    .collapsible {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius);
+      margin-top: 12px;
+      text-align: left;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .collapsible:hover { background: var(--primary-dark); }
     .collapsible:after { content: '\002B'; float: right; }
     .collapsible.active:after { content: '\2212'; }
-    .content { padding: 10px 15px; display: none; border-left: 2px solid #D7282F; }
+    .content {
+      padding: 12px 15px;
+      display: none;
+      border-left: 3px solid var(--primary);
+      margin-top: 6px;
+      background: #fafafa;
+      border-radius: var(--radius);
+    }
 
-    #backToTop { position: fixed; bottom: 20px; right: 20px; z-index: 1002; background-color: #D7282F; color: white; border: none; padding: 12px 18px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; }
-    #backToTop:hover { background-color: #a01c23; }
+    /* FOOTER */
+    footer {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 18px;
+      font-size: 0.9em;
+      margin-top: 50px;
+    }
+    footer a {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* BACK TO TOP */
+    #backToTop {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1002;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: none;
+      transition: background 0.2s;
+    }
+    #backToTop:hover { background-color: var(--primary-dark); }
   </style>
 </head>
 <body>
 
 <header>
-  <img src="logo.jpg" alt="Logo" />
+  <img src="logo.jpg" alt="JNK Logo" />
   <h1>JNK Express Padala</h1>
   <a href="admin.html" class="admin-link">Login</a>
 </header>
@@ -87,54 +330,53 @@
   <h3>Our Services</h3>
   <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
   <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
-  <p><strong>Bulk/Truck Services:</strong> Large shipments- Balikbayan boxes, appliances, handled with care.</p>
+  <p><strong>Bulk/Truck Services:</strong> Large shipments—Balikbayan boxes, appliances, handled with care.</p>
 </div>
 
 <div class="news-section">
   <h4>📍 Pick-up Locations</h4>
   <ul>
-    <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
-    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
-    <li><strong>Vigo/Dangay:</strong> (Near Dangay Church)</li>
+    <li><strong>Main Branch:</strong> Urban Finds by JNK, Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
+    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA Warehouse and TILIK Elementary School)</li>
+    <li><strong>Vigo/Dangay:</strong> Near Dangay Church</li>
     <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
     <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
     <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
   </ul>
 </div>
+
 <div class="info-section" id="policies">
   <button class="collapsible">About Us</button>
   <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
+    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We provide excellent service, timely tracking, and secure handling of shipments.</p>
   </div>
 
   <button class="collapsible">Privacy Policy</button>
   <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
+    <p>We respect your privacy. Data like your name, email, phone, and tracking info is collected only for delivery purposes. We never sell or share information without consent.</p>
   </div>
 
   <button class="collapsible">Cookie Policy</button>
   <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
+    <p>We may use cookies to improve your experience. Disabling cookies may affect some features.</p>
   </div>
 </div>
 
-<!-- Back to Top Button -->
 <button id="backToTop" onclick="scrollToTop()">↑ Top</button>
+
 <div class="info-section">
   <button class="collapsible">Terms & Conditions</button>
   <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
+    <p>By using JNK Express Padala services, you agree to provide accurate shipment details. We are not liable for delays due to natural disasters, traffic, or incorrect info. All parcels are handled as declared.</p>
   </div>
 
   <button class="collapsible">Refund & Shipping Policy</button>
   <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
+    <p>Shipping fees are non-refundable once dispatched. Claims for lost/damaged items will be assessed individually. Ensure correct packaging and delivery details.</p>
   </div>
 </div>
-<!-- Floating Support Button -->
-<div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
 
-<!-- Support Form -->
+<div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
 <div class="support-form" id="supportForm">
   <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
     <input type="hidden" name="_captcha" value="false">
@@ -146,8 +388,8 @@
 </div>
 
 <footer>
-  &copy; 2021 JNK Express Padala. All Rights Reserved.<br>
-  <a href="https://www.facebook.com/profile.php?id=61572021585621" style="color:white; text-decoration:underline;">Facebook</a>
+  &copy; 2025 JNK Express Padala. All Rights Reserved.<br>
+  <a href="https://www.facebook.com/profile.php?id=61572021585621">Facebook</a>
 </footer>
 
 <script>
@@ -206,10 +448,10 @@ async function trackPackage() {
           </iframe>`;
       }
     } else {
-      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
     }
   } catch (error) {
-    resultDiv.innerHTML = "Please enter your tracking number.";
+    resultDiv.innerHTML = "⚠️ Please enter a valid tracking number.";
     console.error(error);
   }
 
@@ -222,7 +464,6 @@ function toggleSupportForm() {
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
 
-// Collapsible sections
 const coll = document.getElementsByClassName("collapsible");
 for (let i = 0; i < coll.length; i++) {
   coll[i].addEventListener("click", function() {
@@ -232,7 +473,6 @@ for (let i = 0; i < coll.length; i++) {
   });
 }
 
-// Back to top
 window.onscroll = function() {
   const btn = document.getElementById("backToTop");
   btn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "block" : "none";
