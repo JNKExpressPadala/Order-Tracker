@@ -45,7 +45,27 @@
     .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
     .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
 
-    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
+   body {
+  font-family: Arial, sans-serif;
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+footer {
+  background: #D7282F;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-size: 0.9em;
+  position: relative; /* ensures footer stays at bottom */
+  bottom: 0;
+  width: 100%;
+  margin-top: 50px;
+}
 
     .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
     .collapsible:hover { background: #a01c23; }
