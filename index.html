@@ -71,248 +71,87 @@
       position: relative;
       z-index: 1;
     }
-    header img {
-      height: 55px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      transform: rotateY(0deg);
-      transition: transform 0.4s ease;
-    }
-    header img:hover { transform: rotateY(15deg); }
-    header h1 {
-      margin: 0;
-      font-size: 1.8em;
-      font-weight: 700;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.25);
-      flex: 1;
-    }
+    header img { height: 55px; border-radius: 12px; }
+    header h1 { font-size: 1.6em; font-weight: 700; flex: 1; }
     .admin-link {
-      color: white;
-      text-decoration: none;
-      background: rgba(255,255,255,0.2);
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 0.95em;
-      transition: all 0.3s ease;
+      color: white; text-decoration: none; background: rgba(255,255,255,0.2);
+      padding: 8px 14px; border-radius: 8px; font-size: 0.95em; transition: all 0.3s ease;
     }
     .admin-link:hover { background: white; color: #D7282F; }
 
     /* Nav */
     nav {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      background: #fff;
-      padding: 12px;
-      border-bottom: 1px solid #eee;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-      position: relative;
-      z-index: 1;
+      display: flex; justify-content: center; flex-wrap: wrap;
+      background: #fff; padding: 12px;
+      border-bottom: 1px solid #eee; box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+      position: relative; z-index: 1;
     }
     nav button {
-      margin: 6px 12px;
-      padding: 10px 18px;
-      border: 2px solid #D7282F;
-      background: white;
-      color: #D7282F;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
+      margin: 6px 12px; padding: 10px 18px;
+      border: 2px solid #D7282F; background: white; color: #D7282F;
+      font-weight: 600; border-radius: 8px; cursor: pointer;
       transition: all 0.3s ease;
-      transform: translateY(0px);
     }
     nav button:hover {
-      background: #D7282F;
-      color: white;
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      background: #D7282F; color: white;
+      transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2);
     }
 
     /* Container */
     .container {
-      max-width: 650px;
-      margin: 30px auto;
-      background: rgba(255,255,255,0.9);
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-      padding: 2.2em;
-      text-align: center;
-      backdrop-filter: blur(12px);
-      transition: transform 0.4s ease;
-      position: relative;
-      z-index: 1;
+      max-width: 650px; margin: 40px auto;
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      padding: 2em; text-align: center;
+      backdrop-filter: blur(12px); position: relative; z-index: 1;
     }
-    .container:hover { transform: translateY(-5px); }
-
     .tracking-bar {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
+      display: flex; gap: 10px; margin-top: 20px;
     }
     input, button.track-btn {
-      padding: 12px;
-      font-size: 1em;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      padding: 12px; font-size: 1em;
+      border-radius: 8px; border: 1px solid #ccc;
     }
-    input {
-      flex: 1;
-      transition: all 0.3s ease;
-    }
+    input { flex: 1; }
     input:focus {
-      border-color: #D7282F;
-      box-shadow: 0 0 8px rgba(215,40,47,0.3);
-      outline: none;
+      border-color: #D7282F; box-shadow: 0 0 8px rgba(215,40,47,0.3); outline: none;
     }
     .track-btn {
-      background-color: #D7282F;
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      background-color: #D7282F; color: white; border: none; font-weight: bold;
+      cursor: pointer; transition: all 0.3s ease;
     }
-    .track-btn:hover {
-      background-color: #a01c23;
-      transform: scale(1.05);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-    }
+    .track-btn:hover { background-color: #a01c23; transform: scale(1.05); }
 
     /* Status Box */
     .status-box {
-      margin-top: 20px;
+      margin-top: 25px;
       padding: 20px;
       background: linear-gradient(135deg, #fff5f5, #ffecec);
       border-radius: 12px;
-      text-align: left;
+      text-align: center;
       display: none;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
+    .status-box h3 { margin-bottom: 15px; }
+    .status-detail { margin: 6px 0; font-size: 1em; }
+
     .progress-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      font-size: 0.95em;
+      display: flex; justify-content: space-between;
+      margin-top: 20px; font-size: 0.9em;
     }
     .progress-step {
-      flex: 1;
-      text-align: center;
-      position: relative;
+      flex: 1; text-align: center; position: relative;
     }
     .progress-step::before {
-      content: "";
-      display: block;
-      height: 8px;
-      background: #ccc;
-      margin: 0 auto 6px;
-      border-radius: 4px;
-      width: 80%;
-      transition: background 0.4s ease;
+      content: ""; display: block; height: 8px; background: #ccc;
+      margin: 0 auto 6px; border-radius: 4px; width: 80%;
     }
     .progress-step.active::before { background: #D7282F; }
 
-    /* Support Button */
-    .support-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      background: linear-gradient(135deg, #D7282F, #a01c23);
-      color: white;
-      padding: 14px 20px;
-      border-radius: 25px;
-      font-weight: bold;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      z-index: 2;
-    }
-    .support-btn:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-    }
-    .support-form {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      width: 320px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-      padding: 1.2em;
-      display: none;
-      z-index: 1001;
-    }
-
-    /* Collapsibles */
-    .collapsible {
-      width: 100%;
-      background: #D7282F;
-      color: white;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      margin-top: 12px;
-      text-align: left;
-      font-size: 1em;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .collapsible:hover { background: #a01c23; }
-    .collapsible:after { content: '\002B'; float: right; }
-    .collapsible.active:after { content: '\2212'; }
-    .content {
-      padding: 12px 15px;
-      display: none;
-      border-left: 3px solid #D7282F;
-      background: rgba(255, 245, 245, 0.6);
-      border-radius: 6px;
-      margin-top: 6px;
-      animation: slideDown 0.4s ease;
-    }
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Footer */
-    footer {
-      background: linear-gradient(135deg, #D7282F, #a01c23);
-      color: white;
-      text-align: center;
-      padding: 18px;
-      font-size: 0.95em;
-      margin-top: 50px;
-      box-shadow: 0 -3px 12px rgba(0,0,0,0.2);
-      position: relative;
-      z-index: 1;
-    }
-    footer a { color: #fff; text-decoration: underline; }
-    footer a:hover { text-shadow: 0 0 6px #fff; }
-
-    /* Back to Top */
-    #backToTop {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1002;
-      background: #D7282F;
-      color: white;
-      border: none;
-      padding: 14px 20px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-      display: none;
-      transition: all 0.3s ease;
-    }
-    #backToTop:hover { background-color: #a01c23; transform: scale(1.1); }
+    #loading { display: none; margin-top: 15px; font-weight: bold; color: #D7282F; }
   </style>
 </head>
 <body>
-
-<!-- Your ORIGINAL HTML CONTENT goes here (header, nav, container, sections, support, footer, scripts) -->
-<!-- I didn’t remove or touch your Firebase logic & structure, only CSS is upgraded. -->
 
 <header>
   <img src="logo.jpg" alt="Logo" />
@@ -335,78 +174,7 @@
   </div>
   <div id="loading">⏳ Loading...</div>
   <div id="statusResult" class="status-box"></div>
-  <div id="mapContainer" class="map-box"></div>
 </div>
-
-<div class="services-section">
-  <h3>Our Services</h3>
-  <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
-  <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
-  <p><strong>Bulk/Truck Services:</strong> Large shipments- Balikbayan boxes, appliances, handled with care.</p>
-</div>
-
-<div class="news-section">
-  <h4>📍 Pick-up Locations</h4>
-  <ul>
-    <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
-    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
-    <li><strong>Vigo/Dangay:</strong> (Near Dangay Church)</li>
-    <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
-    <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
-    <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
-  </ul>
-</div>
-
-<div class="info-section" id="policies">
-  <button class="collapsible">About Us</button>
-  <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
-  </div>
-
-  <button class="collapsible">Privacy Policy</button>
-  <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
-  </div>
-
-  <button class="collapsible">Cookie Policy</button>
-  <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
-  </div>
-</div>
-
-<!-- Back to Top Button -->
-<button id="backToTop" onclick="scrollToTop()">↑ Top</button>
-
-<div class="info-section">
-  <button class="collapsible">Terms & Conditions</button>
-  <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
-  </div>
-
-  <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
-  </div>
-</div>
-
-<!-- Floating Support Button -->
-<div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
-
-<!-- Support Form -->
-<div class="support-form" id="supportForm">
-  <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="text" name="Name" placeholder="Your Name" required />
-    <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
-    <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
-    <button type="submit">Send Message</button>
-  </form>
-</div>
-
-<footer>
-  &copy; 2021 JNK Express Padala. All Rights Reserved.<br>
-  <a href="https://www.facebook.com/profile.php?id=61572021585621" target="_blank">Facebook</a>
-</footer>
 
 <script>
 const firebaseConfig = {
@@ -424,14 +192,16 @@ const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 async function trackPackage() {
   const input = document.getElementById('trackingInput').value.trim().toUpperCase();
   const resultDiv = document.getElementById('statusResult');
-  const mapDiv = document.getElementById('mapContainer');
   const loadingDiv = document.getElementById('loading');
 
-  loadingDiv.style.display = 'block';
   resultDiv.style.display = 'none';
-  mapDiv.innerHTML = "";
+  loadingDiv.style.display = 'block';
 
-  if (!input) { alert("Enter a tracking number!"); loadingDiv.style.display = 'none'; return; }
+  if (!input) {
+    alert("Please enter a tracking number.");
+    loadingDiv.style.display = 'none';
+    return;
+  }
 
   try {
     const doc = await db.collection("parcels").doc(input).get();
@@ -441,44 +211,24 @@ async function trackPackage() {
       const data = doc.data();
       resultDiv.innerHTML = `
         <h3>📦 Tracking Number: ${input}</h3>
-        <p><strong>Status:</strong> ${data.status || "Unknown"}</p>
-        <p><strong>Destination:</strong> ${data.destination || "N/A"}</p>
-        <p><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
+        <p class="status-detail"><strong>Status:</strong> ${data.status || "Unknown"}</p>
+        <p class="status-detail"><strong>Destination:</strong> ${data.destination || "N/A"}</p>
+        <p class="status-detail"><strong>Updated At:</strong> ${data.updatedAt || "N/A"}</p>
         <div class="progress-bar">
           ${STAGES.map(stage => `<div class="progress-step ${stage === data.status ? 'active' : ''}">${stage}</div>`).join('')}
         </div>
       `;
-      resultDiv.style.display = 'block';
-      if (data.location) {
-        const [lat, lng] = data.location.split(",");
-        mapDiv.innerHTML = `
-          <iframe src="https://maps.google.com/maps?q=${lat},${lng}&hl=es&z=14&output=embed" width="100%" height="250" style="border-radius:12px; margin-top:15px;"></iframe>
-        `;
-      }
     }
+    resultDiv.style.display = 'block';
   } catch (e) {
     console.error("Error:", e);
-    resultDiv.innerHTML = `<p style="color:red;">⚠️ Error retrieving data. Try again.</p>`;
+    resultDiv.innerHTML = `<p style="color:red;">⚠️ Error retrieving data. Try again later.</p>`;
+    resultDiv.style.display = 'block';
   }
   loadingDiv.style.display = 'none';
 }
-
-function toggleSupportForm() {
-  const form = document.getElementById('supportForm');
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
-}
-function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-window.onscroll = function() {
-  document.getElementById("backToTop").style.display = document.documentElement.scrollTop > 200 ? "block" : "none";
-};
-
-document.querySelectorAll(".collapsible").forEach(btn => {
-  btn.addEventListener("click", function() {
-    this.classList.toggle("active");
-    const content = this.nextElementSibling;
-    content.style.display = content.style.display === "block" ? "none" : "block";
-  });
-});
 </script>
+
 </body>
 </html>
+
