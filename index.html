@@ -22,36 +22,35 @@
       margin: 0;
       padding: 0;
       overflow-x: hidden;
-      perspective: 1000px; /* enables 3D transforms */
     }
 
-    /* ===== Header ===== */
+    /* ===== Header (sticky top) ===== */
     header {
+      position: sticky;
+      top: 0;
+      z-index: 1100;
       background: linear-gradient(135deg, #D7282F, #a01c23);
       color: #fff;
       padding: 15px 25px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-      transform-style: preserve-3d;
+      gap: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      backdrop-filter: blur(6px);
     }
     header img {
-      height: 55px;
-      border-radius: 12px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-      transform: rotateY(-10deg);
-      transition: transform 0.4s ease;
+      height: 50px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease;
     }
-    header img:hover {
-      transform: rotateY(0deg) scale(1.05);
-    }
+    header img:hover { transform: scale(1.05); }
     header h1 {
       margin: 0;
-      font-size: 1.8em;
+      font-size: 1.6em;
       letter-spacing: 1px;
-      transform: translateZ(20px);
+      flex: 1;
     }
     .admin-link {
       color: white;
@@ -65,7 +64,6 @@
     .admin-link:hover {
       background: #fff;
       color: #D7282F;
-      transform: translateY(-3px);
     }
 
     /* ===== Navigation ===== */
@@ -88,7 +86,6 @@
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.35s ease;
-      transform: perspective(600px) translateZ(0);
     }
     nav button:hover {
       background: #D7282F;
@@ -106,9 +103,6 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       padding: 2.5em;
       text-align: center;
-      backdrop-filter: blur(12px);
-      transform: translateY(20px);
-      animation: fadeInUp 1s ease forwards;
     }
     .container h2 {
       margin-bottom: 1em;
@@ -127,9 +121,6 @@
       display: flex;
       gap: 12px;
       margin-top: 12px;
-    }
-    .tracking-bar input {
-      flex: 1;
     }
     .track-btn {
       background-color: #D7282F;
@@ -195,129 +186,36 @@
       font-weight: 600;
     }
 
-    /* ===== Floating Support Button ===== */
-    .support-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      background: linear-gradient(135deg, #D7282F, #a01c23);
-      color: white;
-      padding: 14px 20px;
-      border-radius: 30px;
-      font-weight: bold;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
-      z-index: 1000;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .support-btn:hover {
-      transform: translateY(-4px) scale(1.05);
-    }
-
-    .support-form {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      width: 320px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
-      padding: 1.2em;
-      display: none;
-      z-index: 1001;
-      animation: fadeInUp 0.6s ease forwards;
-    }
-    .support-form input, .support-form textarea {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 1em;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .support-form button {
-      background: #D7282F;
-      color: white;
-      border: none;
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    .support-form button:hover {
-      background: #a01c23;
-      transform: scale(1.05);
-    }
-
-    /* ===== Info & Sections ===== */
-    .info-section, .services-section, .news-section {
-      max-width: 650px;
-      margin: 30px auto;
-      padding: 20px 25px;
-      background: rgba(255,255,255,0.85);
-      border-radius: 16px;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-      animation: fadeInUp 1s ease forwards;
-    }
-    .info-section h4, .services-section h3, .news-section h4 {
-      color: #D7282F;
-      margin-bottom: 12px;
-    }
-
-    /* ===== Collapsibles ===== */
-    .collapsible {
-      width: 100%;
-      background: #D7282F;
-      color: white;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      margin-top: 12px;
-      text-align: left;
-      font-size: 1em;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .collapsible:hover {
-      background: #a01c23;
-    }
-    .collapsible:after {
-      content: '\002B';
-      float: right;
-    }
-    .collapsible.active:after {
-      content: '\2212';
-    }
-    .content {
-      padding: 12px 18px;
-      display: none;
-      border-left: 3px solid #D7282F;
-      background: #fffdfd;
-      border-radius: 0 0 8px 8px;
-    }
-
-    /* ===== Back to Top ===== */
+    /* ===== Floating Buttons ===== */
+    .support-btn,
     #backToTop {
       position: fixed;
-      bottom: 20px;
       right: 20px;
-      z-index: 1002;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+      z-index: 1200;
+    }
+
+    .support-btn {
+      bottom: 90px;
+      background: linear-gradient(135deg, #D7282F, #a01c23);
+      color: white;
+      padding: 14px 20px;
+    }
+    .support-btn:hover { transform: scale(1.08); }
+
+    #backToTop {
+      bottom: 20px;
       background: linear-gradient(135deg, #D7282F, #a01c23);
       color: white;
       border: none;
       padding: 14px 20px;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
       display: none;
-      transition: transform 0.3s ease;
     }
-    #backToTop:hover {
-      transform: scale(1.1);
-    }
+    #backToTop:hover { transform: scale(1.12); }
 
     /* ===== Footer ===== */
     footer {
@@ -332,12 +230,6 @@
     footer a {
       color: white;
       text-decoration: underline;
-    }
-
-    /* ===== Animations ===== */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -389,34 +281,22 @@
 <div class="info-section" id="policies">
   <button class="collapsible">About Us</button>
   <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
+    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery...</p>
   </div>
 
   <button class="collapsible">Privacy Policy</button>
   <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
+    <p>We respect your privacy and ensure your personal information is protected...</p>
   </div>
 
   <button class="collapsible">Cookie Policy</button>
   <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
+    <p>Our website may use cookies to enhance your experience...</p>
   </div>
 </div>
 
 <!-- Back to Top Button -->
 <button id="backToTop" onclick="scrollToTop()">↑ Top</button>
-
-<div class="info-section">
-  <button class="collapsible">Terms & Conditions</button>
-  <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
-  </div>
-
-  <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
-  </div>
-</div>
 
 <!-- Floating Support Button -->
 <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
@@ -493,7 +373,7 @@ async function trackPackage() {
           </iframe>`;
       }
     } else {
-      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong>";
     }
   } catch (error) {
     resultDiv.innerHTML = "Please enter your tracking number.";
