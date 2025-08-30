@@ -4,13 +4,8 @@
   <meta charset="UTF-8" />
   <title>JNK Express Padala - Track Your Package</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Track your JNK Express Padala packages easily. Enter your tracking number to see live updates, estimated delivery, and status timeline." />
-  <meta name="keywords" content="JNK Express Padala, Track Package, Courier, Shipping, Lubang" />
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
   <style>
     body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
     header { background: #D7282F; color: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -18,17 +13,14 @@
     header h1 { margin: 0; font-size: 1.6em; flex: 1; }
     .admin-link { color: white; text-decoration: none; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; font-size: 0.95em; }
     .admin-link:hover { background: white; color: #D7282F; }
-
     nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; }
     nav button { margin: 5px 10px; padding: 10px 16px; border: 1px solid #D7282F; background: #fff; color: #D7282F; font-weight: bold; border-radius: 6px; cursor: pointer; }
     nav button:hover { background: #D7282F; color: #fff; }
-
     .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); padding: 2em; text-align: center; }
     input, button.track-btn { padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
     .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
     .tracking-bar input { flex: 1; }
     .track-btn { background-color: #D7282F; color: white; border: none; font-weight: bold; cursor: pointer; }
-
     .status-box { margin-top: 20px; padding: 20px; background: #fdf1f1; border-radius: 10px; text-align: left; display: none; }
     .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.95em; }
     .progress-step { flex: 1; text-align: center; position: relative; }
@@ -36,42 +28,31 @@
     .progress-step.active::before { background: #D7282F; }
     .map-box { margin-top: 20px; border-radius: 10px; overflow: hidden; }
     #loading { display: none; margin-top: 10px; color: #D7282F; }
-
+    .footer-link { display: block; margin-top: 20px; color: #D7282F; text-decoration: none; }
     .support-btn { position: fixed; bottom: 90px; right: 20px; background-color: #D7282F; color: white; padding: 12px 18px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
     .support-form { position: fixed; bottom: 150px; right: 20px; width: 300px; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1em; display: none; z-index: 1001; }
     .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
     .support-form button { background: #D7282F; color: white; border: none; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; }
-
     .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
     .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
-
     footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
-
-    .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
-    .collapsible:hover { background: #a01c23; }
-    .collapsible:after { content: '\002B'; float: right; }
-    .collapsible.active:after { content: '\2212'; }
-    .content { padding: 10px 15px; display: none; border-left: 2px solid #D7282F; }
-
-    #backToTop { position: fixed; bottom: 20px; right: 20px; z-index: 1002; background-color: #D7282F; color: white; border: none; padding: 12px 18px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; }
-    #backToTop:hover { background-color: #a01c23; }
+    .collapsible { background-color: #D7282F; color: white; cursor: pointer; padding: 10px; width: 100%; border: none; text-align: left; outline: none; font-size: 1em; border-radius: 6px; margin-top: 5px; }
+    .active, .collapsible:hover { background-color: #b71c24; }
+    .content { padding: 0 18px; display: none; overflow: hidden; background-color: #f9f9f9; border-radius: 6px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
-
 <header>
   <img src="logo.jpg" alt="Logo" />
   <h1>JNK Express Padala</h1>
   <a href="admin.html" class="admin-link">Login</a>
 </header>
-
 <nav>
   <button onclick="document.getElementById('trackingInput').focus()">Track & Trace</button>
   <button onclick="alert('Shipping Rates - Coming Soon!')">Shipping Rates</button>
   <button onclick="alert('Shipping Days - Coming Soon!')">Shipping Days</button>
   <button onclick="alert('Find Branches - Coming Soon!')">Find Branches</button>
 </nav>
-
 <div class="container">
   <h2>Track Your Package</h2>
   <div class="tracking-bar">
@@ -82,165 +63,164 @@
   <div id="statusResult" class="status-box"></div>
   <div id="mapContainer" class="map-box"></div>
 </div>
-
 <div class="services-section">
   <h3>Our Services</h3>
   <p><strong>Package Courier:</strong> Fast delivery from Urban to Lubang and Vice-versa!</p>
   <p><strong>Sea Freight:</strong> Best rates, starting at just ₱20!</p>
   <p><strong>Bulk/Truck Services:</strong> Large shipments- Balikbayan boxes, appliances, handled with care.</p>
 </div>
-
 <div class="news-section">
   <h4>📍 Pick-up Locations</h4>
   <ul>
-    <li><strong>Main Branch:</strong> Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
-    <li><strong>Tilik:</strong> E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
-    <li><strong>Vigo/Dangay:</strong> (Near Dangay Church)</li>
-    <li><strong>Tagbac:</strong> 104 Guijo St., Extension (West)</li>
-    <li><strong>Binacas:</strong> 213 Kasoy St. (In front of plaza)</li>
-    <li><strong>Cabra:</strong> 037 Bayabas St., Libis</li>
+    <li>Main Branch: Urban Finds by JNK. Andres Bonifacio HW, Brgy. Araw at Bituin, Poblacion East (Near Rural Health Unit)</li>
+    <li>Tilik: E. Arnaldo St. (Near NFA's Warehouse and TILIK Elementary School)</li>
+    <li>Vigo/Dangay: (Near Dangay Church)</li>
+    <li>Tagbac: 104 Guijo St., Extension (West)</li>
+    <li>Binacas: 213 Kasoy St. (In front of plaza)</li>
+    <li>Cabra: 037 Bayabas St., Libis</li>
   </ul>
 </div>
-<div class="info-section" id="policies">
+<div class="info-section">
   <button class="collapsible">About Us</button>
   <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We strive to provide excellent service to our customers while ensuring timely parcel tracking and secure handling of shipments.</p>
+    <p>JNK Express Padala is committed to delivering your packages safely, quickly, and reliably. Since our establishment, we have dedicated ourselves to providing exceptional courier and logistics services to our customers.</p>
+    <p><strong>Our Mission:</strong> To offer fast, secure, and convenient delivery services that our customers can trust.</p>
+    <p><strong>Our Vision:</strong> To become the most reliable and customer-focused delivery service in the region.</p>
+    <p><strong>Our Values:</strong><br>Customer Satisfaction: Your happiness is our priority.<br>Reliability: We ensure your parcels arrive safely and on time.<br>Innovation: Continuously improving our services with technology and efficiency.</p>
+    <p><strong>Why Choose Us:</strong><br>- Real-time package tracking with JNK Express Padala Tracker<br>- Secure and fast delivery to your doorstep<br>- Friendly and dedicated customer support</p>
   </div>
-
-  <button class="collapsible">Privacy Policy</button>
+  
+    <button class="collapsible">Privacy Policy</button>
   <div class="content">
-    <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
+    <p><strong>Effective Date:</strong> [Insert Date]</p>
+    <p>JNK Express Padala respects your privacy. This policy explains how we collect, use, and protect your personal information.</p>
+    <p><strong>Information We Collect:</strong><br>Name, address, contact details<br>Tracking numbers and parcel information<br>Payment information (if applicable)<br>Cookies and analytics data</p>
+    <p><strong>How We Use Your Information:</strong><br>- To process and track your packages<br>- To improve our services<br>- To send important updates and notifications</p>
+    <p><strong>Sharing Your Information:</strong><br>We do not sell your personal information. We may share data with trusted service providers for delivery, payment processing, or analytics.</p>
+    <p><strong>Your Rights:</strong><br>You may request to access, correct, or delete your data. Contact us at [Insert Email] for privacy requests.</p>
+    <p><strong>Cookies & Tracking:</strong><br>We use cookies to enhance your browsing experience and for analytics purposes. You may disable cookies in your browser settings.</p>
+    <p><strong>Contact Us:</strong><br>For privacy questions, email us at [Insert Email].</p>
   </div>
 
-  <button class="collapsible">Cookie Policy</button>
+  <button class="collapsible">Terms and Conditions</button>
   <div class="content">
-    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
+    <p><strong>Acceptance of Terms:</strong><br>By using JNK Express Padala website and services, you agree to these terms.</p>
+    <p><strong>User Responsibilities:</strong><br>- Provide accurate information when creating orders<br>- Do not use our services for illegal purposes<br>- Respect our website and services</p>
+    <p><strong>Delivery & Refunds:</strong><br>Shipping times are estimates; we are not liable for delays due to unforeseen circumstances. Refunds or cancellations are processed according to our Refund Policy.</p>
+    <p><strong>Intellectual Property:</strong><br>All content on this website, including logos, graphics, and text, belongs to JNK Express Padala and may not be used without permission.</p>
+    <p><strong>Limitation of Liability:</strong><br>We are not responsible for indirect damages resulting from the use of our website or services.</p>
+    <p><strong>Governing Law:</strong><br>These terms are governed by the laws of the Philippines.</p>
   </div>
-</div>
-
-<!-- Back to Top Button -->
-<button id="backToTop" onclick="scrollToTop()">↑ Top</button>
-<div class="info-section">
-  <button class="collapsible">Terms & Conditions</button>
+    <button class="collapsible">Refund & Shipping Policy</button>
   <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
+    <p><strong>Shipping:</strong><br>- Packages are delivered based on the selected service type<br>- Delivery times are estimated; we aim for punctuality but delays may occur</p>
+    <p><strong>Refunds & Returns:</strong><br>- Refunds are available for lost or damaged parcels reported within [Insert Timeframe]<br>- Customers must provide proof of purchase and parcel details<br>- Refund processing may take up to [Insert Number] business days</p>
+    <p><strong>Contact:</strong><br>For questions about refunds or shipments, email [jhonyhix@gmail.com]</p>
+  </div>
+  <!-- Floating Support Button -->
+  <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
+
+  <!-- Support Form -->
+  <div class="support-form" id="supportForm">
+    <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="Name" placeholder="Your Name" required />
+      <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
+      <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
   </div>
 
-  <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
-  </div>
-</div>
-<!-- Floating Support Button -->
-<div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
+  <footer>
+    &copy; 2021 JNK Express Padala. All Rights Reserved.
+  </footer>
 
-<!-- Support Form -->
-<div class="support-form" id="supportForm">
-  <form action="https://formsubmit.co/jhonyhix@gmail.com" method="POST">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="text" name="Name" placeholder="Your Name" required />
-    <input type="text" name="Tracking Number" placeholder="Tracking Number" required />
-    <textarea name="Message" rows="3" placeholder="Your message" required></textarea>
-    <button type="submit">Send Message</button>
-  </form>
-</div>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
+      authDomain: "jnk-ordertracker.firebaseapp.com",
+      projectId: "jnk-ordertracker",
+      storageBucket: "jnk-ordertracker.appspot.com",
+      messagingSenderId: "421193030070",
+      appId: "1:421193030070:web:078e39980237bc41f64917"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 
-<footer>
-  &copy; 2021 JNK Express Padala. All Rights Reserved.<br>
-  <a href="https://www.facebook.com/profile.php?id=61572021585621" style="color:white; text-decoration:underline;">Facebook</a>
-</footer>
+    async function trackPackage() {
+      const input = document.getElementById('trackingInput').value.trim().toUpperCase();
+      const resultDiv = document.getElementById('statusResult');
+      const mapDiv = document.getElementById('mapContainer');
+      const loadingDiv = document.getElementById('loading');
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
+      loadingDiv.style.display = 'block';
+      resultDiv.style.display = 'none';
+      mapDiv.innerHTML = '';
 
-async function trackPackage() {
-  const input = document.getElementById('trackingInput').value.trim().toUpperCase();
-  const resultDiv = document.getElementById('statusResult');
-  const mapDiv = document.getElementById('mapContainer');
-  const loadingDiv = document.getElementById('loading');
+      try {
+        const doc = await db.collection("tracking").doc(input).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const location = data.location || "Unknown";
+          const estimated = data.estimatedDate || "Not available";
+          const history = data.statusHistory || [];
 
-  loadingDiv.style.display = 'block';
-  resultDiv.style.display = 'none';
-  mapDiv.innerHTML = '';
+          let progress = STAGES.map(stage =>
+            `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
+          ).join("");
 
-  try {
-    const doc = await db.collection("tracking").doc(input).get();
-    if (doc.exists) {
-      const data = doc.data();
-      const location = data.location || "Unknown";
-      const estimated = data.estimatedDate || "Not available";
-      const history = data.statusHistory || [];
+          let timeline = history.map(h => {
+            const time = h.timestamp?.toDate().toLocaleString() || "";
+            return `• [${time}] ${h.status}`;
+          }).join("<br>");
 
-      let progress = STAGES.map(stage =>
-        `<div class='progress-step ${history.some(h => h.status === stage) ? 'active' : ''}'>${stage}</div>`
-      ).join("");
+          resultDiv.innerHTML = `
+            <strong>Location:</strong> ${location}<br>
+            <strong>Estimated Delivery:</strong> ${estimated}<br><br>
+            <strong>Status Progress:</strong>
+            <div class='progress-bar'>${progress}</div><br>
+            <strong>Status Timeline:</strong><br>${timeline}`;
 
-      let timeline = history.map(h => {
-        const time = h.timestamp?.toDate().toLocaleString() || "";
-        return `• [${time}] ${h.status}`;
-      }).join("<br>");
-
-      resultDiv.innerHTML = `
-        <strong>Location:</strong> ${location}<br>
-        <strong>Estimated Delivery:</strong> ${estimated}<br><br>
-        <strong>Status Progress:</strong>
-        <div class='progress-bar'>${progress}</div><br>
-        <strong>Status Timeline:</strong><br>${timeline}`;
-
-      if (location && location !== "Unknown") {
-        const encodedLocation = encodeURIComponent(location);
-        mapDiv.innerHTML = `
-          <iframe width="100%" height="250" frameborder="0" style="border:0"
-            referrerpolicy="no-referrer-when-downgrade" allowfullscreen
-            src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
-          </iframe>`;
+          if (location && location !== "Unknown") {
+            const encodedLocation = encodeURIComponent(location);
+            mapDiv.innerHTML = `
+              <iframe width="100%" height="250" frameborder="0" style="border:0"
+                referrerpolicy="no-referrer-when-downgrade" allowfullscreen
+                src="https://www.google.com/maps/embed/v1/place?q=${encodedLocation}&key=AIzaSyBuYjjEn24Bb8KlcGowU4IarGUsijsCP6c">
+              </iframe>`;
+          }
+        } else {
+          resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Your parcel may still be on the way or not yet received by JNK Expess Padala.<br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>";
+        }
+      } catch (error) {
+        resultDiv.innerHTML = "Please enter your tracking number.";
+        console.error(error);
       }
-    } else {
-      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check your tracking number or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+
+      loadingDiv.style.display = 'none';
+      resultDiv.style.display = 'block';
     }
-  } catch (error) {
-    resultDiv.innerHTML = "Please enter your tracking number.";
-    console.error(error);
-  }
 
-  loadingDiv.style.display = 'none';
-  resultDiv.style.display = 'block';
-}
+    function toggleSupportForm() {
+      const form = document.getElementById('supportForm');
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    }
 
-function toggleSupportForm() {
-  const form = document.getElementById('supportForm');
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
-}
-
-// Collapsible sections
-const coll = document.getElementsByClassName("collapsible");
-for (let i = 0; i < coll.length; i++) {
-  coll[i].addEventListener("click", function() {
-    this.classList.toggle("active");
-    const content = this.nextElementSibling;
-    content.style.display = content.style.display === "block" ? "none" : "block";
-  });
-}
-
-// Back to top
-window.onscroll = function() {
-  const btn = document.getElementById("backToTop");
-  btn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "block" : "none";
-};
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-</script>
-
+    const collapsibles = document.getElementsByClassName("collapsible");
+    for (let i = 0; i < collapsibles.length; i++) {
+      collapsibles[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        const content = this.nextElementSibling;
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      });
+    }
+  </script>
 </body>
 </html>
+
+
