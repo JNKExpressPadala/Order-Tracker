@@ -45,27 +45,7 @@
     .info-section, .services-section, .news-section { max-width: 600px; margin: 20px auto; padding: 10px 20px; }
     .info-section h4, .services-section h3, .news-section h4 { color: #D7282F; }
 
-   body {
-  font-family: Arial, sans-serif;
-  background: #fff;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-footer {
-  background: #D7282F;
-  color: white;
-  text-align: center;
-  padding: 15px;
-  font-size: 0.9em;
-  position: relative; /* ensures footer stays at bottom */
-  bottom: 0;
-  width: 100%;
-  margin-top: 50px;
-}
+    footer { background: #D7282F; color: white; text-align: center; padding: 15px; font-size: 0.9em; margin-top: 50px; }
 
     .collapsible { width: 100%; background: #D7282F; color: white; padding: 12px; border: none; border-radius: 6px; margin-top: 10px; text-align: left; font-size: 1em; cursor: pointer; }
     .collapsible:hover { background: #a01c23; }
@@ -132,6 +112,15 @@ footer {
     <p>We respect your privacy and ensure your personal information is protected. Data such as your name, email, phone number, and tracking information is collected solely to provide our delivery services. We do not sell or share personal information to third parties without your consent.</p>
   </div>
 
+  <button class="collapsible">Cookie Policy</button>
+  <div class="content">
+    <p>Our website may use cookies to enhance your experience. Cookies help us remember preferences, improve site functionality, and analyze visitor activity. You can disable cookies in your browser settings, but some features may not function properly.</p>
+  </div>
+</div>
+
+<!-- Back to Top Button -->
+<button id="backToTop" onclick="scrollToTop()">↑ Top</button>
+<div class="info-section">
   <button class="collapsible">Terms & Conditions</button>
   <div class="content">
     <p>By using JNK Express Padala services, you agree to provide accurate information for shipment and tracking. JNK Express Padala is not liable for delays caused by unforeseen events such as natural disasters, traffic conditions, or incorrect recipient details. All parcels are handled according to the declared content and value.</p>
@@ -142,9 +131,6 @@ footer {
     <p>Shipping fees are non-refundable once the parcel is dispatched. Refunds or claims for lost or damaged items will be assessed on a case-by-case basis. Customers are encouraged to ensure proper packaging and accurate delivery information to avoid complications.</p>
   </div>
 </div>
-  <!-- Back to Top Button -->
-<button id="backToTop" onclick="scrollToTop()">↑ Top</button>
-<div class="info-section">
 <!-- Floating Support Button -->
 <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
 
