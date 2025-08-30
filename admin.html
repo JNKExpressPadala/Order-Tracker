@@ -7,50 +7,14 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -69,10 +33,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -86,34 +46,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(`📦 Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(`💰 Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(`⚖️ Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(`👥 Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -147,7 +120,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -162,50 +135,14 @@ async function exportAnalyticsPDF(){
 
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -224,10 +161,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -241,34 +174,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -302,7 +248,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -318,50 +264,14 @@ async function exportAnalyticsPDF(){
 </script>
 <!-- Chart / Export libs used previously -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -380,10 +290,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -397,34 +303,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -458,7 +377,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -473,50 +392,14 @@ async function exportAnalyticsPDF(){
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -535,10 +418,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -552,34 +431,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -613,7 +505,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -628,50 +520,14 @@ async function exportAnalyticsPDF(){
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -690,10 +546,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -707,34 +559,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -768,7 +633,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -783,50 +648,14 @@ async function exportAnalyticsPDF(){
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -845,10 +674,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -862,34 +687,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -923,7 +761,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -939,50 +777,14 @@ async function exportAnalyticsPDF(){
 </script>
 <!-- QR Scanner -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js">
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -1001,10 +803,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -1018,34 +816,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -1079,7 +890,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -1709,95 +1520,7 @@ async function printAndSave() {
     </head>
     <body onload="window.print(); window.close();">
       ${content}
-    
-<script>
-// ================= Fixed Excel Export Functions =================
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!pageSetup'] = { paperSize: 5, orientation: "portrait" };
-  ws['!printOptions'] = { horizontalCentered: true, verticalCentered: true };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){
-    alert("No analytics data loaded. Please refresh analytics first.");
-    return;
-  }
-
-  const aoa = [];
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!pageSetup'] = { paperSize: 5, orientation: "portrait" };
-  ws['!printOptions'] = { horizontalCentered: true, verticalCentered: true };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-// ================= Fixed PDF Export Function =================
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){
-    alert("No analytics data loaded. Please refresh analytics first.");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]);
-
-  doc.setFontSize(16);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
-
-  doc.setFontSize(12);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
-
-  doc.save("analytics_dashboard.pdf");
-}
-</script>
-
-</body></html>
+    </body></html>
   `);
   printWin.document.close();
 
@@ -2368,50 +2091,14 @@ db.collection && db.collection('products').onSnapshot && db.collection('products
 db.collection && db.collection('sales').onSnapshot && db.collection('sales').onSnapshot(()=>{/*loadSales() if implemented*/});
 
 
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-
-  // Data rows
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
+/* ========================== Analytics Export ========================== */
 function exportAnalyticsExcel(){
   if(!window.__analyticsRows){ 
     alert("No analytics data loaded. Please refresh analytics first."); 
     return; 
   }
 
-  const aoa = [];
-  // Header rows
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-
-  // Column headers + data
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
+  const aoa = [["Date","Tracking #","Parcel Name","Barangay","Price"]];
   window.__analyticsRows.forEach(r=>{
     aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
   });
@@ -2430,10 +2117,6 @@ function exportAnalyticsExcel(){
     aoa.push([b.barangay, b.count]);
   });
 
-  // Footer row
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Analytics");
@@ -2447,34 +2130,47 @@ async function exportAnalyticsPDF(){
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]); // Legal size
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // === Header ===
-  doc.setFontSize(16);
+  // === Header with logo + title ===
+  const logoUrl = "https://raw.githubusercontent.com/your-github-repo/logo.png"; // change to your real logo URL
+  try {
+    const img = await fetch(logoUrl).then(r=>r.blob()).then(b=>new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(img, "PNG", 14, 8, 25, 25);
+  } catch(e){ console.warn("Logo not loaded:", e); }
+
+  doc.setFontSize(18);
+  doc.setTextColor(215, 40, 47);
+  doc.text("JNK Express Padala", 42, 20);
+  doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
+  doc.text("Analytics Dashboard Report", 42, 28);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 42, 34);
 
   // === KPIs ===
   doc.setFontSize(11);
   doc.setTextColor(215, 40, 47);
-  doc.text("Key Metrics", 14, 30);
+  doc.text("Key Metrics", 14, 48);
 
   doc.setTextColor(0,0,0);
-  let kpiY = 38;
-  doc.text(`Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
-  doc.text(`Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
+  let kpiY = 56;
+  doc.text(` Total Parcels: ${document.getElementById("kpiParcels").innerText}`, 14, kpiY);
+  doc.text(` Total Revenue: ₱${document.getElementById("kpiRevenue").innerText}`, 110, kpiY);
   kpiY += 8;
-  doc.text(`Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
-  doc.text(`Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
+  doc.text(` Average Price: ₱${document.getElementById("kpiAvg").innerText}`, 14, kpiY);
+  doc.text(` Repeat Customers: ${document.getElementById("kpiRepeat").innerText}`, 110, kpiY);
 
   // === Charts ===
   const chart1 = document.getElementById("chartParcels");
   const chart2 = document.getElementById("chartRevenue");
   const chart3 = document.getElementById("chartBarangay");
 
-  let yCharts = 60;
+  let yCharts = 72;
   if(chart1){
     const img1 = chart1.toDataURL("image/png", 1.0);
     doc.addImage(img1, "PNG", 14, yCharts, 85, 60);
@@ -2508,7 +2204,7 @@ async function exportAnalyticsPDF(){
   // === Footer ===
   doc.setFontSize(9);
   doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
+  doc.text("JNK Express Padala • Trusted Service for Lubangenos • © 2025", 14, 290);
 
   // === Filename with date range ===
   const fromEl = document.getElementById("anaFrom").value;
@@ -2522,93 +2218,5 @@ async function exportAnalyticsPDF(){
 }
 
 </script>
-
-<script>
-// ================= Fixed Excel Export Functions =================
-function exportTrackingExcel(entries){
-  if(!entries || entries.length === 0){
-    alert("No entries to export.");
-    return;
-  }
-
-  const aoa = [];
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-  aoa.push(["Tracking #","Parcel Name","Barangay","Price","Status","Date"]);
-  entries.forEach(r=>{
-    aoa.push([r.id, r.name||"", r.barangay||"", r.price||"", r.status||"", r.ts ? r.ts.toLocaleString() : ""]);
-  });
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!pageSetup'] = { paperSize: 5, orientation: "portrait" };
-  ws['!printOptions'] = { horizontalCentered: true, verticalCentered: true };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Tracking Entries");
-  XLSX.writeFile(wb, `tracking_entries_${Date.now()}.xlsx`);
-}
-
-function exportAnalyticsExcel(){
-  if(!window.__analyticsRows){
-    alert("No analytics data loaded. Please refresh analytics first.");
-    return;
-  }
-
-  const aoa = [];
-  aoa.push(["JNK Express Padala"]);
-  aoa.push([`Date Generated: ${new Date().toLocaleString()}`]);
-  aoa.push([]);
-  aoa.push(["Date","Tracking #","Parcel Name","Barangay","Price"]);
-  window.__analyticsRows.forEach(r=>{
-    aoa.push([r.ts.toLocaleDateString(), r.id, r.name, r.barangay, r.price]);
-  });
-  aoa.push([]);
-  aoa.push(["Daily Summary"]);
-  (window.__analyticsDaily||[]).forEach(d=>{
-    aoa.push([d.date, d.parcels, "", "", d.revenue]);
-  });
-  aoa.push([]);
-  aoa.push(["Barangay Distribution"]);
-  (window.__analyticsBarangay||[]).forEach(b=>{
-    aoa.push([b.barangay, b.count]);
-  });
-  aoa.push([]);
-  aoa.push(["JNK Express Padala • Trusted Service for Lubangenos • ©2021"]);
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!pageSetup'] = { paperSize: 5, orientation: "portrait" };
-  ws['!printOptions'] = { horizontalCentered: true, verticalCentered: true };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analytics");
-  XLSX.writeFile(wb, `analytics_export_${Date.now()}.xlsx`);
-}
-
-// ================= Fixed PDF Export Function =================
-async function exportAnalyticsPDF(){
-  if(!window.__analyticsRows){
-    alert("No analytics data loaded. Please refresh analytics first.");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", [216, 356]);
-
-  doc.setFontSize(16);
-  doc.text("JNK Express Padala", 14, 12);
-  doc.setFontSize(10);
-  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 18);
-
-  doc.setFontSize(12);
-  doc.setTextColor(150,150,150);
-  doc.text("JNK Express Padala • Trusted Service for Lubangenos • ©2021", 14, 350);
-
-  doc.save("analytics_dashboard.pdf");
-}
-</script>
-
 </body>
 </html>
