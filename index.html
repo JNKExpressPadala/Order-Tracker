@@ -19,7 +19,6 @@
       --text-dark: #333;
       --radius: 12px;
     }
-
     body {
       font-family: "Segoe UI", Roboto, Arial, sans-serif;
       background: var(--light-gray);
@@ -28,275 +27,46 @@
       padding: 0;
       line-height: 1.6;
     }
-
-    /* HEADER */
-    header {
-      background: var(--primary);
-      color: #fff;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    header img {
-      height: 48px;
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    header h1 {
-      margin: 0 10px;
-      font-size: 1.6em;
-      flex: 1;
-    }
-    .admin-link {
-      color: white;
-      text-decoration: none;
-      background: rgba(255,255,255,0.15);
-      padding: 6px 14px;
-      border-radius: var(--radius);
-      font-size: 0.9em;
-      transition: all 0.2s ease-in-out;
-    }
-    .admin-link:hover {
-      background: #fff;
-      color: var(--primary);
-    }
-
-    /* NAVIGATION */
-    nav {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
-      padding: 10px;
-    }
-    nav button {
-      margin: 5px 8px;
-      padding: 10px 16px;
-      border: 1px solid var(--primary);
-      background: white;
-      color: var(--primary);
-      font-weight: bold;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.25s;
-    }
-    nav button:hover {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    /* MAIN CONTENT */
-    .container {
-      max-width: 650px;
-      margin: 30px auto;
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      padding: 2em;
-      text-align: center;
-    }
-    h2 {
-      margin-top: 0;
-      color: var(--primary);
-    }
-    input, button.track-btn {
-      padding: 12px;
-      font-size: 1em;
-      border-radius: var(--radius);
-      border: 1px solid #ccc;
-      outline: none;
-    }
-    input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 4px rgba(215,40,47,0.3);
-    }
-    .tracking-bar {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
+    header { background: var(--primary); color: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+    header img { height: 48px; border-radius: var(--radius); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    header h1 { margin: 0 10px; font-size: 1.6em; flex: 1; }
+    .admin-link { color: white; text-decoration: none; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: var(--radius); font-size: 0.9em; transition: all 0.2s ease-in-out; }
+    .admin-link:hover { background: #fff; color: var(--primary); }
+    nav { display: flex; justify-content: center; flex-wrap: wrap; background: #fff; border-bottom: 1px solid #ddd; padding: 10px; }
+    nav button { margin: 5px 8px; padding: 10px 16px; border: 1px solid var(--primary); background: white; color: var(--primary); font-weight: bold; border-radius: var(--radius); cursor: pointer; transition: all 0.25s; }
+    nav button:hover { background: var(--primary); color: #fff; }
+    .container { max-width: 650px; margin: 30px auto; background: white; border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.08); padding: 2em; text-align: center; }
+    h2 { margin-top: 0; color: var(--primary); }
+    input, button.track-btn { padding: 12px; font-size: 1em; border-radius: var(--radius); border: 1px solid #ccc; outline: none; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 4px rgba(215,40,47,0.3); }
+    .tracking-bar { display: flex; gap: 10px; margin-top: 10px; }
     .tracking-bar input { flex: 1; }
-    .track-btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .track-btn:hover {
-      background: var(--primary-dark);
-    }
-
-    /* TRACKING STATUS */
-    .status-box {
-      margin-top: 20px;
-      padding: 20px;
-      background: #fff4f4;
-      border-radius: var(--radius);
-      text-align: left;
-      display: none;
-    }
-    .progress-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      font-size: 0.9em;
-    }
-    .progress-step {
-      flex: 1;
-      text-align: center;
-      position: relative;
-      font-weight: 500;
-      color: #777;
-    }
-    .progress-step::before {
-      content: "";
-      display: block;
-      height: 6px;
-      background: #ddd;
-      margin: 0 auto 6px;
-      border-radius: 3px;
-      width: 75%;
-    }
-    .progress-step.active {
-      color: var(--primary);
-      font-weight: bold;
-    }
-    .progress-step.active::before {
-      background: var(--primary);
-    }
-    #loading {
-      display: none;
-      margin-top: 10px;
-      color: var(--primary);
-      font-weight: bold;
-    }
-
-    /* SUPPORT BUTTON */
-    .support-btn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      background-color: var(--primary);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 30px;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      cursor: pointer;
-      z-index: 1000;
-      transition: background 0.2s;
-    }
+    .track-btn { background-color: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .track-btn:hover { background: var(--primary-dark); }
+    .status-box { margin-top: 20px; padding: 20px; background: #fff4f4; border-radius: var(--radius); text-align: left; display: none; }
+    .progress-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9em; }
+    .progress-step { flex: 1; text-align: center; position: relative; font-weight: 500; color: #777; }
+    .progress-step::before { content: ""; display: block; height: 6px; background: #ddd; margin: 0 auto 6px; border-radius: 3px; width: 75%; }
+    .progress-step.active { color: var(--primary); font-weight: bold; }
+    .progress-step.active::before { background: var(--primary); }
+    #loading { display: none; margin-top: 10px; color: var(--primary); font-weight: bold; }
+    .support-btn { position: fixed; bottom: 90px; right: 20px; background-color: var(--primary); color: white; padding: 12px 20px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: background 0.2s; }
     .support-btn:hover { background: var(--primary-dark); }
-    .support-form {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      width: 300px;
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-      padding: 1em;
-      display: none;
-      z-index: 1001;
-    }
-    .support-form input, .support-form textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      font-size: 1em;
-      border-radius: var(--radius);
-      border: 1px solid #ccc;
-    }
-    .support-form button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .support-form { position: fixed; bottom: 150px; right: 20px; width: 300px; background: #fff; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,0.2); padding: 1em; display: none; z-index: 1001; }
+    .support-form input, .support-form textarea { width: 100%; padding: 10px; margin-top: 8px; font-size: 1em; border-radius: var(--radius); border: 1px solid #ccc; }
+    .support-form button { background: var(--primary); color: white; border: none; margin-top: 10px; padding: 10px; border-radius: var(--radius); cursor: pointer; transition: background 0.2s; }
     .support-form button:hover { background: var(--primary-dark); }
-
-    /* INFO SECTIONS */
-    .info-section, .services-section, .news-section {
-      max-width: 650px;
-      margin: 20px auto;
-      padding: 20px;
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    .info-section h4, .services-section h3, .news-section h4 {
-      color: var(--primary);
-      margin-top: 0;
-    }
-    .news-section ul {
-      padding-left: 20px;
-    }
-
-    /* COLLAPSIBLES */
-    .collapsible {
-      width: 100%;
-      background: var(--primary);
-      color: white;
-      padding: 12px;
-      border: none;
-      border-radius: var(--radius);
-      margin-top: 12px;
-      text-align: left;
-      font-size: 1em;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .info-section, .services-section, .news-section { max-width: 650px; margin: 20px auto; padding: 20px; background: white; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+    .info-section h4, .services-section h3, .news-section h4 { color: var(--primary); margin-top: 0; }
+    .news-section ul { padding-left: 20px; }
+    .collapsible { width: 100%; background: var(--primary); color: white; padding: 12px; border: none; border-radius: var(--radius); margin-top: 12px; text-align: left; font-size: 1em; cursor: pointer; transition: background 0.2s; }
     .collapsible:hover { background: var(--primary-dark); }
     .collapsible:after { content: '\002B'; float: right; }
     .collapsible.active:after { content: '\2212'; }
-    .content {
-      padding: 12px 15px;
-      display: none;
-      border-left: 3px solid var(--primary);
-      margin-top: 6px;
-      background: #fafafa;
-      border-radius: var(--radius);
-    }
-
-    /* FOOTER */
-    footer {
-      background: var(--primary);
-      color: white;
-      text-align: center;
-      padding: 18px;
-      font-size: 0.9em;
-      margin-top: 50px;
-    }
-    footer a {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    /* BACK TO TOP */
-    #backToTop {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1002;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 12px 18px;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      display: none;
-      transition: background 0.2s;
-    }
+    .content { padding: 12px 15px; display: none; border-left: 3px solid var(--primary); margin-top: 6px; background: #fafafa; border-radius: var(--radius); }
+    footer { background: var(--primary); color: white; text-align: center; padding: 18px; font-size: 0.9em; margin-top: 50px; }
+    footer a { color: #fff; text-decoration: underline; }
+    #backToTop { position: fixed; bottom: 20px; right: 20px; z-index: 1002; background-color: var(--primary); color: white; border: none; padding: 12px 18px; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: none; transition: background 0.2s; }
     #backToTop:hover { background-color: var(--primary-dark); }
   </style>
 </head>
@@ -348,32 +118,21 @@
 <div class="info-section" id="policies">
   <button class="collapsible">About Us</button>
   <div class="content">
-    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond. We provide excellent service, timely tracking, and secure handling of shipments.</p>
+    <p>JNK Express Padala is dedicated to safe, quick, and reliable delivery from Urban to Lubang and beyond.</p>
   </div>
-
   <button class="collapsible">Privacy Policy</button>
-  <div class="content">
-    <p>We respect your privacy. Data like your name, email, phone, and tracking info is collected only for delivery purposes. We never sell or share information without consent.</p>
-  </div>
-
+  <div class="content"><p>We respect your privacy. Data is only used for delivery purposes.</p></div>
   <button class="collapsible">Cookie Policy</button>
-  <div class="content">
-    <p>We may use cookies to improve your experience. Disabling cookies may affect some features.</p>
-  </div>
+  <div class="content"><p>We may use cookies to improve your experience.</p></div>
 </div>
 
 <button id="backToTop" onclick="scrollToTop()">↑ Top</button>
 
 <div class="info-section">
   <button class="collapsible">Terms & Conditions</button>
-  <div class="content">
-    <p>By using JNK Express Padala services, you agree to provide accurate shipment details. We are not liable for delays due to natural disasters, traffic, or incorrect info. All parcels are handled as declared.</p>
-  </div>
-
+  <div class="content"><p>By using JNK Express Padala services, you agree to provide accurate shipment details.</p></div>
   <button class="collapsible">Refund & Shipping Policy</button>
-  <div class="content">
-    <p>Shipping fees are non-refundable once dispatched. Claims for lost/damaged items will be assessed individually. Ensure correct packaging and delivery details.</p>
-  </div>
+  <div class="content"><p>Shipping fees are non-refundable once dispatched.</p></div>
 </div>
 
 <div class="support-btn" onclick="toggleSupportForm()">💬 Support</div>
@@ -392,17 +151,10 @@
   <a href="https://www.facebook.com/profile.php?id=61572021585621">Facebook</a>
 </footer>
 
+<!-- Load Firebase config -->
+<script src="firebase-config.js"></script>
+
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAnrNfuTSRAKUS2tAU4AUUrauw_QzszCjY",
-  authDomain: "jnk-ordertracker.firebaseapp.com",
-  projectId: "jnk-ordertracker",
-  storageBucket: "jnk-ordertracker.appspot.com",
-  messagingSenderId: "421193030070",
-  appId: "1:421193030070:web:078e39980237bc41f64917"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 const STAGES = ["Package Received", "In Transit", "Arrived", "For Pick-up"];
 
 async function trackPackage() {
@@ -416,9 +168,9 @@ async function trackPackage() {
   mapDiv.innerHTML = '';
 
   try {
-    const doc = await db.collection("tracking").doc(input).get();
-    if (doc.exists) {
-      const data = doc.data();
+    const docSnap = await db.collection("tracking").doc(input).get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
       const location = data.location || "Unknown";
       const estimated = data.estimatedDate || "Not available";
       const history = data.statusHistory || [];
@@ -448,7 +200,7 @@ async function trackPackage() {
           </iframe>`;
       }
     } else {
-      resultDiv.innerHTML = "❌ <strong>Tracking number not found.</strong><br>Please double-check or <a href='#' onclick='toggleSupportForm()'>contact support</a>.";
+      resultDiv.innerHTML = "❌ Tracking number not found.";
     }
   } catch (error) {
     resultDiv.innerHTML = "⚠️ Please enter a valid tracking number.";
@@ -463,7 +215,6 @@ function toggleSupportForm() {
   const form = document.getElementById('supportForm');
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
-
 const coll = document.getElementsByClassName("collapsible");
 for (let i = 0; i < coll.length; i++) {
   coll[i].addEventListener("click", function() {
@@ -472,15 +223,11 @@ for (let i = 0; i < coll.length; i++) {
     content.style.display = content.style.display === "block" ? "none" : "block";
   });
 }
-
 window.onscroll = function() {
   const btn = document.getElementById("backToTop");
   btn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "block" : "none";
 };
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 </script>
-
 </body>
 </html>
