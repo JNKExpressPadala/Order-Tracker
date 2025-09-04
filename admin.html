@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JNK Express Padala - Admin Panel</title>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- Vendor libs -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --brand:#b61e24;
+      --muted:#6b7280;
+      --bg:#f9fafb;
+      --shadow:0 6px 20px rgba(0,0,0,.08);
+    }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; background:var(--bg); margin:0; color:#111827; }
+    .wrap{ max-width:1000px; margin:20px auto; padding:0 12px; }
+    header h1{ font-size:1.4rem; }
+    .tabs{ display:flex; gap:8px; align-items:center; background:#fff; padding:8px; border-radius:12px; box-shadow:var(--shadow); position:sticky; top:0; z-index:10 }
+    .tab-btn{ border:none; padding:10px 14px; border-radius:10px; background:#f3f4f6; cursor:pointer; font-weight:600; }
+    .tab-btn.active{ background:#fff6f6; color:var(--brand); box-shadow:var(--shadow); }
+    .section{ display:none; }
+    .section.show{ display:block; }
+    .card{ background:#fff; border-radius:14px; padding:14px; box-shadow:var(--shadow); }
+    .grid.two{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media(min-width:760px){ .grid.two{ grid-template-columns:1fr 1fr; } }
+    input,select,button{ padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb; }
+    button{ background:var(--brand); color:#fff; border:none; font-weight:700; cursor:pointer; }
+    button.delete-btn{ background:#ef4444; }
+    .top-bar{ display:flex; gap:8px; align-items:center; }
+    .pagination{ display:flex; justify-content:center; gap:10px; margin:14px 0; }
+    .muted{ color:var(--muted); font-size:.9rem; }
+    .kpis{ display:grid; gap:12px; grid-template-columns:repeat(2,1fr); }
+    @media(min-width:760px){ .kpis{ grid-template-columns:repeat(4,1fr);} }
+    .kpi{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+    .kpi .label{ color:var(--muted); font-size:.9rem }
+    .kpi .value{ font-size:1.6rem; font-weight:800 }
+    .chart-card{ background:#fff; border-radius:14px; padding:12px; box-shadow:var(--shadow); }
+    .table{ width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; box-shadow:var(--shadow) }
+    .table th,.table td{ padding:10px 12px; border-bottom:1px solid #eee; text-align:left; }
+    .table th{ background:#fff6f6; color:#b61e24 }
+    #receiptArea{ display:none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>JNK Admin Panel</h2>
+
+  <!-- LOGIN -->
+  <div id="loginSection" class="card">
+    <div class="grid two">
+      <div>
+        <label class="muted">Username</label>
+        <input id="username" autocomplete="username" placeholder="Username" />
+      </div>
+      <div>
+        <label class="muted">Password</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Password" />
+      </div>
+    </div>
+    <div class="top-bar" style="margin-top:10px">
+      <button onclick="APP.login()">Login</button>
+      <div class="muted">Use correct credentials to access admin features.</div>
+    </div>
+    <p id="loginMessage" style="color:#b61e24; margin:8px 2px 0;"></p>
+  </div>
+
+  <!-- APP -->
+  <div id="appSection" style="display:none; margin-top:16px;">
+    <div class="tabs">
+      <button id="tabManageBtn"   class="tab-btn active" onclick="UI.showTab('manage')">Manage</button>
+      <button id="tabProductsBtn" class="tab-btn" onclick="UI.showTab('products')">Products</button>
+      <button id="tabLoyaltyBtn"  class="tab-btn" onclick="UI.showTab('loyalty')">Loyalty</button>
+      <button id="tabAnalyticsBtn"class="tab-btn" onclick="UI.showTab('analytics')">Analytics</button>
+      <div style="flex:1"></div>
+      <button class="tab-btn" onclick="APP.logout()">Logout</button>
+    </div>
+
+    <!-- MANAGE -->
+    <div id="manageSection" class="section show">
+      <div class="card">
+        <h3>Add / Update Tracking Entry</h3>
+        <div class="grid two">
+          <input id="trackNumber" placeholder="Tracking Number" />
+          <input id="parcelName" placeholder="Parcel Name (customer or item name)" />
+          <input id="barangay" placeholder="Barangay" />
+          <input id="price" type="number" placeholder="Price (PHP)" />
+          <select id="trackStatus">
+            <option value="">Select Status</option>
+            <option>Package Received</option>
+            <option>In Transit</option>
+            <option>Arrived</option>
+            <option>For Pick-up</option>
+          </select>
+          <input id="trackLocation" placeholder="Location (e.g. Manila Hub)" />
+          <input id="estimatedDate" type="date" />
+        </div>
+        <div class="top-bar" style="margin-top:12px;">
+          <button onclick="Tracking.saveTracking()">Add / Update</button>
+          <button id="printReceiptBtn">🖨️ Print Receipt</button>
+          <button onclick="Tracking.startScanner()">📷 Scan</button>
+          <div style="flex:1"></div>
+          <div class="muted">Tip: scan QR to autofill tracking number and print</div>
+        </div>
+        <div id="scannerContainer" style="display:none; margin-top:10px;">
+          <div id="scanner" style="width:100%"></div>
+          <div style="margin-top:8px;"><button class="delete-btn" onclick="Tracking.stopScanner()">❌ Cancel</button></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="top-bar">
+          <input id="searchInput" placeholder="Search tracking number." />
+          <button onclick="Tracking.currentPage=1; Tracking.renderEntries()">🔍 Search</button>
+          <div style="flex:1"></div>
+          <button onclick="Tracking.loadAllEntries()">Refresh List</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="top-bar">
+          <input id="excelFrom" type="date"/>
+          <input id="excelTo" type="date"/>
+          <button onclick="Export.exportExcelByDateRange()">📊 Export Excel (4 cols + totals)</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Bulk Update by Time Range</h3>
+        <div class="grid two">
+          <div>
+            <label class="muted">From</label>
+            <input id="bulkFromDate" type="date"/>
+            <input id="bulkFromTime" type="time"/>
+          </div>
+          <div>
+            <label class="muted">To</label>
+            <input id="bulkToDate" type="date"/>
+            <input id="bulkToTime" type="time"/>
+          </div>
+          <select id="bulkStatus">
+            <option value="">Update Status to.</option>
+            <option>Package Received</option>
+            <option>In Transit</option>
+            <option>Arrived</option>
+            <option>For Pick-up</option>
+          </select>
+          <input id="bulkLocation" placeholder="Optional New Location" />
+        </div>
+        <div style="margin-top:10px;">
+          <button onclick="BulkUpdate.bulkUpdateByTimeRange()">Apply Bulk Update</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <h3>All Tracking Entries</h3>
+        <div id="entries"></div>
+        <div class="pagination">
+          <button onclick="Tracking.prevPage()">Previous</button>
+          <button onclick="Tracking.nextPage()">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS (stubs kept for compatibility with your UI) -->
+    <div id="productsSection" class="section">
+      <div class="card">
+        <h3>Products (Beauty / Clothes)</h3>
+        <div class="grid two">
+          <input id="prodBarcode" placeholder="Barcode / SKU (scan or type)"/>
+          <input id="prodName" placeholder="Product Name"/>
+          <select id="prodCategory">
+            <option value="">Select Category</option>
+            <option>Beauty</option>
+            <option>Clothes</option>
+          </select>
+          <input id="prodPrice" type="number" placeholder="Price (PHP)"/>
+          <input id="prodStock" type="number" placeholder="Stock Quantity"/>
+          <input id="prodNotes" placeholder="Notes (optional)"/>
+        </div>
+        <div class="top-bar" style="margin-top:10px;">
+          <button onclick="Products.saveProduct()">Save Product</button>
+          <button onclick="Products.startProductScanner()">Scan Product</button>
+          <div style="flex:1"></div>
+          <button onclick="Products.loadProducts()">Refresh Products</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h4>Product List</h4>
+        <div id="productList"></div>
+        <div style="margin-top:10px;">
+          <button onclick="Export.exportProductsExcel()">Export Products</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h4>Record Sale</h4>
+        <div class="grid two">
+          <input id="saleBarcode" placeholder="Barcode (scan or type)"/>
+          <input id="saleQty" type="number" value="1" placeholder="Quantity"/>
+          <input id="saleBuyer" placeholder="Buyer name (optional)"/>
+          <input id="saleNote" placeholder="Note (optional)"/>
+        </div>
+        <div class="top-bar" style="margin-top:10px;">
+          <button onclick="Products.recordSale()">Record Sale</button>
+          <button onclick="Products.startSaleScanner()">Scan to Sell</button>
+          <div style="flex:1"></div>
+          <button onclick="Products.loadSales()">Load Sales</button>
+        </div>
+        <div style="margin-top:14px;">
+          <h4>Recent Sales</h4>
+          <div id="salesList"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Sales Analytics (Products)</h3>
+        <div class="top-bar">
+          <input id="prodAnaFrom" type="date"/>
+          <input id="prodAnaTo" type="date"/>
+          <button onclick="Products.loadProductAnalytics()">Refresh</button>
+          <button onclick="Products.quickProductRange('month')">This Month</button>
+          <button onclick="Products.quickProductRange('lastmonth')">Last Month</button>
+        </div>
+        <div class="kpis" style="margin-top:12px;">
+          <div class="kpi"><div class="label">Total Products Sold</div><div class="value" id="pKpiSold">0</div></div>
+          <div class="kpi"><div class="label">Total Sales (₱)</div><div class="value" id="pKpiRevenue">0</div></div>
+          <div class="kpi"><div class="label">Avg Sale Value (₱)</div><div class="value" id="pKpiAvg">0</div></div>
+          <div class="kpi"><div class="label">Top Category</div><div class="value" id="pKpiTopCat">-</div></div>
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;">Top Products</h4>
+            <canvas id="chartTopProducts" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;">Category Distribution</h4>
+            <canvas id="chartCategory" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOYALTY -->
+    <div id="loyaltySection" class="section">
+      <div class="card">
+        <h3>Register Loyalty Card</h3>
+        <div class="grid two">
+          <div>
+            <label class="muted">Card ID / Barcode</label>
+            <input id="loyCardId" placeholder="Scan or type card ID"/>
+          </div>
+          <div>
+            <label class="muted">Scan Card</label>
+            <div class="top-bar" style="gap:8px;">
+              <button onclick="Loyalty.startLoyaltyScanner()">Scan Card</button>
+              <button onclick="Loyalty.stopLoyaltyScanner()">Stop</button>
+            </div>
+          </div>
+          <div>
+            <label class="muted">Full Name</label>
+            <input id="loyName" placeholder="Customer's full name"/>
+          </div>
+          <div>
+            <label class="muted">Phone Number</label>
+            <input id="loyPhone" placeholder="09XXXXXXXXX"/>
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="muted">Complete Address</label>
+            <input id="loyAddress" placeholder="House/Street, Brgy, City, Province"/>
+          </div>
+        </div>
+        <div class="top-bar" style="margin-top:10px;">
+          <button onclick="Loyalty.registerLoyalty()">Register Card</button>
+          <button onclick="Loyalty.loadLoyaltyMembers()">Refresh Members</button>
+          <div style="flex:1"></div>
+          <div class="muted">Registered customers only: points awarded for registered names on tracking entries.</div>
+        </div>
+        <div id="loyaltyScannerContainer" style="display:none; margin-top:10px;">
+          <div id="loyaltyScanner" style="width:100%"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Loyalty Members</h3>
+        <div class="top-bar">
+          <input id="loySearch" placeholder="Search by name, phone or card ID."/>
+          <button onclick="Loyalty.renderLoyaltyList()">🔍 Search</button>
+          <div style="flex:1"></div>
+          <button onclick="Export.exportLoyaltyExcel()">Export Loyalty (Excel)</button>
+        </div>
+        <div id="loyaltyList" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="analyticsSection" class="section">
+      <div class="card">
+        <h3>Analytics</h3>
+        <div class="top-bar">
+          <input id="anaFrom" type="date"/>
+          <input id="anaTo" type="date"/>
+          <button onclick="Analytics.loadAnalytics()">Refresh</button>
+          <button onclick="Analytics.quickRange('today')">Today</button>
+          <button onclick="Analytics.quickRange('week')">This Week</button>
+          <button onclick="Analytics.quickRange('month')">This Month</button>
+        </div>
+      </div>
+      <div class="kpis" style="margin-top:14px;">
+        <div class="kpi"><div class="label">Total Parcels</div><div class="value" id="kpiParcels">0</div></div>
+        <div class="kpi"><div class="label">Total Revenue (₱)</div><div class="value" id="kpiRevenue">0</div></div>
+        <div class="kpi"><div class="label">Average Price (₱)</div><div class="value" id="kpiAvg">0</div></div>
+        <div class="kpi"><div class="label">Repeat Customers</div><div class="value" id="kpiRepeat">0</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px;">
+        <div class="chart-card">
+          <h4 style="margin:0 0 8px;">Daily Parcel Count</h4>
+          <canvas id="chartParcels" height="120"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4 style="margin:0 0 8px;">Daily Revenue (₱)</h4>
+          <canvas id="chartRevenue" height="120"></canvas>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:14px;">
+        <div class="chart-card">
+          <h4 style="margin:0 0 8px;">Barangay Distribution</h4>
+          <canvas id="chartBarangay" height="140"></canvas>
+        </div>
+        <div class="card">
+          <h4 style="margin:0 0 8px;">Top Barangays</h4>
+          <table class="table" id="topBarangaysTable">
+            <thead><tr><th>Barangay</th><th>Parcels</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="top-bar" style="margin-top:10px;">
+            <button onclick="Export.exportAnalyticsExcel()">Export Analytics (Excel)</button>
+            <button onclick="Export.exportAnalyticsPDF()">Export Analytics (PDF)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden print area -->
+  <div id="receiptArea"><div id="receiptContent" style="font-family:monospace; font-size:10pt;"></div></div>
+</div>
+
+<!-- App modules -->
+<script src="firebase-config.js"></script>
+<script src="ui-section.js"></script>
+<script src="tracking-section.js"></script>
+<script src="export-section.js"></script>
+<script src="bulkupdate-section.js"></script>
+<script src="products-section.js"></script>
+<script src="loyalty-section.js"></script>
+<script src="analytics-section.js"></script>
+</body>
+</html>
